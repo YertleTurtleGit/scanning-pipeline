@@ -5,10 +5,11 @@ class DepthMapHelper {
    /**
     * @public
     * @param {HTMLImageElement} normalMap
+    * @param {number} qualityPercent
     * @returns {Promise<HTMLImageElement>}
     */
-   static async getDepthMap(normalMap) {
-      const depthMapHelper = new DepthMapHelper(normalMap);
+   static async getDepthMap(normalMap, qualityPercent = 0.025) {
+      const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
       const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
 
@@ -31,8 +32,9 @@ class DepthMapHelper {
    /**
     * @private
     * @param {HTMLImageElement} normalMap
+    * @param {number} qualityPercent
     */
-   constructor(normalMap) {
+   constructor(normalMap, qualityPercent) {
       /** @constant */
       this.DEPTH_FACTOR = 1;
 
@@ -40,11 +42,15 @@ class DepthMapHelper {
       this.SLOPE_SHIFT = -255 / 2;
 
       this.normalMap = normalMap;
+      this.qualityPercent = qualityPercent;
       this.width = normalMap.width;
       this.height = normalMap.height;
 
-      const angleDistance = 20;
-      this.azimuthalAngles = new Array(360 / angleDistance).fill(null);
+      const maximumAngleCount = this.width * 2 + this.height * 2;
+      const angleCount = Math.round(maximumAngleCount * this.qualityPercent);
+      const angleDistance = 360 / angleCount;
+
+      this.azimuthalAngles = new Array(angleCount).fill(null);
 
       let angleOffset = 0;
       for (

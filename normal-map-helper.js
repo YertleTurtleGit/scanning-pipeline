@@ -183,10 +183,10 @@ class NormalMapHelper {
       ]);
 
       const normalMapRendering = GlslRendering.render(
-         GlslImage.load(lightImage_000)
+         normalVector.getVector4()
       );
 
-      normalMapShader.purge();
+      normalMapShader.unbind();
       return normalMapRendering.getJsImage();
    }
 
@@ -220,6 +220,12 @@ class NormalMapHelper {
       front = front.divideFloat(all);
 
       let normalVector = new GlslVector3([east, north, front]);
+
+      normalVector = new GlslVector3([
+         new GlslFloat(0),
+         new GlslFloat(1),
+         new GlslFloat(0),
+      ]);
 
       const normalMapRendering = GlslRendering.render(
          normalVector.getVector4()
