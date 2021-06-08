@@ -1,5 +1,6 @@
 :root {
-   --backgroundColor: hsl(0, 0%, 25%);
+   --backgroundColor0: hsl(0, 0%, 25%);
+   --backgroundColor1: hsl(0, 0%, 40%);
    --fontColor: hsl(0, 0%, 90%);
    --fontFamily: sans-serif;
 }
@@ -9,7 +10,14 @@ body {
    margin: 0;
    border: 0;
 
-   background-color: var(--backgroundColor);
+   background-color: var(--backgroundColor0);
    color: var(--fontColor);
    font-family: var(--fontFamily);
+}
+
+.main-area {
+   float: left;
+   margin: 20px;
+   padding: 10px;
+   background-color: var(--backgroundColor1);
 }
