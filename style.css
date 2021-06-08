@@ -1,0 +1,15 @@
+:root {
+   --backgroundColor: hsl(0, 0%, 25%);
+   --fontColor: hsl(0, 0%, 90%);
+   --fontFamily: sans-serif;
+}
+
+body {
+   padding: 0;
+   margin: 0;
+   border: 0;
+
+   background-color: var(--backgroundColor);
+   color: var(--fontColor);
+   font-family: var(--fontFamily);
+}
