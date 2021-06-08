@@ -10,28 +10,72 @@
    <body>
       <h1>Scanning Pipeline</h1>
 
-      <div class="main-area" id="inputArea">
+      <div class="mainArea" id="inputArea">
          <h2>Input</h2>
-         <div class="image-area"></div>
-      </div>
 
-      <div class="main-area" id="normalMapArea">
-         <h2>Normal Mapping</h2>
-         <div class="image-area">
-            <img id="normalMapImage" />
+         <select id="inputSelect">
+            <option value="test">test</option>
+            <option value="file" disabled>file</option>
+            <option value="render" disabled>render</option>
+         </select>
+
+         <div class="imageArea">
+            <div id="photometricStereoImages">
+               <img
+                  id="photometricStereoImage_000"
+                  src="./test-datasets/photometric-stereo/object1_000_036.jpg"
+               />
+               <img
+                  id="photometricStereoImage_045"
+                  src="./test-datasets/photometric-stereo/object1_045_036.jpg"
+               />
+               <img
+                  id="photometricStereoImage_090"
+                  src="./test-datasets/photometric-stereo/object1_090_036.jpg"
+               />
+               <img
+                  id="photometricStereoImage_135"
+                  src="./test-datasets/photometric-stereo/object1_135_036.jpg"
+               />
+               <img
+                  id="photometricStereoImage_180"
+                  src="./test-datasets/photometric-stereo/object1_180_036.jpg"
+               />
+               <img
+                  id="photometricStereoImage_225"
+                  src="./test-datasets/photometric-stereo/object1_225_036.jpg"
+               />
+               <img
+                  id="photometricStereoImage_270"
+                  src="./test-datasets/photometric-stereo/object1_270_036.jpg"
+               />
+               <img
+                  id="photometricStereoImage_315"
+                  src="./test-datasets/photometric-stereo/object1_315_036.jpg"
+               />
+            </div>
          </div>
       </div>
 
-      <div class="main-area" id="depthMapArea">
+      <div class="mainArea" id="normalMapArea">
+         <h2>Normal Mapping</h2>
+         <img id="normalMapImage" />
+      </div>
+
+      <div class="mainArea" id="depthMapArea">
          <h2>Depth Mapping</h2>
          <img id="depthMapImage" />
       </div>
 
-      <div class="main-area" id="pointCloudArea">
+      <div class="mainArea" id="pointCloudArea">
          <h2>Point Cloud</h2>
-         <div class="image-area"></div>
       </div>
 
-      <script src="main.js"></script>
+      <script src="./glsl-shader.js"></script>
+      <script src="./normal-map-helper.js"></script>
+      <script src="./depth-map-helper.js"></script>
+      <script src="./dom-declarations.js"></script>
+
+      <script src="./main.js"></script>
    </body>
 </html>

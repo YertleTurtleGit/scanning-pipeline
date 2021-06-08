@@ -1,49 +1,49 @@
 //@ts-check
 "use strict";
 
-class DepthMapping {
+class DepthMapHelper {
    /**
     * @public
-    * @param {HTMLImageElement} normalMapping
+    * @param {HTMLImageElement} normalMap
     * @returns {Promise<HTMLImageElement>}
     */
-   static async getDepthMapping(normalMapping) {
-      const depthMapping = new DepthMapping(normalMapping);
+   static async getDepthMap(normalMap) {
+      const depthMapHelper = new DepthMapHelper(normalMap);
 
-      const gradientPixelArray = depthMapping.getLocalGradientFactor();
+      const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
 
-      const anglesCount = depthMapping.azimuthalAngles.length;
+      const anglesCount = depthMapHelper.azimuthalAngles.length;
       const integralPromises = new Array(anglesCount);
 
       for (let i = 0; i < anglesCount; i++) {
-         integralPromises[i] = depthMapping.calculateAnisotropicIntegral(
-            depthMapping.azimuthalAngles[i],
+         integralPromises[i] = depthMapHelper.calculateAnisotropicIntegral(
+            depthMapHelper.azimuthalAngles[i],
             gradientPixelArray
          );
       }
 
       const integrals = await Promise.all(integralPromises);
-      const integral = depthMapping.getAverageIntegralAsGrayscale(integrals);
+      const integral = depthMapHelper.getAverageIntegralAsGrayscale(integrals);
 
-      return depthMapping.getDepthMappingImage(integral);
+      return depthMapHelper.getDepthMapImage(integral);
    }
 
    /**
     * @private
-    * @param {HTMLImageElement} normalMapping
+    * @param {HTMLImageElement} normalMap
     */
-   constructor(normalMapping) {
+   constructor(normalMap) {
       /** @constant */
       this.DEPTH_FACTOR = 1;
 
       /** @constant */
       this.SLOPE_SHIFT = -255 / 2;
 
-      this.normalMapping = normalMapping;
-      this.width = normalMapping.width;
-      this.height = normalMapping.height;
+      this.normalMap = normalMap;
+      this.width = normalMap.width;
+      this.height = normalMap.height;
 
-      const angleDistance = 5;
+      const angleDistance = 20;
       this.azimuthalAngles = new Array(360 / angleDistance).fill(null);
 
       let angleOffset = 0;
@@ -62,7 +62,7 @@ class DepthMapping {
     * @param {number[]} integral
     * @returns {Promise<HTMLImageElement>}
     */
-   getDepthMappingImage(integral) {
+   getDepthMapImage(integral) {
       const buffer = new Uint8ClampedArray(this.width * this.height * 4);
 
       // create off-screen canvas element
@@ -99,6 +99,9 @@ class DepthMapping {
 
       const integral = new Array(integralCount * 4);
 
+      let min = Number.MAX_VALUE;
+      let max = Number.MIN_VALUE;
+
       for (let i = 0; i < integralCount; i++) {
          let averageIntegralValue = 0;
          for (let j = 0; j < integralsCount; j++) {
@@ -106,15 +109,28 @@ class DepthMapping {
                averageIntegralValue += integrals[j][i];
             }
          }
-         const grayscaleValue = (averageIntegralValue / integralCount) * 100;
+         const grayscaleValue = averageIntegralValue;
          integral[i * 4 + 0] = grayscaleValue;
          integral[i * 4 + 1] = grayscaleValue;
          integral[i * 4 + 2] = grayscaleValue;
-         integral[i * 4 + 3] = 255;
+         integral[i * 4 + 3] = null;
+
+         if (grayscaleValue > max) {
+            max = grayscaleValue;
+         }
+         if (grayscaleValue < min) {
+            min = grayscaleValue;
+         }
       }
 
-      const ratio = Math.max(...integral) / 255;
-      return integral.map((v) => Math.round(v / ratio));
+      const normalizeDivisor = Math.abs(min) + max;
+
+      return integral.map((v) => {
+         if (v === null) {
+            return 255;
+         }
+         return ((v + Math.abs(min)) / normalizeDivisor) * 255;
+      });
    }
 
    /**
@@ -122,13 +138,13 @@ class DepthMapping {
     * @returns {Uint8Array}
     */
    getLocalGradientFactor() {
-      const depthMappingShader = new Shader({
+      const depthMapShader = new Shader({
          width: this.width,
          height: this.height,
       });
-      depthMappingShader.bind();
+      depthMapShader.bind();
 
-      const glslNormalMap = GlslImage.load(this.normalMapping);
+      const glslNormalMap = GlslImage.load(this.normalMap);
       const red = glslNormalMap.channel(0);
       const green = glslNormalMap.channel(1);
       const blue = glslNormalMap.channel(2);
@@ -141,7 +157,7 @@ class DepthMapping {
          result.getVector4()
       ).getPixelArray();
 
-      depthMappingShader.purge();
+      depthMapShader.purge();
       return gradientPixelArray;
    }
 
