@@ -59,7 +59,7 @@ jobs:
         source: https://${{ github.actor }}.github.io/${{ github.event.repository.name }}/
         destination: screenshot.png
         full-page: true
-        delay: 120
+        delay: 0
           
     - uses: actions/download-artifact@v2
       with:
@@ -67,7 +67,7 @@ jobs:
 
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: added screenshot
+        commit_message: update screenshot
         branch: main    
         
     - name: Clean
