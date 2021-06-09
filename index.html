@@ -69,20 +69,18 @@
          <h2>Normal Mapping</h2>
          <img id="normalMapImage" />
 
-         <!--
          <input
-               id="normalMapResolution"
-               type="range"
-               name="normalMapResolution"
-               min="1"
-               max="100"
-               value="100"
-               onchange="polarOutput.value=value + '%'"
-               oninput="polarOutput.value=value + '%'"
-            />
-            <output id="polarOutput"></output>
-            <label for="normalMapResolution">resolution</label>
-         -->
+            id="normalMapResolution"
+            type="range"
+            name="normalMapResolution"
+            min="1"
+            max="100"
+            value="50"
+            onchange="polarOutput.value=value + '%'"
+            oninput="polarOutput.value=value + '%'"
+         />
+         <output id="polarOutput"></output>
+         <label for="normalMapResolution">resolution</label>
       </div>
 
       <div class="mainArea" id="depthMapArea">

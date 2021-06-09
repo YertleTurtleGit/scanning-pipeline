@@ -6,62 +6,70 @@ class DepthMapHelper {
 
    /**
     * @public
-    * @param {HTMLImageElement} normalMap
+    * @param {Promise<HTMLImageElement>} normalMap
     * @param {number} qualityPercent
     * @param {HTMLImageElement} imageElement
     * @returns {Promise<HTMLImageElement>}
     */
    static async getDepthMap(
       normalMap,
-      qualityPercent = 0.025,
+      qualityPercent = 0.001,
       cancelIfNewJobSpawned = false,
       imageElement = undefined
    ) {
       DepthMapHelper.renderId++;
+
       if (imageElement)
          imageElement.style.filter =
             "blur(" +
-            Math.round((imageElement.width * imageElement.height) / 50000) +
-            "px) opacity(0.5)";
+            Math.round((imageElement.width * imageElement.height) / 25000) +
+            "px)";
 
-      const depthMapHelper = new DepthMapHelper(
-         normalMap,
-         qualityPercent,
-         cancelIfNewJobSpawned
-      );
+      return new Promise((resolve) => {
+         setTimeout(async () => {
+            const depthMapHelper = new DepthMapHelper(
+               await normalMap,
+               qualityPercent,
+               cancelIfNewJobSpawned
+            );
 
-      const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
+            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
 
-      const anglesCount = depthMapHelper.azimuthalAngles.length;
-      const integralPromises = new Array(anglesCount);
+            const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
 
-      if (depthMapHelper.isRenderObsolete()) return;
+            const anglesCount = depthMapHelper.azimuthalAngles.length;
+            const integralPromises = new Array(anglesCount);
 
-      for (let i = 0; i < anglesCount; i++) {
-         integralPromises[i] = depthMapHelper.calculateAnisotropicIntegral(
-            depthMapHelper.azimuthalAngles[i],
-            gradientPixelArray
-         );
-      }
+            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
 
-      const integrals = await Promise.all(integralPromises);
+            for (let i = 0; i < anglesCount; i++) {
+               integralPromises[i] =
+                  depthMapHelper.calculateAnisotropicIntegral(
+                     depthMapHelper.azimuthalAngles[i],
+                     gradientPixelArray
+                  );
+            }
 
-      if (depthMapHelper.isRenderObsolete()) return;
+            const integrals = await Promise.all(integralPromises);
 
-      const integral = await depthMapHelper.getAverageIntegralAsGrayscale(
-         integrals
-      );
+            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
 
-      if (depthMapHelper.isRenderObsolete()) return;
+            const integral = await depthMapHelper.getAverageIntegralAsGrayscale(
+               integrals
+            );
 
-      const depthMap = await depthMapHelper.getDepthMapImage(integral);
+            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
 
-      if (imageElement && depthMap) {
-         imageElement.src = depthMap.src;
-         imageElement.style.filter = "";
-      }
+            const depthMap = await depthMapHelper.getDepthMapImage(integral);
 
-      return depthMap;
+            if (imageElement && depthMap) {
+               imageElement.src = depthMap.src;
+               imageElement.style.filter = "";
+            }
+
+            resolve(depthMap);
+         });
+      });
    }
 
    /**
