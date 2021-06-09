@@ -8,7 +8,7 @@ class DepthMapHelper {
     * @param {number} qualityPercent
     * @returns {Promise<HTMLImageElement>}
     */
-   static async getDepthMap(normalMap, qualityPercent = 0.025) {
+   static async getDepthMap(normalMap, qualityPercent = 0.01) {
       const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
       const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
@@ -32,7 +32,6 @@ class DepthMapHelper {
    /**
     * @private
     * @param {HTMLImageElement} normalMap
-    * @param {number} qualityPercent
     */
    constructor(normalMap, qualityPercent) {
       /** @constant */
@@ -174,22 +173,27 @@ class DepthMapHelper {
     * @returns {Promise<number[]>}
     */
    async calculateAnisotropicIntegral(azimuthalAngle, gradientPixelArray) {
-      let integral = new Array(this.width * this.height);
-      let pixelLines = this.getPixelLinesFromAzimuthalAngle(
-         azimuthalAngle,
-         gradientPixelArray
-      );
+      return new Promise((resolve) => {
+         setTimeout(() => {
+            let integral = new Array(this.width * this.height);
+            let pixelLines = this.getPixelLinesFromAzimuthalAngle(
+               azimuthalAngle,
+               gradientPixelArray
+            );
 
-      for (let j = 0; j < pixelLines.length; j++) {
-         let lineOffset = 0;
-         for (let k = 0; k < pixelLines[j].length; k++) {
-            const index = pixelLines[j][k].x + pixelLines[j][k].y * this.width;
-            integral[index] = lineOffset;
-            lineOffset += pixelLines[j][k].slope * -this.DEPTH_FACTOR;
-         }
-      }
+            for (let j = 0; j < pixelLines.length; j++) {
+               let lineOffset = 0;
+               for (let k = 0; k < pixelLines[j].length; k++) {
+                  const index =
+                     pixelLines[j][k].x + pixelLines[j][k].y * this.width;
+                  integral[index] = lineOffset;
+                  lineOffset += pixelLines[j][k].slope * -this.DEPTH_FACTOR;
+               }
+            }
 
-      return integral;
+            resolve(integral);
+         });
+      });
    }
 
    /**
