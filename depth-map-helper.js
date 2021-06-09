@@ -2,19 +2,40 @@
 "use strict";
 
 class DepthMapHelper {
+   static renderId = 0;
+
    /**
     * @public
     * @param {HTMLImageElement} normalMap
     * @param {number} qualityPercent
+    * @param {HTMLImageElement} imageElement
     * @returns {Promise<HTMLImageElement>}
     */
-   static async getDepthMap(normalMap, qualityPercent = 0.01) {
-      const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
+   static async getDepthMap(
+      normalMap,
+      qualityPercent = 0.025,
+      cancelIfNewJobSpawned = false,
+      imageElement = undefined
+   ) {
+      DepthMapHelper.renderId++;
+      if (imageElement)
+         imageElement.style.filter =
+            "blur(" +
+            Math.round((imageElement.width * imageElement.height) / 50000) +
+            "px) opacity(0.5)";
+
+      const depthMapHelper = new DepthMapHelper(
+         normalMap,
+         qualityPercent,
+         cancelIfNewJobSpawned
+      );
 
       const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
 
       const anglesCount = depthMapHelper.azimuthalAngles.length;
       const integralPromises = new Array(anglesCount);
+
+      if (depthMapHelper.isRenderObsolete()) return;
 
       for (let i = 0; i < anglesCount; i++) {
          integralPromises[i] = depthMapHelper.calculateAnisotropicIntegral(
@@ -24,16 +45,32 @@ class DepthMapHelper {
       }
 
       const integrals = await Promise.all(integralPromises);
-      const integral = depthMapHelper.getAverageIntegralAsGrayscale(integrals);
 
-      return depthMapHelper.getDepthMapImage(integral);
+      if (depthMapHelper.isRenderObsolete()) return;
+
+      const integral = await depthMapHelper.getAverageIntegralAsGrayscale(
+         integrals
+      );
+
+      if (depthMapHelper.isRenderObsolete()) return;
+
+      const depthMap = await depthMapHelper.getDepthMapImage(integral);
+
+      if (imageElement && depthMap) {
+         imageElement.src = depthMap.src;
+         imageElement.style.filter = "";
+      }
+
+      return depthMap;
    }
 
    /**
     * @private
     * @param {HTMLImageElement} normalMap
+    * @param {number} qualityPercent
+    * @param {boolean} cancelIfNewJobSpawned
     */
-   constructor(normalMap, qualityPercent) {
+   constructor(normalMap, qualityPercent, cancelIfNewJobSpawned) {
       /** @constant */
       this.DEPTH_FACTOR = 1;
 
@@ -42,6 +79,9 @@ class DepthMapHelper {
 
       this.normalMap = normalMap;
       this.qualityPercent = qualityPercent;
+      this.cancelIfNewJobSpawned = cancelIfNewJobSpawned;
+
+      this.renderId = DepthMapHelper.renderId;
       this.width = normalMap.width;
       this.height = normalMap.height;
 
@@ -64,77 +104,93 @@ class DepthMapHelper {
 
    /**
     * @private
+    * @returns {boolean}
+    */
+   isRenderObsolete() {
+      return (
+         this.cancelIfNewJobSpawned && this.renderId < DepthMapHelper.renderId
+      );
+   }
+
+   /**
+    * @private
     * @param {number[]} integral
     * @returns {Promise<HTMLImageElement>}
     */
-   getDepthMapImage(integral) {
-      const buffer = new Uint8ClampedArray(this.width * this.height * 4);
-
-      // create off-screen canvas element
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-
-      canvas.width = this.width;
-      canvas.height = this.height;
-
-      const imageData = ctx.createImageData(this.width, this.height);
-
-      imageData.data.set(integral);
-
-      // update canvas with new data
-      ctx.putImageData(imageData, 0, 0);
-
+   async getDepthMapImage(integral) {
       return new Promise((resolve) => {
-         const image = new Image();
-         image.addEventListener("load", () => {
-            resolve(image);
+         setTimeout(() => {
+            const buffer = new Uint8ClampedArray(this.width * this.height * 4);
+
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            canvas.width = this.width;
+            canvas.height = this.height;
+
+            const imageData = ctx.createImageData(this.width, this.height);
+
+            imageData.data.set(integral);
+
+            ctx.putImageData(imageData, 0, 0);
+
+            const image = new Image();
+            image.addEventListener("load", () => {
+               resolve(image);
+            });
+            image.src = canvas.toDataURL();
          });
-         image.src = canvas.toDataURL();
       });
    }
 
    /**
     * @private
     * @param {number[][]} integrals
-    * @return {number[]}
+    * @return {Promise<number[]>}
     */
-   getAverageIntegralAsGrayscale(integrals) {
-      const integralsCount = integrals.length;
-      const integralCount = integrals[0].length;
+   async getAverageIntegralAsGrayscale(integrals) {
+      return new Promise((resolve) => {
+         setTimeout(() => {
+            const integralsCount = integrals.length;
+            const integralCount = integrals[0].length;
 
-      const integral = new Array(integralCount * 4);
+            const integral = new Array(integralCount * 4);
 
-      let min = Number.MAX_VALUE;
-      let max = Number.MIN_VALUE;
+            let min = Number.MAX_VALUE;
+            let max = Number.MIN_VALUE;
 
-      for (let i = 0; i < integralCount; i++) {
-         let averageIntegralValue = 0;
-         for (let j = 0; j < integralsCount; j++) {
-            if (integrals[j][i]) {
-               averageIntegralValue += integrals[j][i];
+            for (let i = 0; i < integralCount; i++) {
+               let averageIntegralValue = 0;
+               for (let j = 0; j < integralsCount; j++) {
+                  if (integrals[j][i]) {
+                     averageIntegralValue += integrals[j][i];
+                  }
+               }
+               const grayscaleValue = averageIntegralValue;
+               integral[i * 4 + 0] = grayscaleValue;
+               integral[i * 4 + 1] = grayscaleValue;
+               integral[i * 4 + 2] = grayscaleValue;
+               integral[i * 4 + 3] = null;
+
+               if (grayscaleValue > max) {
+                  max = grayscaleValue;
+               }
+               if (grayscaleValue < min) {
+                  min = grayscaleValue;
+               }
             }
-         }
-         const grayscaleValue = averageIntegralValue;
-         integral[i * 4 + 0] = grayscaleValue;
-         integral[i * 4 + 1] = grayscaleValue;
-         integral[i * 4 + 2] = grayscaleValue;
-         integral[i * 4 + 3] = null;
 
-         if (grayscaleValue > max) {
-            max = grayscaleValue;
-         }
-         if (grayscaleValue < min) {
-            min = grayscaleValue;
-         }
-      }
+            const normalizeDivisor = Math.abs(min) + max;
 
-      const normalizeDivisor = Math.abs(min) + max;
-
-      return integral.map((v) => {
-         if (v === null) {
-            return 255;
-         }
-         return ((v + Math.abs(min)) / normalizeDivisor) * 255;
+            resolve(
+               integral.map((v) => {
+                  if (v === null) {
+                     return 255;
+                  }
+                  return ((v + Math.abs(min)) / normalizeDivisor) * 255;
+               })
+            );
+         });
       });
    }
 
@@ -173,13 +229,19 @@ class DepthMapHelper {
     * @returns {Promise<number[]>}
     */
    async calculateAnisotropicIntegral(azimuthalAngle, gradientPixelArray) {
+      const depthMapHelper = this;
+
       return new Promise((resolve) => {
          setTimeout(() => {
+            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
+
             let integral = new Array(this.width * this.height);
             let pixelLines = this.getPixelLinesFromAzimuthalAngle(
                azimuthalAngle,
                gradientPixelArray
             );
+
+            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
 
             for (let j = 0; j < pixelLines.length; j++) {
                let lineOffset = 0;

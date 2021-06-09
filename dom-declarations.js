@@ -10,6 +10,14 @@ function declareImage(elementId) {
 }
 
 /**
+ * @param {string} elementId
+ * @returns {HTMLInputElement}
+ */
+function declareInput(elementId) {
+   return /** @type {HTMLInputElement} */ (document.getElementById(elementId));
+}
+
+/**
  * @param {string} url
  * @returns {Promise<HTMLImageElement>}
  */
@@ -34,3 +42,5 @@ const PHOTOMETRIC_STEREO_IMAGE_180 = declareImage("photometricStereoImage_180");
 const PHOTOMETRIC_STEREO_IMAGE_225 = declareImage("photometricStereoImage_225");
 const PHOTOMETRIC_STEREO_IMAGE_270 = declareImage("photometricStereoImage_270");
 const PHOTOMETRIC_STEREO_IMAGE_315 = declareImage("photometricStereoImage_315");
+
+const NORMAL_MAP_RESOLUTION_INPUT = declareInput("normalMapResolution");

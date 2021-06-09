@@ -1,6 +1,9 @@
 //@ts-check
 "use strict";
 
+/**
+ * @returns {Promise<HTMLImageElement>}
+ */
 async function calculateNormalMap() {
    const normalMap = await NormalMapHelper.getPhotometricStereoNormalMap(
       PHOTOMETRIC_STEREO_IMAGE_000,
@@ -17,15 +20,20 @@ async function calculateNormalMap() {
    return normalMap;
 }
 
+/**
+ * @param {HTMLImageElement} normalMap
+ * @returns {Promise<HTMLImageElement>}
+ */
 async function calculateDepthMap(normalMap) {
-   const depthMap = await DepthMapHelper.getDepthMap(normalMap);
-   DEPTH_MAP_IMAGE.src = depthMap.src;
-   return depthMap;
+   return DepthMapHelper.getDepthMap(normalMap, 0.01, true, DEPTH_MAP_IMAGE);
 }
 
 async function calculate() {
    const normalMap = await calculateNormalMap();
-   setTimeout(calculateDepthMap.bind(null, normalMap));
+   await calculateDepthMap(normalMap);
 }
 
-setTimeout(calculate);
+calculate();
+
+NORMAL_MAP_RESOLUTION_INPUT.addEventListener("change", calculate);
+// NORMAL_MAP_RESOLUTION_INPUT.addEventListener("input", calculate);
