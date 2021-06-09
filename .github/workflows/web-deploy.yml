@@ -59,7 +59,7 @@ jobs:
         source: https://${{ github.actor }}.github.io/${{ github.event.repository.name }}/
         destination: screenshot.png
         full-page: true
-        delay: 0
+        delay: 120
           
     - uses: actions/download-artifact@v2
       with:
