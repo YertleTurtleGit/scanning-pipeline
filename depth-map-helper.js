@@ -8,7 +8,7 @@ class DepthMapHelper {
     * @param {number} qualityPercent
     * @returns {Promise<HTMLImageElement>}
     */
-   static async getDepthMap(normalMap, qualityPercent = 0.1) {
+   static async getDepthMap(normalMap, qualityPercent = 1) {
       const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
       const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
