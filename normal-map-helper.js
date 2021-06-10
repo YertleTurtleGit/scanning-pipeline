@@ -2,6 +2,7 @@
 "use strict";
 
 class NormalMapHelper {
+   /** @private @type {number} */
    static renderId = 0;
 
    /**
@@ -33,24 +34,26 @@ class NormalMapHelper {
       imageElement = undefined,
       resolutionPercent = 100
    ) {
-      NormalMapHelper.renderId++;
-
       if (imageElement)
          imageElement.style.filter =
             "blur(" +
             Math.round((imageElement.width * imageElement.height) / 25000) +
             "px)";
 
+      const normalMapHelper = new NormalMapHelper(cancelIfNewJobSpawned);
+
+      if (normalMapHelper.isRenderObsolete()) return;
+
       return new Promise((resolve) => {
          setTimeout(async () => {
-            const normalMapHelper = new NormalMapHelper(cancelIfNewJobSpawned);
+            if (normalMapHelper.isRenderObsolete()) return;
 
             const normalMapShader = new Shader({
                width: lightImage_000.naturalWidth * (resolutionPercent / 100),
                height: lightImage_000.naturalHeight * (resolutionPercent / 100),
             });
 
-            if (normalMapHelper.isRenderObsolete()) resolve(undefined);
+            if (normalMapHelper.isRenderObsolete()) return;
 
             normalMapShader.bind();
 
@@ -89,6 +92,8 @@ class NormalMapHelper {
                orthogonalAzimuthalAngleDeg,
                oppositeAzimuthalAngleDeg
             ) {
+               if (normalMapHelper.isRenderObsolete()) return;
+
                /**
                 * @param {number} azimuthalAngleDeg
                 * @param {number} polarAngleDeg
@@ -209,13 +214,15 @@ class NormalMapHelper {
                normalVector.channel(2),
             ]);
 
+            if (normalMapHelper.isRenderObsolete()) return;
+
             const normalMapRendering = GlslRendering.render(
                normalVector.getVector4()
             );
 
             normalMapShader.unbind();
 
-            if (normalMapHelper.isRenderObsolete()) resolve(undefined);
+            if (normalMapHelper.isRenderObsolete()) return;
 
             const normalMap = await normalMapRendering.getJsImage();
 
@@ -279,8 +286,9 @@ class NormalMapHelper {
     * @param {boolean} cancelIfNewJobSpawned
     */
    constructor(cancelIfNewJobSpawned) {
-      this.renderId = NormalMapHelper.renderId;
+      NormalMapHelper.renderId++;
 
+      this.renderId = NormalMapHelper.renderId;
       this.cancelIfNewJobSpawned = cancelIfNewJobSpawned;
    }
 

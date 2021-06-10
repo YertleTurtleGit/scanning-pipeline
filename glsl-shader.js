@@ -317,7 +317,7 @@ class GlslContext {
 
       this.glContext.shaderSource(vertexShader, vertexShaderSource);
       this.glContext.shaderSource(fragmentShader, fragmentShaderSource);
-      console.log("Compiling shader program.");
+      //console.log("Compiling shader program.");
       this.glContext.compileShader(vertexShader);
       this.glContext.compileShader(fragmentShader);
       let shaderProgram = this.glContext.createProgram();
@@ -333,7 +333,7 @@ class GlslContext {
     */
    loadGlslImages(shaderProgram) {
       const glslImages = this.glslShader.getGlslImages();
-      console.log("Loading " + glslImages.length + " image(s) for gpu.");
+      //console.log("Loading " + glslImages.length + " image(s) for gpu.");
       for (let i = 0; i < glslImages.length; i++) {
          glslImages[i].loadIntoShaderProgram(this.glContext, shaderProgram, i);
       }
@@ -448,7 +448,7 @@ class GlslContext {
       const shaderProgram = this.createShaderProgram(outVariable);
       this.glContext.useProgram(shaderProgram);
       this.loadGlslImages(shaderProgram);
-      console.log("Rendering on gpu.");
+      //console.log("Rendering on gpu.");
       const vaoFrame = this.getFrameVAO(shaderProgram);
       this.drawArraysFromVAO(vaoFrame);
    }

@@ -2,6 +2,7 @@
 "use strict";
 
 class DepthMapHelper {
+   /** @private @type {number} */
    static renderId = 0;
 
    /**
@@ -17,30 +18,30 @@ class DepthMapHelper {
       cancelIfNewJobSpawned = false,
       imageElement = undefined
    ) {
-      DepthMapHelper.renderId++;
-
       if (imageElement)
          imageElement.style.filter =
             "blur(" +
             Math.round((imageElement.width * imageElement.height) / 25000) +
             "px)";
 
+      const depthMapHelper = new DepthMapHelper(
+         await normalMap,
+         qualityPercent,
+         cancelIfNewJobSpawned
+      );
+
+      if (depthMapHelper.isRenderObsolete()) return;
+
       return new Promise((resolve) => {
          setTimeout(async () => {
-            const depthMapHelper = new DepthMapHelper(
-               await normalMap,
-               qualityPercent,
-               cancelIfNewJobSpawned
-            );
-
-            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
+            if (depthMapHelper.isRenderObsolete()) return;
 
             const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
 
             const anglesCount = depthMapHelper.azimuthalAngles.length;
             const integralPromises = new Array(anglesCount);
 
-            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
+            if (depthMapHelper.isRenderObsolete()) return;
 
             for (let i = 0; i < anglesCount; i++) {
                integralPromises[i] =
@@ -52,13 +53,13 @@ class DepthMapHelper {
 
             const integrals = await Promise.all(integralPromises);
 
-            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
+            if (depthMapHelper.isRenderObsolete()) return;
 
             const integral = await depthMapHelper.getAverageIntegralAsGrayscale(
                integrals
             );
 
-            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
+            if (depthMapHelper.isRenderObsolete()) return;
 
             const depthMap = await depthMapHelper.getDepthMapImage(integral);
 
@@ -79,6 +80,8 @@ class DepthMapHelper {
     * @param {boolean} cancelIfNewJobSpawned
     */
    constructor(normalMap, qualityPercent, cancelIfNewJobSpawned) {
+      DepthMapHelper.renderId++;
+
       /** @constant */
       this.DEPTH_FACTOR = 1;
 
@@ -138,6 +141,8 @@ class DepthMapHelper {
 
             const imageData = ctx.createImageData(this.width, this.height);
 
+            if (this.isRenderObsolete()) return;
+
             imageData.data.set(integral);
 
             ctx.putImageData(imageData, 0, 0);
@@ -188,6 +193,8 @@ class DepthMapHelper {
                }
             }
 
+            if (this.isRenderObsolete()) return;
+
             const normalizeDivisor = Math.abs(min) + max;
 
             resolve(
@@ -204,52 +211,62 @@ class DepthMapHelper {
 
    /**
     * @private
-    * @returns {Uint8Array}
+    * @returns {Promise<Uint8Array>}
     */
    getLocalGradientFactor() {
-      const depthMapShader = new Shader({
-         width: this.width,
-         height: this.height,
+      return new Promise((resolve) => {
+         setTimeout(() => {
+            // TODO: Check if reject does not break like return.
+            if (this.isRenderObsolete()) return;
+
+            const depthMapShader = new Shader({
+               width: this.width,
+               height: this.height,
+            });
+            depthMapShader.bind();
+
+            const glslNormalMap = GlslImage.load(this.normalMap);
+            const red = glslNormalMap.channel(0);
+            const green = glslNormalMap.channel(1);
+            const blue = glslNormalMap.channel(2);
+            const result = new GlslVector3([
+               red.divideFloat(blue),
+               green.divideFloat(blue),
+               blue,
+            ]);
+
+            if (this.isRenderObsolete()) return;
+
+            const gradientPixelArray = GlslRendering.render(
+               result.getVector4()
+            ).getPixelArray();
+
+            depthMapShader.purge();
+            resolve(gradientPixelArray);
+         });
       });
-      depthMapShader.bind();
-
-      const glslNormalMap = GlslImage.load(this.normalMap);
-      const red = glslNormalMap.channel(0);
-      const green = glslNormalMap.channel(1);
-      const blue = glslNormalMap.channel(2);
-      const result = new GlslVector3([
-         red.divideFloat(blue),
-         green.divideFloat(blue),
-         blue,
-      ]);
-      const gradientPixelArray = GlslRendering.render(
-         result.getVector4()
-      ).getPixelArray();
-
-      depthMapShader.purge();
-      return gradientPixelArray;
    }
 
    /**
     * @private
     * @param {number} azimuthalAngle
-    * @param {Uint8Array} gradientPixelArray
+    * @param {Promise<Uint8Array>} gradientPixelArray
     * @returns {Promise<number[]>}
     */
    async calculateAnisotropicIntegral(azimuthalAngle, gradientPixelArray) {
       const depthMapHelper = this;
 
       return new Promise((resolve) => {
-         setTimeout(() => {
-            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
+         setTimeout(async () => {
+            if (depthMapHelper.isRenderObsolete()) return;
 
             let integral = new Array(this.width * this.height);
             let pixelLines = this.getPixelLinesFromAzimuthalAngle(
                azimuthalAngle,
-               gradientPixelArray
+               await gradientPixelArray
             );
 
-            if (depthMapHelper.isRenderObsolete()) resolve(undefined);
+            if (depthMapHelper.isRenderObsolete()) return;
 
             for (let j = 0; j < pixelLines.length; j++) {
                let lineOffset = 0;
