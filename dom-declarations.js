@@ -34,6 +34,10 @@ function loadImage(url) {
 const NORMAL_MAP_IMAGE = declareImage("normalMapImage");
 const DEPTH_MAP_IMAGE = declareImage("depthMapImage");
 
+const INPUT_TYPE_SELECT = /** @type {HTMLSelectElement} */ (
+   document.getElementById("inputType")
+);
+
 const PHOTOMETRIC_STEREO_IMAGE_000 = declareImage("photometricStereoImage_000");
 const PHOTOMETRIC_STEREO_IMAGE_045 = declareImage("photometricStereoImage_045");
 const PHOTOMETRIC_STEREO_IMAGE_090 = declareImage("photometricStereoImage_090");
