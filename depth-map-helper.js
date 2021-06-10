@@ -7,7 +7,7 @@ class DepthMapHelper {
 
    /**
     * @public
-    * @param {Promise<HTMLImageElement>} normalMap
+    * @param {HTMLImageElement} normalMap
     * @param {number} qualityPercent
     * @param {HTMLImageElement} imageElement
     * @returns {Promise<HTMLImageElement>}
@@ -25,7 +25,7 @@ class DepthMapHelper {
             "px)";
 
       const depthMapHelper = new DepthMapHelper(
-         await normalMap,
+         normalMap,
          qualityPercent,
          cancelIfNewJobSpawned
       );

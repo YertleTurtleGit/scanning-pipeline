@@ -44,3 +44,4 @@ const PHOTOMETRIC_STEREO_IMAGE_270 = declareImage("photometricStereoImage_270");
 const PHOTOMETRIC_STEREO_IMAGE_315 = declareImage("photometricStereoImage_315");
 
 const NORMAL_MAP_RESOLUTION_INPUT = declareInput("normalMapResolution");
+const DEPTH_MAP_QUALITY_INPUT = declareInput("depthMapQuality");

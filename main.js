@@ -1,11 +1,8 @@
 //@ts-check
 "use strict";
 
-/**
- * @returns {Promise<HTMLImageElement>}
- */
 async function calculateNormalMap() {
-   const normalMap = await NormalMapHelper.getPhotometricStereoNormalMap(
+   await NormalMapHelper.getPhotometricStereoNormalMap(
       PHOTOMETRIC_STEREO_IMAGE_000,
       PHOTOMETRIC_STEREO_IMAGE_045,
       PHOTOMETRIC_STEREO_IMAGE_090,
@@ -19,23 +16,43 @@ async function calculateNormalMap() {
       NORMAL_MAP_IMAGE,
       Number(NORMAL_MAP_RESOLUTION_INPUT.value)
    );
-   return normalMap;
 }
 
-/**
- * @param {Promise<HTMLImageElement>} normalMap
- * @returns {Promise<HTMLImageElement>}
- */
-async function calculateDepthMap(normalMap) {
-   return DepthMapHelper.getDepthMap(normalMap, 0.01, true, DEPTH_MAP_IMAGE);
+async function calculateDepthMap() {
+   await DepthMapHelper.getDepthMap(
+      NORMAL_MAP_IMAGE,
+      Number(DEPTH_MAP_QUALITY_INPUT.value),
+      true,
+      DEPTH_MAP_IMAGE
+   );
 }
 
-async function calculate() {
-   const normalMap = calculateNormalMap();
-   await calculateDepthMap(normalMap);
+async function calculateNormalAndDepthMap() {
+   await calculateNormalMap();
+   await calculateDepthMap();
 }
 
-calculate();
+//calculateNormalMapResolution();
+calculateNormalAndDepthMap();
 
-NORMAL_MAP_RESOLUTION_INPUT.addEventListener("change", calculate);
-NORMAL_MAP_RESOLUTION_INPUT.addEventListener("input", calculate);
+function calculateNormalMapResolution() {
+   const sizeFactor = Math.round(
+      (NORMAL_MAP_IMAGE.width / PHOTOMETRIC_STEREO_IMAGE_000.naturalWidth) *
+         100 +
+         0.5
+   );
+   NORMAL_MAP_RESOLUTION_INPUT.value = String(sizeFactor);
+   NORMAL_MAP_RESOLUTION_INPUT.min = String(sizeFactor);
+}
+
+NORMAL_MAP_RESOLUTION_INPUT.addEventListener(
+   "change",
+   calculateNormalAndDepthMap
+);
+NORMAL_MAP_RESOLUTION_INPUT.addEventListener(
+   "input",
+   calculateNormalAndDepthMap
+);
+
+DEPTH_MAP_QUALITY_INPUT.addEventListener("change", calculateDepthMap);
+DEPTH_MAP_QUALITY_INPUT.addEventListener("input", calculateDepthMap);
