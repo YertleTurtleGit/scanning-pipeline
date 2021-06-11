@@ -15,54 +15,25 @@
 
          <select id="inputType">
             <option value="test">test</option>
-            <option value="file" disabled>file</option>
+            <option value="file">file</option>
             <option value="render" disabled>render</option>
+            <option value="render" disabled>webcam</option>
          </select>
 
          <div class="imageArea">
             <div id="photometricStereoImages">
-               <img
-                  id="photometricStereoImage_000"
-                  src="./test-datasets/photometric-stereo/object1_000_036.jpg"
-                  crossorigin="anonymous"
-               />
-               <img
-                  id="photometricStereoImage_045"
-                  src="./test-datasets/photometric-stereo/object1_045_036.jpg"
-                  crossorigin="anonymous"
-               />
-               <img
-                  id="photometricStereoImage_090"
-                  src="./test-datasets/photometric-stereo/object1_090_036.jpg"
-                  crossorigin="anonymous"
-               />
-               <img
-                  id="photometricStereoImage_135"
-                  src="./test-datasets/photometric-stereo/object1_135_036.jpg"
-                  crossorigin="anonymous"
-               />
-               <img
-                  id="photometricStereoImage_180"
-                  src="./test-datasets/photometric-stereo/object1_180_036.jpg"
-                  crossorigin="anonymous"
-               />
-               <img
-                  id="photometricStereoImage_225"
-                  src="./test-datasets/photometric-stereo/object1_225_036.jpg"
-                  crossorigin="anonymous"
-               />
-               <img
-                  id="photometricStereoImage_270"
-                  src="./test-datasets/photometric-stereo/object1_270_036.jpg"
-                  crossorigin="anonymous"
-               />
-               <img
-                  id="photometricStereoImage_315"
-                  src="./test-datasets/photometric-stereo/object1_315_036.jpg"
-                  crossorigin="anonymous"
-               />
+               <img id="photometricStereoImage_000" crossorigin="anonymous" />
+               <img id="photometricStereoImage_045" crossorigin="anonymous" />
+               <img id="photometricStereoImage_090" crossorigin="anonymous" />
+               <img id="photometricStereoImage_135" crossorigin="anonymous" />
+               <img id="photometricStereoImage_180" crossorigin="anonymous" />
+               <img id="photometricStereoImage_225" crossorigin="anonymous" />
+               <img id="photometricStereoImage_270" crossorigin="anonymous" />
+               <img id="photometricStereoImage_315" crossorigin="anonymous" />
             </div>
          </div>
+
+         <input id="fileBrowse" type="file" multiple />
       </div>
 
       <div class="mainArea" id="normalMapArea">
@@ -75,7 +46,7 @@
             name="normalMapResolution"
             min="1"
             max="100"
-            value="25"
+            value="30"
             onchange="normalMapResolutionOutput.value=value + '%'"
             oninput="normalMapResolutionOutput.value=value + '%'"
          />
@@ -93,8 +64,8 @@
             name="depthMapQuality"
             min="0.001"
             step="0.001"
-            max="1"
-            value="0.1"
+            max="0.5"
+            value="0.025"
             onchange="depthMapQualityOutput.value=value + '%'"
             oninput="depthMapQualityOutput.value=value + '%'"
          />

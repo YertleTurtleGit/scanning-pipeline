@@ -21,7 +21,7 @@ class DepthMapHelper {
       if (imageElement)
          imageElement.style.filter =
             "blur(" +
-            Math.round((imageElement.width * imageElement.height) / 25000) +
+            Math.round((imageElement.width * imageElement.height) / 20000) +
             "px)";
 
       const depthMapHelper = new DepthMapHelper(
