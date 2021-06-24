@@ -13,8 +13,13 @@
       <div class="mainArea" id="inputArea">
          <h2>Input</h2>
 
+         <select id="calculationType">
+            <option value="photometricStereo">photometric stereo</option>
+            <option value="rapidGradient" disabled>rapid gradient</option>
+         </select>
+
          <select id="inputType">
-            <option value="test">test</option>
+            <option value="test">test dataset</option>
             <option value="file">file</option>
             <option value="render" disabled>render</option>
             <option value="render" disabled>webcam</option>
@@ -38,6 +43,7 @@
 
       <div class="mainArea" id="normalMapArea">
          <h2>Normal Mapping</h2>
+
          <img id="normalMapImage" />
 
          <input
@@ -56,6 +62,7 @@
 
       <div class="mainArea" id="depthMapArea">
          <h2>Depth Mapping</h2>
+
          <img id="depthMapImage" />
 
          <input
