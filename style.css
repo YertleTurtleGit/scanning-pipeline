@@ -1,6 +1,6 @@
 :root {
-   --backgroundColor0: hsl(0, 0%, 25%);
-   --backgroundColor1: hsl(0, 0%, 40%);
+   --backgroundColor0: hsl(0, 0%, 10%);
+   --backgroundColor1: hsl(0, 0%, 20%);
    --fontColor: hsl(0, 0%, 90%);
    --fontFamily: sans-serif;
 }
@@ -20,6 +20,7 @@ body {
 }
 
 .mainArea {
+   position: relative;
    width: 20%;
    float: left;
    margin: 20px;
@@ -27,6 +28,20 @@ body {
    padding-top: 0px;
    background-color: var(--backgroundColor1);
    border-radius: 10px;
+   filter: drop-shadow(5px 7px 4px black);
+}
+
+.mainArea:after {
+   content: " ";
+   position: absolute;
+   height: 0;
+   width: 0;
+   left: 100%;
+   top: 50%;
+   transform: translate(0%, -50%);
+   border: 75px solid transparent;
+   border-left: 30px solid var(--backgroundColor1);
+  filter: drop-shadow(5px 7px 4px black);
 }
 
 img {
