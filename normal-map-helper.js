@@ -16,6 +16,7 @@ class NormalMapHelper {
     * @param {HTMLImageElement} lightImage_270
     * @param {HTMLImageElement} lightImage_315
     * @param {number} polarAngleDeg
+    * @param {HTMLImageElement} lightImage_NONE
     * @param {boolean} cancelIfNewJobSpawned
     * @param {HTMLImageElement} imageElement
     * @returns {Promise<HTMLImageElement>}
@@ -30,15 +31,17 @@ class NormalMapHelper {
       lightImage_270,
       lightImage_315,
       polarAngleDeg,
+      lightImage_NONE = undefined,
       cancelIfNewJobSpawned = false,
       imageElement = undefined,
       resolutionPercent = 100
    ) {
-      if (imageElement)
+      if (imageElement) {
          imageElement.style.filter =
             "blur(" +
             Math.round((imageElement.width * imageElement.height) / 20000) +
             "px) brightness(0.25)";
+      }
 
       const normalMapHelper = new NormalMapHelper(cancelIfNewJobSpawned);
 
@@ -57,6 +60,12 @@ class NormalMapHelper {
 
             normalMapShader.bind();
 
+            let lightLuminance_NONE;
+            if (lightImage_NONE && lightImage_NONE.naturalWidth > 0) {
+               lightLuminance_NONE =
+                  GlslImage.load(lightImage_NONE).getLuminanceFloat();
+            }
+
             const lightLuminances = [
                GlslImage.load(lightImage_000).getLuminanceFloat(),
                GlslImage.load(lightImage_045).getLuminanceFloat(),
@@ -67,6 +76,13 @@ class NormalMapHelper {
                GlslImage.load(lightImage_270).getLuminanceFloat(),
                GlslImage.load(lightImage_315).getLuminanceFloat(),
             ];
+
+            if (lightLuminance_NONE) {
+               lightLuminances.forEach((lightLuminance) => {
+                  lightLuminance =
+                     lightLuminance.subtractFloat(lightLuminance_NONE);
+               });
+            }
 
             const all = new GlslFloat(0).maximum(...lightLuminances);
 

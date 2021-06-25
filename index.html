@@ -21,8 +21,8 @@
          <select id="inputType">
             <option value="test">test dataset</option>
             <option value="file">file</option>
+            <option value="webcam">webcam</option>
             <option value="render" disabled>render</option>
-            <option value="render" disabled>webcam</option>
          </select>
 
          <div class="imageArea">
@@ -35,6 +35,12 @@
                <img id="photometricStereoImage_225" crossorigin="anonymous" />
                <img id="photometricStereoImage_270" crossorigin="anonymous" />
                <img id="photometricStereoImage_315" crossorigin="anonymous" />
+               <img id="photometricStereoImage_NONE" crossorigin="anonymous" />
+            </div>
+
+            <div id="webcamArea">
+               <video id="webcamPreview"></video>
+               <button id="webcamCapture">capture</button>
             </div>
          </div>
 
@@ -89,6 +95,7 @@
       <script src="./glsl-shader.js"></script>
       <script src="./normal-map-helper.js"></script>
       <script src="./depth-map-helper.js"></script>
+      <script src="./webcam-dataset-helper.js"></script>
       <script src="./dom-declarations.js"></script>
 
       <script src="./main.js"></script>

@@ -1,7 +1,7 @@
 //@ts-check
 "use strict";
 
-async function calculateNormalMap() {
+async function calculateNormalMap(polarAngleDeg = 35) {
    await NormalMapHelper.getPhotometricStereoNormalMap(
       PHOTOMETRIC_STEREO_IMAGE_000,
       PHOTOMETRIC_STEREO_IMAGE_045,
@@ -11,7 +11,8 @@ async function calculateNormalMap() {
       PHOTOMETRIC_STEREO_IMAGE_225,
       PHOTOMETRIC_STEREO_IMAGE_270,
       PHOTOMETRIC_STEREO_IMAGE_315,
-      35,
+      polarAngleDeg,
+      PHOTOMETRIC_STEREO_IMAGE_NONE,
       true,
       NORMAL_MAP_IMAGE,
       Number(NORMAL_MAP_RESOLUTION_INPUT.value)
@@ -28,7 +29,9 @@ async function calculateDepthMap() {
 }
 
 async function calculateNormalAndDepthMap() {
+   console.log("load images");
    await loadInputImages();
+   console.log("images loaded");
    await calculateNormalMap();
    await calculateDepthMap();
 }
@@ -38,14 +41,15 @@ async function calculateNormalAndDepthMap() {
  */
 async function loadInputImages() {
    const imagePromises = [
-      loadImage(PHOTOMETRIC_STEREO_IMAGE_000),
-      loadImage(PHOTOMETRIC_STEREO_IMAGE_045),
-      loadImage(PHOTOMETRIC_STEREO_IMAGE_090),
-      loadImage(PHOTOMETRIC_STEREO_IMAGE_135),
-      loadImage(PHOTOMETRIC_STEREO_IMAGE_180),
-      loadImage(PHOTOMETRIC_STEREO_IMAGE_225),
-      loadImage(PHOTOMETRIC_STEREO_IMAGE_270),
-      loadImage(PHOTOMETRIC_STEREO_IMAGE_315),
+      loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_000),
+      loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_045),
+      loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_090),
+      loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_135),
+      loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_180),
+      loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_225),
+      loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_270),
+      loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_315),
+      loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_NONE),
    ];
 
    return await Promise.all(imagePromises);
@@ -55,12 +59,15 @@ async function loadInputImages() {
  * @param {HTMLImageElement} image
  * @returns {Promise<HTMLImageElement>}
  */
-async function loadImage(image) {
+async function loadHTMLImage(image) {
    /**
     * @param {HTMLImageElement} image
     * @returns {boolean}
     */
    function isImageLoaded(image) {
+      if (image.src.endsWith("null")) {
+         return true;
+      }
       if (!image.complete || image.naturalWidth === 0) {
          return false;
       }
@@ -90,16 +97,29 @@ function calculateNormalMapResolution() {
    NORMAL_MAP_RESOLUTION_INPUT.min = String(sizeFactor);
 }
 
-function inputTypeChange() {
+async function inputTypeChange() {
+   WEBCAM_AREA.style.display = "none";
+   FILE_BROWSE_INPUT.style.display = "none";
+   WebcamDatasetHelper.purgeWebcamConnections();
+
+   setInputImagesSourceFiles();
+
    if (INPUT_TYPE_SELECT.value === INPUT_TYPE.TEST) {
-      FILE_BROWSE_INPUT.style.display = "none";
       setImagesToPhotometricStereoTest();
-      calculateNormalAndDepthMap();
    } else if (INPUT_TYPE_SELECT.value === INPUT_TYPE.FILE) {
       setInputImagesSourceFiles(Array.from(FILE_BROWSE_INPUT.files));
       FILE_BROWSE_INPUT.style.display = "inherit";
-      calculateNormalAndDepthMap();
+   } else if (INPUT_TYPE_SELECT.value === INPUT_TYPE.WEBCAM) {
+      WEBCAM_AREA.style.display = "inherit";
+      setInputImages(
+         await WebcamDatasetHelper.getPhotometricStereoDataset(
+            WEBCAM_PREVIEW,
+            WEBCAM_CAPTURE_BUTTON
+         )
+      );
    }
+
+   calculateNormalAndDepthMap();
 }
 
 NORMAL_MAP_RESOLUTION_INPUT.addEventListener(

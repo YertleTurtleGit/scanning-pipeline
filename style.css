@@ -19,6 +19,12 @@ body {
    font-family: var(--fontFamily);
 }
 
+video {
+   width: 100%;
+   height: auto;
+   background-color: black;
+}
+
 .mainArea {
    position: relative;
    width: 20%;
@@ -41,7 +47,7 @@ body {
    transform: translate(0%, -50%);
    border: 75px solid transparent;
    border-left: 30px solid var(--backgroundColor1);
-  filter: drop-shadow(5px 7px 4px black);
+   filter: drop-shadow(5px 7px 4px black);
 }
 
 img {
