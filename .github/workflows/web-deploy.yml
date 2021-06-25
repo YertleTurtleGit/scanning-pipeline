@@ -68,7 +68,8 @@ jobs:
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
         commit_message: update screenshot
-        branch: main    
+        branch: main
+        file_pattern: screenshot.png
         
     - name: Clean
       uses: GeekyEggo/delete-artifact@v1.0.0
