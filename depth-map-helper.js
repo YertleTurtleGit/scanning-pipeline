@@ -232,7 +232,7 @@ class DepthMapHelper {
             const result = new GlslVector3([
                red.divideFloat(blue),
                green.divideFloat(blue),
-               blue,
+               blue.minimum(red, green),
             ]);
 
             if (this.isRenderObsolete()) return;
@@ -418,6 +418,11 @@ class DepthMapHelper {
     */
    getPixelSlope(pixel, stepVector, gradientPixelArray) {
       const index = (pixel.x + pixel.y * this.width) * 4;
+
+      if (gradientPixelArray[index + 2] === 0) {
+         return 0;
+      }
+
       const rightSlope = gradientPixelArray[index + 0] + this.SLOPE_SHIFT;
       const topSlope = gradientPixelArray[index + 1] + this.SLOPE_SHIFT;
       return stepVector.x * rightSlope + stepVector.y * topSlope;

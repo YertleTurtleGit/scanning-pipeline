@@ -129,7 +129,7 @@ class PointCloudHelper {
       this.geometry = new THREE.BufferGeometry();
 
       this.material = new THREE.PointsMaterial({
-         size: 1,
+         size: 2,
          vertexColors: true,
       });
       this.pointCloud = new THREE.Points(this.geometry, this.material);
