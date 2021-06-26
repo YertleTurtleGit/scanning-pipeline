@@ -1,7 +1,7 @@
 //@ts-check
 "use strict";
 
-async function calculateNormalMap(polarAngleDeg = 35) {
+async function calculateNormalMap() {
    await NormalMapHelper.getPhotometricStereoNormalMap(
       PHOTOMETRIC_STEREO_IMAGE_000,
       PHOTOMETRIC_STEREO_IMAGE_045,
@@ -11,12 +11,13 @@ async function calculateNormalMap(polarAngleDeg = 35) {
       PHOTOMETRIC_STEREO_IMAGE_225,
       PHOTOMETRIC_STEREO_IMAGE_270,
       PHOTOMETRIC_STEREO_IMAGE_315,
-      polarAngleDeg,
+      35,
       PHOTOMETRIC_STEREO_IMAGE_NONE,
       true,
       NORMAL_MAP_IMAGE,
       Number(NORMAL_MAP_RESOLUTION_INPUT.value)
    );
+   await calculateDepthMap();
 }
 
 async function calculateDepthMap() {
@@ -26,14 +27,21 @@ async function calculateDepthMap() {
       true,
       DEPTH_MAP_IMAGE
    );
+   await calculatePointCloud();
 }
 
-async function calculateNormalAndDepthMap() {
+async function calculatePointCloud() {
+   await PointCloudHelper.calculatePointCloud(
+      DEPTH_MAP_IMAGE,
+      POINT_CLOUD_CANVAS
+   );
+}
+
+async function calculateEverything() {
    console.log("load images");
    await loadInputImages();
    console.log("images loaded");
    await calculateNormalMap();
-   await calculateDepthMap();
 }
 
 /**
@@ -119,17 +127,11 @@ async function inputTypeChange() {
       );
    }
 
-   calculateNormalAndDepthMap();
+   calculateEverything();
 }
 
-NORMAL_MAP_RESOLUTION_INPUT.addEventListener(
-   "change",
-   calculateNormalAndDepthMap
-);
-NORMAL_MAP_RESOLUTION_INPUT.addEventListener(
-   "input",
-   calculateNormalAndDepthMap
-);
+NORMAL_MAP_RESOLUTION_INPUT.addEventListener("change", calculateNormalMap);
+NORMAL_MAP_RESOLUTION_INPUT.addEventListener("input", calculateNormalMap);
 
 DEPTH_MAP_QUALITY_INPUT.addEventListener("change", calculateDepthMap);
 DEPTH_MAP_QUALITY_INPUT.addEventListener("input", calculateDepthMap);

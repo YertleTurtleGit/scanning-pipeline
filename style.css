@@ -37,7 +37,7 @@ video {
    filter: drop-shadow(5px 7px 4px black);
 }
 
-.mainArea:after {
+.mainAreaArrow:after {
    content: " ";
    position: absolute;
    height: 0;

@@ -152,3 +152,7 @@ const WEBCAM_PREVIEW = /** @type {HTMLVideoElement} */ (
    document.getElementById("webcamPreview")
 );
 const WEBCAM_CAPTURE_BUTTON = declareInput("webcamCapture");
+
+const POINT_CLOUD_CANVAS = /**@type {HTMLCanvasElement} */ (
+   document.getElementById("pointCloudCanvas")
+);

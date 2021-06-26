@@ -14,7 +14,11 @@ const GPU_GL_FLOAT_PRECISION = {
 const FLOAT_PRECISION = GPU_GL_FLOAT_PRECISION.HIGH;
 
 /** @type {{RED: number, GREEN: number, BLUE: number}} */
-const LUMINANCE_CHANNEL_QUANTIFIER = { RED: 1 / 3, GREEN: 1 / 3, BLUE: 1 / 3 };
+const LUMINANCE_CHANNEL_QUANTIFIER = {
+   RED: 0.2126,
+   GREEN: 0.7152,
+   BLUE: 0.0722,
+};
 
 /**
  * @typedef {string} GLSL_VARIABLE
@@ -1241,10 +1245,9 @@ class GlslFloat extends GlslVariable {
    /**
     * @return {GlslFloat}
     */
-    acos() {
+   acos() {
       return this.getGlslFloatResult([this], GLSL_OPERATOR.ARC_COSINE);
    }
-
 }
 
 class GlslVector3 extends GlslVector {
