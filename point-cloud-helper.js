@@ -57,7 +57,7 @@ class PointCloudHelper {
                   const index = (y * dataCanvas.width + x) * 4;
                   vertices.push(
                      (x / maxDimension - 0.5) * 100,
-                     (y / maxDimension - 0.5) * 100,
+                     (1 - y / maxDimension - 0.5) * 100,
                      (imageData[index] / 255) * 0.1 * 100
                   );
                   vertexColors.push(
@@ -124,7 +124,11 @@ class PointCloudHelper {
          25,
          this.renderCanvas.width / this.renderCanvas.height
       );
-      this.controls = new THREE.OrbitControls(this.camera, this.renderCanvas);
+      this.controls = new THREE.TrackballControls(
+         this.camera,
+         this.renderCanvas
+      );
+      this.controls.target.set(0, 0, 0);
       this.scene = new THREE.Scene();
       this.geometry = new THREE.BufferGeometry();
 
@@ -137,7 +141,10 @@ class PointCloudHelper {
       this.scene.add(this.pointCloud);
 
       this.camera.position.z = 75;
-      this.camera.position.y = -150;
+      this.camera.position.y = -200;
+
+      this.controls.minDistance = 1;
+      this.controls.maxDistance = 200;
 
       this.controls.addEventListener("change", () => {
          this.renderer.render(this.scene, this.camera);

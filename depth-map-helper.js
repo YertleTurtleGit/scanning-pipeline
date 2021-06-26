@@ -131,8 +131,6 @@ class DepthMapHelper {
    async getDepthMapImage(integral) {
       return new Promise((resolve) => {
          setTimeout(() => {
-            const buffer = new Uint8ClampedArray(this.width * this.height * 4);
-
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
 
@@ -272,7 +270,8 @@ class DepthMapHelper {
                let lineOffset = 0;
                for (let k = 0; k < pixelLines[j].length; k++) {
                   const index =
-                     pixelLines[j][k].x + pixelLines[j][k].y * this.width;
+                     pixelLines[j][k].x +
+                     (this.height - 1 - pixelLines[j][k].y) * this.width;
                   integral[index] = lineOffset;
                   lineOffset += pixelLines[j][k].slope * -this.DEPTH_FACTOR;
                }
@@ -337,11 +336,14 @@ class DepthMapHelper {
     */
    getEdgeFramePixels() {
       if (this.edgeFramePixels === undefined) {
+         /** @type {{ x: number; y: number; }[]} */
          this.edgeFramePixels = [];
+
          const topY = -1;
          const bottomY = this.height;
          const leftX = -1;
          const rightX = this.width;
+
          for (let x = 0; x < this.width; x++) {
             this.edgeFramePixels.push({ x: x, y: topY });
             this.edgeFramePixels.push({ x: x, y: bottomY });
