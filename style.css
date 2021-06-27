@@ -50,6 +50,30 @@ video {
    filter: drop-shadow(5px 7px 4px black);
 }
 
+.mainAreaLoading:before {
+   content: " ";
+   position: absolute;
+   height: 20px;
+   width: 20px;
+   right: 15px;
+   top: 15px;
+   transform: translate(-50%, -50%);
+
+   border: 6px solid var(--fontColor);
+   border-top: 6px solid var(--backgroundColor1);
+   border-radius: 50%;
+   animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+   0% {
+      transform: rotate(0deg);
+   }
+   100% {
+      transform: rotate(360deg);
+   }
+}
+
 img {
    width: 100%;
    height: auto;

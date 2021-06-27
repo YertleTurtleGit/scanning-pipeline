@@ -11,11 +11,9 @@ class PointCloudHelper {
    static async calculatePointCloud(
       depthMapImage,
       renderCanvas,
+      depthFactor = 0.15,
       textureImage = undefined
    ) {
-      if (renderCanvas) {
-         renderCanvas.style.opacity = "0";
-      }
       await new Promise((resolve) => {
          setTimeout(() => {
             const pointCloudHelper = PointCloudHelper.getInstance(renderCanvas);
@@ -58,7 +56,7 @@ class PointCloudHelper {
                   vertices.push(
                      (x / maxDimension - 0.5) * 100,
                      (1 - y / maxDimension - 0.75) * 100,
-                     (imageData[index] / 255) * 0.1 * 100
+                     (imageData[index] / 255) * 100 * depthFactor
                   );
                   vertexColors.push(
                      textureData[index + 0] / 255,
@@ -83,10 +81,6 @@ class PointCloudHelper {
             resolve();
          });
       });
-
-      if (renderCanvas) {
-         renderCanvas.style.opacity = "1";
-      }
    }
 
    /**

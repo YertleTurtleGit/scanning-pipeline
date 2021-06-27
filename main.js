@@ -2,6 +2,10 @@
 "use strict";
 
 async function calculateNormalMap() {
+   NORMAL_MAP_AREA.classList.add("mainAreaLoading");
+   DEPTH_MAP_AREA.classList.add("mainAreaLoading");
+   POINT_CLOUD_AREA.classList.add("mainAreaLoading");
+
    await NormalMapHelper.getPhotometricStereoNormalMap(
       PHOTOMETRIC_STEREO_IMAGE_000,
       PHOTOMETRIC_STEREO_IMAGE_045,
@@ -17,24 +21,31 @@ async function calculateNormalMap() {
       NORMAL_MAP_IMAGE,
       Number(NORMAL_MAP_RESOLUTION_INPUT.value)
    );
+   NORMAL_MAP_AREA.classList.remove("mainAreaLoading");
    await calculateDepthMap();
 }
 
 async function calculateDepthMap() {
+   DEPTH_MAP_AREA.classList.add("mainAreaLoading");
+   POINT_CLOUD_AREA.classList.add("mainAreaLoading");
    await DepthMapHelper.getDepthMap(
       NORMAL_MAP_IMAGE,
       Number(DEPTH_MAP_QUALITY_INPUT.value),
       true,
       DEPTH_MAP_IMAGE
    );
+   DEPTH_MAP_AREA.classList.remove("mainAreaLoading");
    await calculatePointCloud();
 }
 
 async function calculatePointCloud() {
+   POINT_CLOUD_AREA.classList.add("mainAreaLoading");
    await PointCloudHelper.calculatePointCloud(
       DEPTH_MAP_IMAGE,
-      POINT_CLOUD_CANVAS
+      POINT_CLOUD_CANVAS,
+      Number(POINT_CLOUD_DEPTH_FACTOR_INPUT.value)
    );
+   POINT_CLOUD_AREA.classList.remove("mainAreaLoading");
 }
 
 async function calculateEverything() {
@@ -48,6 +59,11 @@ async function calculateEverything() {
  * @returns {Promise<HTMLImageElement[]>}
  */
 async function loadInputImages() {
+   INPUT_AREA.classList.add("mainAreaLoading");
+   NORMAL_MAP_AREA.classList.add("mainAreaLoading");
+   DEPTH_MAP_AREA.classList.add("mainAreaLoading");
+   POINT_CLOUD_AREA.classList.add("mainAreaLoading");
+
    const imagePromises = [
       loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_000),
       loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_045),
@@ -59,8 +75,9 @@ async function loadInputImages() {
       loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_315),
       loadHTMLImage(PHOTOMETRIC_STEREO_IMAGE_NONE),
    ];
-
-   return await Promise.all(imagePromises);
+   const images = await Promise.all(imagePromises);
+   INPUT_AREA.classList.remove("mainAreaLoading");
+   return images;
 }
 
 /**
@@ -135,6 +152,9 @@ NORMAL_MAP_RESOLUTION_INPUT.addEventListener("input", calculateNormalMap);
 
 DEPTH_MAP_QUALITY_INPUT.addEventListener("change", calculateDepthMap);
 DEPTH_MAP_QUALITY_INPUT.addEventListener("input", calculateDepthMap);
+
+POINT_CLOUD_DEPTH_FACTOR_INPUT.addEventListener("change", calculatePointCloud);
+POINT_CLOUD_DEPTH_FACTOR_INPUT.addEventListener("input", calculatePointCloud);
 
 INPUT_TYPE_SELECT.addEventListener("change", inputTypeChange);
 FILE_BROWSE_INPUT.addEventListener("change", () => {

@@ -93,6 +93,20 @@
             id="pointCloudCanvas"
             style="width: 100%; height: auto"
          ></canvas>
+
+         <input
+            id="depthFactor"
+            type="range"
+            name="depthFactor"
+            min="0.01"
+            step="0.01"
+            max="1"
+            value="0.15"
+            onchange="depthFactorOutput.value=value"
+            oninput="depthFactorOutput.value=value"
+         />
+         <output id="depthFactorOutput"></output>
+         <label for="depthFactor">depth factor</label>
       </div>
 
       <script src="./lib/three.min.js"></script>

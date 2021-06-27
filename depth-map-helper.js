@@ -18,12 +18,6 @@ class DepthMapHelper {
       cancelIfNewJobSpawned = false,
       imageElement = undefined
    ) {
-      if (imageElement)
-         imageElement.style.filter =
-            "blur(" +
-            Math.round((imageElement.width * imageElement.height) / 20000) +
-            "px) brightness(0.25)";
-
       const depthMapHelper = new DepthMapHelper(
          normalMap,
          qualityPercent,
@@ -65,7 +59,7 @@ class DepthMapHelper {
 
             if (imageElement && depthMap) {
                imageElement.src = depthMap.src;
-               imageElement.style.filter = "";
+               
             }
 
             resolve(depthMap);

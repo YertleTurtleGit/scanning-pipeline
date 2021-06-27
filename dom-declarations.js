@@ -142,8 +142,14 @@ const TEST_SRC_PHOTOMETRIC_STEREO_IMAGE_270 =
 const TEST_SRC_PHOTOMETRIC_STEREO_IMAGE_315 =
    "./test-datasets/photometric-stereo/object1_315_036.jpg";
 
+const INPUT_AREA = document.getElementById("inputArea");
+const NORMAL_MAP_AREA = document.getElementById("normalMapArea");
+const DEPTH_MAP_AREA = document.getElementById("depthMapArea");
+const POINT_CLOUD_AREA = document.getElementById("pointCloudArea");
+
 const NORMAL_MAP_RESOLUTION_INPUT = declareInput("normalMapResolution");
 const DEPTH_MAP_QUALITY_INPUT = declareInput("depthMapQuality");
+const POINT_CLOUD_DEPTH_FACTOR_INPUT = declareInput("depthFactor");
 
 const FILE_BROWSE_INPUT = declareInput("fileBrowse");
 

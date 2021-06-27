@@ -36,13 +36,6 @@ class NormalMapHelper {
       imageElement = undefined,
       resolutionPercent = 100
    ) {
-      if (imageElement) {
-         imageElement.style.filter =
-            "blur(" +
-            Math.round((imageElement.width * imageElement.height) / 20000) +
-            "px) brightness(0.25)";
-      }
-
       const normalMapHelper = new NormalMapHelper(cancelIfNewJobSpawned);
 
       if (normalMapHelper.isRenderObsolete()) return;
@@ -244,7 +237,6 @@ class NormalMapHelper {
 
             if (imageElement && normalMap) {
                imageElement.src = normalMap.src;
-               imageElement.style.filter = "";
             }
 
             resolve(normalMap);
