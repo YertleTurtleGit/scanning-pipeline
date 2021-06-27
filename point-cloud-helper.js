@@ -142,6 +142,25 @@ class PointCloudHelper {
 
       setTimeout(this.controls.update);
 
+      window.addEventListener("resize", this.handleResize.bind(this));
+
       PointCloudHelper.instances.push(this);
+   }
+
+   /**
+    * @private
+    */
+   handleResize() {
+      console.log("resized!");
+         const width = this.renderCanvas.clientWidth;
+      const height = this.renderCanvas.clientHeight;
+      const needResize = this.renderCanvas.width !== width || this.renderCanvas.height !== height;
+      if (needResize) {
+         this.renderer.setSize(width, height, false);
+
+         this.camera.aspect = this.renderCanvas.width / this.renderCanvas.height;
+         this.camera.updateProjectionMatrix();
+         this.renderer.render(this.scene, this.camera);
+      }
    }
 }
