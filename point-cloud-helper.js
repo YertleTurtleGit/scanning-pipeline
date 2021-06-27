@@ -124,10 +124,7 @@ class PointCloudHelper {
          25,
          this.renderCanvas.width / this.renderCanvas.height
       );
-      this.controls = new THREE.TrackballControls(
-         this.camera,
-         this.renderCanvas
-      );
+      this.controls = new THREE.OrbitControls(this.camera, this.renderCanvas);
       this.controls.target.set(0, 0, 0);
       this.scene = new THREE.Scene();
       this.geometry = new THREE.BufferGeometry();
