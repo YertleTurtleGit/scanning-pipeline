@@ -60,7 +60,7 @@ video {
    transform: translate(-50%, -50%);
 
    border: 6px solid var(--fontColor);
-   border-top: 6px solid var(--backgroundColor1);
+   border-top: 6px solid transparent;
    border-radius: 50%;
    animation: spin 1s linear infinite;
 }

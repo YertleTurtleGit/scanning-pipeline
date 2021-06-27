@@ -84,6 +84,26 @@ class PointCloudHelper {
    }
 
    /**
+    * @public
+    * @param {HTMLCanvasElement} canvas 
+    */
+   static clearCanvas(canvas) {
+      const pointCloudHelper = PointCloudHelper.getInstance(canvas);
+
+      pointCloudHelper.geometry.setAttribute(
+         "position",
+         new THREE.Float32BufferAttribute([], 3)
+      );
+      pointCloudHelper.geometry.attributes.position.needsUpdate = true;
+
+      pointCloudHelper.geometry.setAttribute(
+         "color",
+         new THREE.Float32BufferAttribute([], 3)
+      );
+      pointCloudHelper.geometry.attributes.color.needsUpdate = true;
+   }
+
+   /**
     * @private
     * @type {PointCloudHelper[]}
     */
@@ -151,14 +171,16 @@ class PointCloudHelper {
     * @private
     */
    handleResize() {
-      console.log("resized!");
-         const width = this.renderCanvas.clientWidth;
+      const width = this.renderCanvas.clientWidth;
       const height = this.renderCanvas.clientHeight;
-      const needResize = this.renderCanvas.width !== width || this.renderCanvas.height !== height;
+      const needResize =
+         this.renderCanvas.width !== width ||
+         this.renderCanvas.height !== height;
       if (needResize) {
          this.renderer.setSize(width, height, false);
 
-         this.camera.aspect = this.renderCanvas.width / this.renderCanvas.height;
+         this.camera.aspect =
+            this.renderCanvas.width / this.renderCanvas.height;
          this.camera.updateProjectionMatrix();
          this.renderer.render(this.scene, this.camera);
       }

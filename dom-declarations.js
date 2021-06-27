@@ -91,6 +91,7 @@ function setImagesToPhotometricStereoTest() {
 function resetOutput() {
    NORMAL_MAP_IMAGE.src = "";
    DEPTH_MAP_IMAGE.src = "";
+   PointCloudHelper.clearCanvas(POINT_CLOUD_CANVAS);
 }
 
 const NORMAL_MAP_IMAGE = declareImage("normalMapImage");
