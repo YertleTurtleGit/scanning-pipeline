@@ -460,7 +460,6 @@ class GlslContext {
 
 class GlslRendering {
    /**
-    * Creates an instance of GlslRendering.
     * @param  {GlslContext} glslContext
     * @param  {GlslVector4} outVariable
     */
@@ -515,7 +514,6 @@ class GlslRendering {
 
 class GlslOperation {
    /**
-    * Creates an instance of GlslOperation.
     * @param  {GlslVariable} callingParameter
     * @param  {GlslVariable} result
     * @param  {GlslVariable[]} parameters
@@ -624,7 +622,7 @@ class GlslOperation {
 
 class GlslImage {
    /**
-    * Creates an instance of GlslImage.
+    * @private
     * @param  {HTMLImageElement} jsImage
     */
    constructor(jsImage) {
@@ -637,6 +635,7 @@ class GlslImage {
       GlslShader.addGlslImageToCurrentShader(this);
    }
    /**
+    * @public
     * @static
     * @param  {HTMLImageElement} jsImage
     * @return {GlslVector4}
@@ -915,7 +914,8 @@ class GlslImage {
  */
 GlslVariable.uniqueNumber = 0;
 
-/** @abstract */ class GlslVector extends GlslVariable {
+/** @abstract */
+class GlslVector extends GlslVariable {
    /**
     * @param {number} channel
     */
@@ -933,7 +933,8 @@ GlslVariable.uniqueNumber = 0;
     */
 }
 
-/** @abstract */ class GlslMatrix extends GlslVariable {
+/** @abstract */
+class GlslMatrix extends GlslVariable {
    /**
     * @abstract
     * @name inverse

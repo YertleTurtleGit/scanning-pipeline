@@ -14,8 +14,8 @@
          <h2>Input</h2>
 
          <select id="calculationType">
-            <option value="photometricStereo">photometric stereo</option>
-            <option value="rapidGradient" disabled>rapid gradient</option>
+            <option value="rapid gradient">rapid gradient</option>
+            <option value="photometric stereo">photometric stereo</option>
          </select>
 
          <select id="inputType">
@@ -27,15 +27,89 @@
 
          <div class="imageArea">
             <div id="photometricStereoImages">
-               <img id="photometricStereoImage_000" crossorigin="anonymous" />
-               <img id="photometricStereoImage_045" crossorigin="anonymous" />
-               <img id="photometricStereoImage_090" crossorigin="anonymous" />
-               <img id="photometricStereoImage_135" crossorigin="anonymous" />
-               <img id="photometricStereoImage_180" crossorigin="anonymous" />
-               <img id="photometricStereoImage_225" crossorigin="anonymous" />
-               <img id="photometricStereoImage_270" crossorigin="anonymous" />
-               <img id="photometricStereoImage_315" crossorigin="anonymous" />
-               <img id="photometricStereoImage_NONE" crossorigin="anonymous" />
+               <img
+                  id="photometricStereoImage_000"
+                  title="← 0° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="photometricStereoImage_045"
+                  title="↖ 45° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="photometricStereoImage_090"
+                  title="↑ 90° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="photometricStereoImage_135"
+                  title="↗ 135° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="photometricStereoImage_180"
+                  title="→ 180° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="photometricStereoImage_225"
+                  title="↘ 225° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="photometricStereoImage_270"
+                  title="↓ 270° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="photometricStereoImage_315"
+                  title="↙ 315° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="photometricStereoImage_NONE"
+                  title="no lights (optional)"
+                  crossorigin="anonymous"
+               />
+            </div>
+
+            <div id="rapidGradientImages">
+               <img
+                  id="rapidGradientImage_000"
+                  title="← 0° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="rapidGradientImage_090"
+                  title="↑ 90° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="rapidGradientImage_180"
+                  title="→ 180° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="rapidGradientImage_270"
+                  title="↓ 270° light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="rapidGradientImage_ALL"
+                  title="all lights"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="rapidGradientImage_FRONT"
+                  title="front light"
+                  crossorigin="anonymous"
+               />
+               <img
+                  id="rapidGradientImage_NONE"
+                  title="no lights (optional)"
+                  crossorigin="anonymous"
+               />
             </div>
 
             <div id="webcamArea">
@@ -50,7 +124,7 @@
       <div class="mainArea mainAreaArrow" id="normalMapArea">
          <h2>Normal Mapping</h2>
 
-         <img id="normalMapImage" />
+         <img id="normalMapImage" title="normal mapping" />
 
          <input
             id="normalMapResolution"
@@ -69,7 +143,7 @@
       <div class="mainArea mainAreaArrow" id="depthMapArea">
          <h2>Depth Mapping</h2>
 
-         <img id="depthMapImage" />
+         <img id="depthMapImage" title="depth mapping" />
 
          <input
             id="depthMapQuality"
@@ -91,6 +165,7 @@
 
          <canvas
             id="pointCloudCanvas"
+            title="point cloud"
             style="width: 100%; height: auto"
          ></canvas>
 

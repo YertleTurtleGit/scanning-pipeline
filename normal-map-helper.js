@@ -7,6 +7,7 @@ class NormalMapHelper {
 
    /**
     * @public
+    * @param {number} lightPolarAngleDeg
     * @param {HTMLImageElement} lightImage_000
     * @param {HTMLImageElement} lightImage_045
     * @param {HTMLImageElement} lightImage_090
@@ -15,13 +16,13 @@ class NormalMapHelper {
     * @param {HTMLImageElement} lightImage_225
     * @param {HTMLImageElement} lightImage_270
     * @param {HTMLImageElement} lightImage_315
-    * @param {number} polarAngleDeg
     * @param {HTMLImageElement} lightImage_NONE
     * @param {boolean} cancelIfNewJobSpawned
-    * @param {HTMLImageElement} imageElement
+    * @param {HTMLImageElement} uiImageElement
     * @returns {Promise<HTMLImageElement>}
     */
    static async getPhotometricStereoNormalMap(
+      lightPolarAngleDeg,
       lightImage_000,
       lightImage_045,
       lightImage_090,
@@ -30,10 +31,9 @@ class NormalMapHelper {
       lightImage_225,
       lightImage_270,
       lightImage_315,
-      polarAngleDeg,
       lightImage_NONE = undefined,
       cancelIfNewJobSpawned = false,
-      imageElement = undefined,
+      uiImageElement = undefined,
       resolutionPercent = 100
    ) {
       const normalMapHelper = new NormalMapHelper(cancelIfNewJobSpawned);
@@ -71,17 +71,17 @@ class NormalMapHelper {
             ];
 
             if (lightLuminance_NONE) {
-               lightLuminances.forEach((lightLuminance) => {
-                  lightLuminance =
-                     lightLuminance.subtractFloat(lightLuminance_NONE);
-               });
+               for (let i = 0; i < lightLuminances.length; i++) {
+                  lightLuminances[i] =
+                     lightLuminances[i].subtractFloat(lightLuminance_NONE);
+               }
             }
 
             const all = new GlslFloat(0).maximum(...lightLuminances);
 
-            lightLuminances.forEach((lightLuminance) => {
-               lightLuminance = lightLuminance.divideFloat(all);
-            });
+            for (let i = 0; i < lightLuminances.length; i++) {
+               lightLuminances[i] = lightLuminances[i].divideFloat(all);
+            }
 
             /**
              * @param {GlslFloat} originLuminance
@@ -124,15 +124,15 @@ class NormalMapHelper {
 
                const originLightDirection = getLightDirectionVector(
                   originAzimuthalAngleDeg,
-                  polarAngleDeg
+                  lightPolarAngleDeg
                );
                const orthogonalLightDirection = getLightDirectionVector(
                   orthogonalAzimuthalAngleDeg,
-                  polarAngleDeg
+                  lightPolarAngleDeg
                );
                const oppositeLightDirection = getLightDirectionVector(
                   oppositeAzimuthalAngleDeg,
-                  polarAngleDeg
+                  lightPolarAngleDeg
                );
 
                const lightMatrix = new GlslMatrix3([
@@ -209,7 +209,7 @@ class NormalMapHelper {
                );
             });
 
-            let normalVector = new GlslVector3([
+            const normalVector = new GlslVector3([
                new GlslFloat(0),
                new GlslFloat(0),
                new GlslFloat(0),
@@ -217,16 +217,10 @@ class NormalMapHelper {
                .addVector3(...normalVectors)
                .divideFloat(new GlslFloat(normalVectors.length));
 
-            normalVector = new GlslVector3([
-               normalVector.channel(0),
-               normalVector.channel(1),
-               normalVector.channel(2),
-            ]);
-
             if (normalMapHelper.isRenderObsolete()) return;
 
             const normalMapRendering = GlslRendering.render(
-               normalVector.getVector4()
+               normalVector.normalize().getVector4()
             );
 
             normalMapShader.unbind();
@@ -235,8 +229,8 @@ class NormalMapHelper {
 
             const normalMap = await normalMapRendering.getJsImage();
 
-            if (imageElement && normalMap) {
-               imageElement.src = normalMap.src;
+            if (uiImageElement && normalMap) {
+               uiImageElement.src = normalMap.src;
             }
 
             resolve(normalMap);
@@ -246,47 +240,103 @@ class NormalMapHelper {
 
    /**
     * @public
-    * @param {HTMLImageElement} allLightGradientImage
-    * @param {HTMLImageElement} northLightGradientImage
-    * @param {HTMLImageElement} eastLightGradientImage
-    * @param {HTMLImageElement} frontLightGradientImage
+    * @param {HTMLImageElement} lightImage_000
+    * @param {HTMLImageElement} lightImage_090
+    * @param {HTMLImageElement} lightImage_180
+    * @param {HTMLImageElement} lightImage_270
+    * @param {HTMLImageElement} lightImage_ALL
+    * @param {HTMLImageElement} lightImage_FRONT
+    * @param {HTMLImageElement} lightImage_NONE
+    * @param {boolean} cancelIfNewJobSpawned
+    * @param {HTMLImageElement} uiImageElement
+    * @param {number} resolutionPercent
     * @returns {Promise<HTMLImageElement>}
     */
-   static getRapidGradientNormalMap(
-      allLightGradientImage,
-      northLightGradientImage,
-      eastLightGradientImage,
-      frontLightGradientImage
+   static async getRapidGradientNormalMap(
+      lightImage_000,
+      lightImage_090,
+      lightImage_180,
+      lightImage_270,
+      lightImage_ALL,
+      lightImage_FRONT,
+      lightImage_NONE = undefined,
+      cancelIfNewJobSpawned = false,
+      uiImageElement = undefined,
+      resolutionPercent = 100
    ) {
-      const normalMapShader = new Shader({
-         width: allLightGradientImage.width,
-         height: allLightGradientImage.height,
+      const normalMapHelper = new NormalMapHelper(cancelIfNewJobSpawned);
+
+      if (normalMapHelper.isRenderObsolete()) return;
+
+      return new Promise((resolve) => {
+         setTimeout(async () => {
+            const normalMapShader = new Shader({
+               width: lightImage_000.naturalWidth * (resolutionPercent / 100),
+               height: lightImage_000.naturalHeight * (resolutionPercent / 100),
+            });
+            normalMapShader.bind();
+
+            let lightLuminance_ALL =
+               GlslImage.load(lightImage_ALL).getLuminanceFloat();
+
+            const lightLuminances = [
+               GlslImage.load(lightImage_000).getLuminanceFloat(),
+               GlslImage.load(lightImage_090).getLuminanceFloat(),
+               GlslImage.load(lightImage_180).getLuminanceFloat(),
+               GlslImage.load(lightImage_270).getLuminanceFloat(),
+               GlslImage.load(lightImage_FRONT).getLuminanceFloat(),
+            ];
+
+            if (lightImage_NONE) {
+               const lightLuminance_NONE =
+                  GlslImage.load(lightImage_NONE).getLuminanceFloat();
+
+               for (let i = 0; i < lightLuminances.length; i++) {
+                  lightLuminances[i] =
+                     lightLuminances[i].subtractFloat(lightLuminance_NONE);
+               }
+               lightLuminance_ALL =
+                  lightLuminance_ALL.subtractFloat(lightLuminance_NONE);
+            }
+
+            for (let i = 0; i < lightLuminances.length; i++) {
+               lightLuminances[i] =
+                  lightLuminances[i].divideFloat(lightLuminance_ALL);
+            }
+
+            const horizontal = lightLuminances[0]
+               .subtractFloat(lightLuminances[2])
+               .addFloat(new GlslFloat(1))
+               .divideFloat(new GlslFloat(2));
+
+            const vertical = lightLuminances[3]
+               .subtractFloat(lightLuminances[1])
+               .addFloat(new GlslFloat(1))
+               .divideFloat(new GlslFloat(2));
+
+            const normalVector = new GlslVector3([
+               horizontal,
+               vertical,
+               lightLuminances[4],
+            ]);
+
+            if (normalMapHelper.isRenderObsolete()) return;
+
+            const normalMapRendering = GlslRendering.render(
+               normalVector.normalize().getVector4()
+            );
+
+            normalMapShader.unbind();
+
+            const normalMap = await normalMapRendering.getJsImage();
+
+            if (uiImageElement && normalMap) {
+               uiImageElement.src = normalMap.src;
+            }
+
+            resolve(normalMap);
+         });
       });
-      normalMapShader.bind();
-
-      let north = GlslImage.load(northLightGradientImage).getLuminanceFloat();
-      let east = GlslImage.load(eastLightGradientImage).getLuminanceFloat();
-      let front = GlslImage.load(frontLightGradientImage).getLuminanceFloat();
-      let all = GlslImage.load(allLightGradientImage).getLuminanceFloat();
-
-      north = north.divideFloat(all);
-      east = east.divideFloat(all);
-      front = front.divideFloat(all);
-
-      let normalVector = new GlslVector3([east, north, front]);
-
-      normalVector = new GlslVector3([
-         new GlslFloat(0),
-         new GlslFloat(1),
-         new GlslFloat(0),
-      ]);
-
-      const normalMapRendering = GlslRendering.render(
-         normalVector.getVector4()
-      );
-
-      normalMapShader.purge();
-      return normalMapRendering.getJsImage();
    }
 
    /**

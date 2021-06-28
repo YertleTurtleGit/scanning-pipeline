@@ -2,9 +2,15 @@
 "use strict";
 
 class WebcamDatasetHelper {
-   /** @privet @type {WebcamDatasetHelper[]} */
+   /**
+    * @private
+    * @type {WebcamDatasetHelper[]}
+    */
    static instances = [];
 
+   /**
+    * @public
+    */
    static purgeWebcamConnections() {
       WebcamDatasetHelper.instances.forEach((instance) => {
          instance.purge();
@@ -13,6 +19,7 @@ class WebcamDatasetHelper {
    }
 
    /**
+    * @public
     * @param {HTMLVideoElement} webcamPreview
     * @param {HTMLInputElement} captureButton
     * @returns {Promise<HTMLImageElement[]>}
@@ -27,26 +34,26 @@ class WebcamDatasetHelper {
 
       return new Promise((resolve) => {
          captureButton.addEventListener("click", async () => {
-            const lightDiv = /**@type {HTMLDivElement} */ (
+            const lightDivBackground = /**@type {HTMLDivElement} */ (
                document.createElement("div")
             );
             const lightCanvas = /**@type {HTMLCanvasElement} */ (
                document.createElement("canvas")
             );
 
-            lightDiv.style.position = "absolute";
-            lightDiv.style.top = "0";
-            lightDiv.style.left = "0";
-            lightDiv.style.width = "100%";
-            lightDiv.style.width = "100%";
-            lightDiv.style.backgroundColor = "black";
-            lightDiv.appendChild(lightCanvas);
-            document.body.appendChild(lightDiv);
-            await lightDiv.requestFullscreen();
+            lightDivBackground.style.position = "absolute";
+            lightDivBackground.style.top = "0";
+            lightDivBackground.style.left = "0";
+            lightDivBackground.style.width = "100%";
+            lightDivBackground.style.width = "100%";
+            lightDivBackground.style.backgroundColor = "black";
+            lightDivBackground.appendChild(lightCanvas);
+            document.body.appendChild(lightDivBackground);
+            await lightDivBackground.requestFullscreen();
 
             const lightDimension = Math.min(
-               lightDiv.clientWidth,
-               lightDiv.clientHeight
+               lightDivBackground.clientWidth,
+               lightDivBackground.clientHeight
             );
 
             lightCanvas.width = lightDimension;
@@ -106,7 +113,111 @@ class WebcamDatasetHelper {
             resolve(lightImages);
             document.exitFullscreen();
             lightCanvas.remove();
+            lightDivBackground.remove();
+         });
+      });
+   }
+
+   /**
+    * @public
+    * @param {HTMLVideoElement} webcamPreview
+    * @param {HTMLInputElement} captureButton
+    * @returns {Promise<HTMLImageElement[]>}
+    */
+   static async getRapidGradientDataset(webcamPreview, captureButton) {
+      const webcamDatasetHelper = new WebcamDatasetHelper(
+         webcamPreview,
+         captureButton
+      );
+
+      await webcamDatasetHelper.initialize();
+
+      return new Promise((resolve) => {
+         captureButton.addEventListener("click", async () => {
+            const lightDivBackground = /**@type {HTMLDivElement} */ (
+               document.createElement("div")
+            );
+            const lightDiv = /**@type {HTMLDivElement} */ (
+               document.createElement("div")
+            );
+
+            lightDivBackground.style.transition = "none";
+            lightDivBackground.style.position = "absolute";
+            lightDivBackground.style.top = "0";
+            lightDivBackground.style.left = "0";
+            lightDivBackground.style.width = "100%";
+            lightDivBackground.style.width = "100%";
+            lightDivBackground.style.backgroundColor = "black";
+            lightDivBackground.appendChild(lightDiv);
+            document.body.appendChild(lightDivBackground);
+            await lightDivBackground.requestFullscreen();
+
+            const lightDimension = Math.min(
+               lightDivBackground.clientWidth,
+               lightDivBackground.clientHeight
+            );
+
+            lightDiv.style.transition = "none";
+            lightDiv.style.position = "absolute";
+            lightDiv.style.width = String(lightDimension) + "px";
+            lightDiv.style.height = String(lightDimension) + "px";
+            lightDiv.style.top = "50%";
+            lightDiv.style.left = "50%";
+            lightDiv.style.transform = "translate(-50%, -50%)";
+            lightDiv.style.backgroundColor = "black";
+
+            await new Promise((resolve) => {
+               setTimeout(resolve, 1000);
+            });
+
+            const noLightImage = await webcamDatasetHelper.captureImage();
+
+            lightDiv.style.backgroundColor = "white";
+
+            await new Promise((resolve) => {
+               setTimeout(resolve, 500);
+            });
+
+            const allLightImage = await webcamDatasetHelper.captureImage();
+
+            lightDiv.style.backgroundColor = "black";
+            lightDiv.style.backgroundImage = "radial-gradient(white, black)";
+
+            await new Promise((resolve) => {
+               setTimeout(resolve, 500);
+            });
+
+            const frontLightImage = await webcamDatasetHelper.captureImage();
+
+            lightDiv.style.backgroundImage =
+               "linear-gradient(to left, white , black)";
+
+            const lightDegrees = [0, 90, 180, 270];
+            const inheritTransform = lightDiv.style.transform;
+            const lightImages = [];
+
+            for (let i = 0; i < lightDegrees.length; i++) {
+               console.log(lightDegrees[i]);
+
+               lightDiv.style.transform =
+                  inheritTransform +
+                  " rotateZ(" +
+                  String(lightDegrees[i]) +
+                  "deg)";
+
+               await new Promise((resolve) => {
+                  setTimeout(resolve, 500);
+               });
+
+               lightImages.push(await webcamDatasetHelper.captureImage());
+            }
+
+            lightImages.push(allLightImage, frontLightImage, noLightImage);
+
+            resolve(lightImages);
+            document.exitFullscreen();
             lightDiv.remove();
+            lightDivBackground.remove();
          });
       });
    }
@@ -145,6 +256,9 @@ class WebcamDatasetHelper {
             this.canvas.width = this.video.videoWidth;
             this.canvas.height = this.video.videoHeight;
             this.context = this.canvas.getContext("2d");
+
+            this.context.translate(this.video.videoWidth, 0);
+            this.context.scale(-1, 1);
             resolve();
          });
       });

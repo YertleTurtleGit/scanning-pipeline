@@ -49,6 +49,8 @@ class PointCloudHelper {
             const vertices = [];
 
             const maxDimension = Math.max(dataCanvas.width, dataCanvas.height);
+            const aspectWidth = dataCanvas.width / dataCanvas.height;
+            const aspectHeight = dataCanvas.height / dataCanvas.width;
 
             for (let x = 0; x < dataCanvas.width; x++) {
                for (let y = 0; y < dataCanvas.height; y++) {
@@ -85,7 +87,7 @@ class PointCloudHelper {
 
    /**
     * @public
-    * @param {HTMLCanvasElement} canvas 
+    * @param {HTMLCanvasElement} canvas
     */
    static clearCanvas(canvas) {
       const pointCloudHelper = PointCloudHelper.getInstance(canvas);
@@ -155,6 +157,8 @@ class PointCloudHelper {
 
       this.controls.minDistance = 1;
       this.controls.maxDistance = 250;
+
+      this.controls.target = new THREE.Vector3(0, 0, 0);
 
       this.controls.addEventListener("change", () => {
          this.renderer.render(this.scene, this.camera);

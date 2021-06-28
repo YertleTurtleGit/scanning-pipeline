@@ -22,7 +22,6 @@ body {
 video {
    width: 100%;
    height: auto;
-   background-color: black;
 }
 
 .mainArea {
@@ -78,7 +77,6 @@ img {
    width: 100%;
    height: auto;
    background-position: center;
-   background-color: black;
 }
 
 .imageArea {
