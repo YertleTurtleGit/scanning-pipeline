@@ -38,6 +38,16 @@ function loadImage(url) {
  * @param {File[]} sourceFiles
  */
 function setInputImagesSourceFiles(sourceFiles = undefined) {
+   reset();
+   // TODO: sort
+   sourceFiles.sort((a, b) => {
+      return a.name.localeCompare(
+         b.name,
+         navigator.languages[0] || navigator.language,
+         { numeric: true, ignorePunctuation: true }
+      );
+   });
+
    if (sourceFiles && sourceFiles.length > 0) {
       /**
        * @param {File} file
@@ -61,13 +71,13 @@ function setInputImagesSourceFiles(sourceFiles = undefined) {
          image.src = "";
       });
    }
-   resetOutput();
 }
 
 /**
  * @param {HTMLImageElement[]} inputImages
  */
 function setPhotometricStereoInputImages(inputImages) {
+   reset();
    let i = 0;
    PHOTOMETRIC_STEREO_IMAGES.forEach((image) => {
       image.src = inputImages[i].src;
@@ -79,6 +89,7 @@ function setPhotometricStereoInputImages(inputImages) {
  * @param {HTMLImageElement[]} inputImages
  */
 function setRapidGradientInputImages(inputImages) {
+   reset();
    let i = 0;
    RAPID_GRADIENT_IMAGES.forEach((image) => {
       image.src = inputImages[i].src;
@@ -87,6 +98,7 @@ function setRapidGradientInputImages(inputImages) {
 }
 
 function setImagesToPhotometricStereoTest() {
+   reset();
    PHOTOMETRIC_STEREO_IMAGE_000.src = TEST_SRC_PHOTOMETRIC_STEREO_IMAGE_000;
    PHOTOMETRIC_STEREO_IMAGE_045.src = TEST_SRC_PHOTOMETRIC_STEREO_IMAGE_045;
    PHOTOMETRIC_STEREO_IMAGE_090.src = TEST_SRC_PHOTOMETRIC_STEREO_IMAGE_090;
@@ -96,10 +108,10 @@ function setImagesToPhotometricStereoTest() {
    PHOTOMETRIC_STEREO_IMAGE_270.src = TEST_SRC_PHOTOMETRIC_STEREO_IMAGE_270;
    PHOTOMETRIC_STEREO_IMAGE_315.src = TEST_SRC_PHOTOMETRIC_STEREO_IMAGE_315;
    PHOTOMETRIC_STEREO_IMAGE_NONE.src = "null";
-   resetOutput();
 }
 
 function setImagesToRapidGradientTest() {
+   reset();
    RAPID_GRADIENT_IMAGE_000.src = TEST_SRC_RAPID_GRADIENT_IMAGE_000;
    RAPID_GRADIENT_IMAGE_090.src = TEST_SRC_RAPID_GRADIENT_IMAGE_090;
    RAPID_GRADIENT_IMAGE_180.src = TEST_SRC_RAPID_GRADIENT_IMAGE_180;
@@ -107,10 +119,15 @@ function setImagesToRapidGradientTest() {
    RAPID_GRADIENT_IMAGE_ALL.src = TEST_SRC_RAPID_GRADIENT_IMAGE_ALL;
    RAPID_GRADIENT_IMAGE_FRONT.src = TEST_SRC_RAPID_GRADIENT_IMAGE_FRONT;
    RAPID_GRADIENT_IMAGE_NONE.src = "null";
-   resetOutput();
 }
 
-function resetOutput() {
+function reset() {
+   PHOTOMETRIC_STEREO_IMAGES.forEach((image) => {
+      image.src = "";
+   });
+   RAPID_GRADIENT_IMAGES.forEach((image) => {
+      image.src = "";
+   });
    NORMAL_MAP_IMAGE.src = "";
    DEPTH_MAP_IMAGE.src = "";
    PointCloudHelper.clearCanvas(POINT_CLOUD_CANVAS);

@@ -225,6 +225,7 @@ CALCULATION_TYPE_SELECT.addEventListener(
 );
 FILE_BROWSE_INPUT.addEventListener("change", () => {
    setInputImagesSourceFiles(Array.from(FILE_BROWSE_INPUT.files));
+   calculateEverything();
 });
 
 inputOrCalculationTypeChange();

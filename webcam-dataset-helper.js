@@ -25,6 +25,10 @@ class WebcamDatasetHelper {
     * @returns {Promise<HTMLImageElement[]>}
     */
    static async getPhotometricStereoDataset(webcamPreview, captureButton) {
+      const tmpCaptureButton = captureButton.cloneNode(true);
+      captureButton.replaceWith(tmpCaptureButton);
+      captureButton = /**@type {HTMLInputElement} */ (tmpCaptureButton);
+
       const webcamDatasetHelper = new WebcamDatasetHelper(
          webcamPreview,
          captureButton
@@ -125,6 +129,10 @@ class WebcamDatasetHelper {
     * @returns {Promise<HTMLImageElement[]>}
     */
    static async getRapidGradientDataset(webcamPreview, captureButton) {
+      const tmpCaptureButton = captureButton.cloneNode(true);
+      captureButton.replaceWith(tmpCaptureButton);
+      captureButton = /**@type {HTMLInputElement} */ (tmpCaptureButton);
+
       const webcamDatasetHelper = new WebcamDatasetHelper(
          webcamPreview,
          captureButton
