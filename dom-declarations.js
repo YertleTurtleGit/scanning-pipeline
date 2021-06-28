@@ -39,15 +39,6 @@ function loadImage(url) {
  */
 function setInputImagesSourceFiles(sourceFiles = undefined) {
    reset();
-   // TODO: sort
-   sourceFiles.sort((a, b) => {
-      return a.name.localeCompare(
-         b.name,
-         navigator.languages[0] || navigator.language,
-         { numeric: true, ignorePunctuation: true }
-      );
-   });
-
    if (sourceFiles && sourceFiles.length > 0) {
       /**
        * @param {File} file
@@ -60,6 +51,15 @@ function setInputImagesSourceFiles(sourceFiles = undefined) {
          });
          fileReader.readAsDataURL(file);
       }
+
+      // TODO: sort
+      sourceFiles.sort((a, b) => {
+         return a.name.localeCompare(
+            b.name,
+            navigator.languages[0] || navigator.language,
+            { numeric: true, ignorePunctuation: true }
+         );
+      });
 
       let i = 0;
       PHOTOMETRIC_STEREO_IMAGES.forEach((image) => {
