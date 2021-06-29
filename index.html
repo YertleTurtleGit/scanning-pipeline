@@ -126,6 +126,8 @@
 
          <img id="normalMapImage" title="normal mapping" />
 
+         <br />
+
          <input
             id="normalMapResolution"
             type="range"
@@ -138,12 +140,29 @@
          />
          <output id="normalMapResolutionOutput"></output>
          <label for="normalMapResolution">resolution</label>
+
+         <br />
+
+         <input
+            id="polarAngleDeg"
+            type="range"
+            name="polarAngleDeg"
+            min="0"
+            max="90"
+            value="35"
+            onchange="polarAngleDegOutput.value=value + '° '"
+            oninput="polarAngleDegOutput.value=value + '° '"
+         />
+         <output id="polarAngleDegOutput"></output>
+         <label for="polarAngleDeg">polar angle</label>
       </div>
 
       <div class="mainArea mainAreaArrow" id="depthMapArea">
          <h2>Depth Mapping</h2>
 
          <img id="depthMapImage" title="depth mapping" />
+
+         <br />
 
          <input
             id="depthMapQuality"
@@ -168,6 +187,8 @@
             title="point cloud"
             style="width: 100%; height: auto"
          ></canvas>
+
+         <br />
 
          <input
             id="depthFactor"

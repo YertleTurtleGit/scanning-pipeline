@@ -8,7 +8,7 @@ async function calculateNormalMap() {
 
    if (CALCULATION_TYPE_SELECT.value === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
       await NormalMapHelper.getPhotometricStereoNormalMap(
-         35,
+         Number(POLAR_ANGLE_DEG_INPUT.value),
          PHOTOMETRIC_STEREO_IMAGE_000,
          PHOTOMETRIC_STEREO_IMAGE_045,
          PHOTOMETRIC_STEREO_IMAGE_090,
@@ -206,11 +206,20 @@ async function inputOrCalculationTypeChange() {
       }
    }
 
+   if (CALCULATION_TYPE_SELECT.value === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
+      POLAR_ANGLE_DEG_INPUT.disabled = false;
+   } else {
+      POLAR_ANGLE_DEG_INPUT.disabled = true;
+   }
+
    calculateEverything();
 }
 
 NORMAL_MAP_RESOLUTION_INPUT.addEventListener("change", calculateNormalMap);
 NORMAL_MAP_RESOLUTION_INPUT.addEventListener("input", calculateNormalMap);
+
+POLAR_ANGLE_DEG_INPUT.addEventListener("change", calculateNormalMap);
+POLAR_ANGLE_DEG_INPUT.addEventListener("input", calculateNormalMap);
 
 DEPTH_MAP_QUALITY_INPUT.addEventListener("change", calculateDepthMap);
 DEPTH_MAP_QUALITY_INPUT.addEventListener("input", calculateDepthMap);

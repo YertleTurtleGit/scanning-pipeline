@@ -234,6 +234,7 @@ const RAPID_GRADIENT_IMAGE_AREA = document.getElementById(
 );
 
 const NORMAL_MAP_RESOLUTION_INPUT = declareInput("normalMapResolution");
+const POLAR_ANGLE_DEG_INPUT = declareInput("polarAngleDeg");
 const DEPTH_MAP_QUALITY_INPUT = declareInput("depthMapQuality");
 const POINT_CLOUD_DEPTH_FACTOR_INPUT = declareInput("depthFactor");
 
