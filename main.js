@@ -63,7 +63,6 @@ async function calculatePointCloud() {
     DEPTH_MAP_IMAGE,
     POINT_CLOUD_CANVAS,
     Number(POINT_CLOUD_DEPTH_FACTOR_INPUT.value),
-    DEPTH_MAP_IMAGE,
     true
   );
   POINT_CLOUD_AREA.classList.remove("mainAreaLoading");

@@ -2,7 +2,7 @@
 "use strict";
 
 class PointCloudHelper {
-  /** @private @type {number} */
+  /** @private */
   static renderId = 0;
 
   /**
@@ -11,21 +11,24 @@ class PointCloudHelper {
    * @param {HTMLCanvasElement} renderCanvas
    * @param {HTMLImageElement} textureImage
    * @param {boolean} cancelIfNewJobSpawned
+   * @returns {Promise<number[]>}
    */
   static async calculatePointCloud(
     depthMapImage,
     renderCanvas,
     depthFactor = 0.15,
-    textureImage = undefined,
-    cancelIfNewJobSpawned = false
+    cancelIfNewJobSpawned = false,
+    textureImage = depthMapImage
   ) {
-    const pointCloudHelper = PointCloudHelper.getInstance(
+    const pointCloudHelper = new PointCloudHelper(
       renderCanvas,
       cancelIfNewJobSpawned
     );
 
-    await new Promise((resolve) => {
-      setTimeout(() => {
+    return await new Promise((resolve) => {
+      setTimeout(async () => {
+        if (pointCloudHelper.isRenderObsolete()) return;
+        await pointCloudHelper.renderingContext.initialize();
         if (pointCloudHelper.isRenderObsolete()) return;
 
         const dataCanvas = document.createElement("canvas");
@@ -35,6 +38,8 @@ class PointCloudHelper {
 
         dataContext.drawImage(depthMapImage, 0, 0);
 
+        if (pointCloudHelper.isRenderObsolete()) return;
+
         const imageData = dataContext.getImageData(
           0,
           0,
@@ -42,11 +47,9 @@ class PointCloudHelper {
           dataCanvas.height
         ).data;
 
-        if (!textureImage) {
-          textureImage = depthMapImage;
-        }
-
         dataContext.drawImage(textureImage, 0, 0);
+
+        if (pointCloudHelper.isRenderObsolete()) return;
 
         const textureData = dataContext.getImageData(
           0,
@@ -59,8 +62,8 @@ class PointCloudHelper {
         const vertices = [];
 
         const maxDimension = Math.max(dataCanvas.width, dataCanvas.height);
-        /* const aspectWidth = dataCanvas.width / dataCanvas.height;
-            const aspectHeight = dataCanvas.height / dataCanvas.width; */
+        /*const aspectWidth = dataCanvas.width / dataCanvas.height;
+        const aspectHeight = dataCanvas.height / dataCanvas.width;*/
 
         for (let x = 0; x < dataCanvas.width; x++) {
           for (let y = 0; y < dataCanvas.height; y++) {
@@ -79,19 +82,25 @@ class PointCloudHelper {
           if (pointCloudHelper.isRenderObsolete()) return;
         }
 
-        pointCloudHelper.geometry.setAttribute(
+        resolve(vertices);
+
+        pointCloudHelper.renderingContext.geometry.setAttribute(
           "position",
           new THREE.Float32BufferAttribute(vertices, 3)
         );
-        pointCloudHelper.geometry.attributes.position.needsUpdate = true;
-
-        pointCloudHelper.geometry.setAttribute(
+        pointCloudHelper.renderingContext.geometry.setAttribute(
           "color",
           new THREE.Float32BufferAttribute(vertexColors, 3)
         );
-        pointCloudHelper.geometry.attributes.color.needsUpdate = true;
 
-        resolve();
+        if (pointCloudHelper.isRenderObsolete()) return;
+
+        pointCloudHelper.renderingContext.geometry.attributes.position.needsUpdate = true;
+        pointCloudHelper.renderingContext.geometry.attributes.color.needsUpdate = true;
+
+        pointCloudHelper.renderingContext.render();
+
+        pointCloudHelper.renderingContext.handleResize();
       }, 100);
     });
   }
@@ -99,46 +108,24 @@ class PointCloudHelper {
   /**
    * @public
    * @param {HTMLCanvasElement} canvas
-   * @param {boolean} cancelIfNewJobSpawned
    */
-  static clearCanvas(canvas, cancelIfNewJobSpawned) {
-    const pointCloudHelper = PointCloudHelper.getInstance(
-      canvas,
-      cancelIfNewJobSpawned
-    );
+  static clearCanvas(canvas) {
+    const pointCloudHelperRenderingContext =
+      PointCloudHelperRenderingContext.getInstance(canvas);
 
-    pointCloudHelper.geometry.setAttribute(
+    pointCloudHelperRenderingContext.geometry.setAttribute(
       "position",
       new THREE.Float32BufferAttribute([], 3)
     );
-    pointCloudHelper.geometry.attributes.position.needsUpdate = true;
-
-    pointCloudHelper.geometry.setAttribute(
+    pointCloudHelperRenderingContext.geometry.setAttribute(
       "color",
       new THREE.Float32BufferAttribute([], 3)
     );
-    pointCloudHelper.geometry.attributes.color.needsUpdate = true;
-  }
 
-  /**
-   * @private
-   * @type {PointCloudHelper[]}
-   */
-  static instances = [];
+    pointCloudHelperRenderingContext.geometry.attributes.position.needsUpdate = true;
+    pointCloudHelperRenderingContext.geometry.attributes.color.needsUpdate = true;
 
-  /**
-   * @private
-   * @param {HTMLCanvasElement} renderCanvas
-   * @param {boolean} cancelIfNewJobSpawned
-   * @returns {PointCloudHelper}
-   */
-  static getInstance(renderCanvas, cancelIfNewJobSpawned = false) {
-    PointCloudHelper.instances.forEach((instance) => {
-      if (instance.renderCanvas === renderCanvas) {
-        return instance;
-      }
-    });
-    return new PointCloudHelper(renderCanvas, cancelIfNewJobSpawned);
+    pointCloudHelperRenderingContext.render();
   }
 
   /**
@@ -148,48 +135,12 @@ class PointCloudHelper {
    */
   constructor(renderCanvas, cancelIfNewJobSpawned) {
     PointCloudHelper.renderId++;
+
     this.renderId = PointCloudHelper.renderId;
     this.cancelIfNewJobSpawned = cancelIfNewJobSpawned;
 
-    this.renderCanvas = renderCanvas;
-    this.renderer = new THREE.WebGLRenderer({
-      canvas: this.renderCanvas,
-      alpha: true,
-      antialias: true,
-    });
-    this.camera = new THREE.PerspectiveCamera(
-      25,
-      this.renderCanvas.width / this.renderCanvas.height
-    );
-    this.controls = new THREE.OrbitControls(this.camera, this.renderCanvas);
-    this.scene = new THREE.Scene();
-    this.geometry = new THREE.BufferGeometry();
-
-    this.material = new THREE.PointsMaterial({
-      size: 2,
-      vertexColors: true,
-    });
-    this.pointCloud = new THREE.Points(this.geometry, this.material);
-
-    this.scene.add(this.pointCloud);
-
-    this.camera.position.z = 75;
-    this.camera.position.y = -100;
-
-    this.controls.minDistance = 1;
-    this.controls.maxDistance = 250;
-
-    this.controls.target = new THREE.Vector3(0, 0, 0);
-
-    this.controls.addEventListener("change", () => {
-      this.renderer.render(this.scene, this.camera);
-    });
-
-    setTimeout(this.controls.update);
-
-    window.addEventListener("resize", this.handleResize.bind(this));
-
-    PointCloudHelper.instances.push(this);
+    this.renderingContext =
+      PointCloudHelperRenderingContext.getInstance(renderCanvas);
   }
 
   /**
@@ -197,14 +148,120 @@ class PointCloudHelper {
    * @returns {boolean}
    */
   isRenderObsolete() {
-    return false;
     return (
       this.cancelIfNewJobSpawned && this.renderId < PointCloudHelper.renderId
     );
   }
+}
+
+class PointCloudHelperRenderingContext {
+  /** @private @constant */
+  static MAX_INSTANCES = 8;
 
   /**
    * @private
+   * @type {PointCloudHelperRenderingContext[]}
+   */
+  static instances = [];
+
+  /**
+   * @public
+   * @param {HTMLCanvasElement} renderCanvas
+   * @returns {PointCloudHelperRenderingContext}
+   */
+  static getInstance(renderCanvas) {
+    for (
+      let i = 0;
+      i < PointCloudHelperRenderingContext.instances.length;
+      i++
+    ) {
+      const testInstance = PointCloudHelperRenderingContext.instances[i];
+      if (testInstance.renderCanvas === renderCanvas) {
+        const instance = testInstance;
+        return instance;
+      }
+    }
+
+    const instance = new PointCloudHelperRenderingContext(renderCanvas);
+    return instance;
+  }
+
+  /**
+   * @private
+   * @param {HTMLCanvasElement} renderCanvas
+   */
+  constructor(renderCanvas) {
+    this.initialized = false;
+    this.renderCanvas = renderCanvas;
+
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: renderCanvas,
+      alpha: true,
+      antialias: true,
+    });
+    this.camera = new THREE.PerspectiveCamera(
+      25,
+      renderCanvas.width / renderCanvas.height
+    );
+    this.controls = new THREE.OrbitControls(this.camera, this.renderCanvas);
+    this.scene = new THREE.Scene();
+    this.geometry = new THREE.BufferGeometry();
+    this.material = new THREE.PointsMaterial({
+      size: 2,
+      vertexColors: true,
+    });
+    this.pointCloud = new THREE.Points(this.geometry, this.material);
+
+    PointCloudHelperRenderingContext.instances.push(this);
+
+    if (
+      PointCloudHelperRenderingContext.instances.length >
+      PointCloudHelperRenderingContext.MAX_INSTANCES
+    ) {
+      console.warn(
+        "PointCloudHelperRenderingContext exceeded maximum render canvas instance count. The last instance gets deleted."
+      );
+      PointCloudHelperRenderingContext.instances.shift();
+    }
+  }
+
+  async render() {
+    await this.initialize();
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  /**
+   * @public
+   */
+  async initialize() {
+    if (this.initialized) {
+      return;
+    }
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        this.scene.add(this.pointCloud);
+
+        this.camera.position.z = 75;
+        this.camera.position.y = -100;
+
+        this.controls.target = new THREE.Vector3(0, 0, 0);
+
+        this.initialized = true;
+        resolve();
+
+        this.controls.addEventListener("change", () => {
+          this.render();
+        });
+        window.addEventListener("resize", this.handleResize.bind(this));
+
+        this.controls.update();
+        this.handleResize();
+      });
+    });
+  }
+
+  /**
+   * @public
    */
   handleResize() {
     const width = this.renderCanvas.clientWidth;
@@ -212,11 +269,11 @@ class PointCloudHelper {
     const needResize =
       this.renderCanvas.width !== width || this.renderCanvas.height !== height;
     if (needResize) {
-      this.renderer.setSize(width, height, false);
+      this.renderer.setSize(width, height);
 
       this.camera.aspect = this.renderCanvas.width / this.renderCanvas.height;
       this.camera.updateProjectionMatrix();
-      this.renderer.render(this.scene, this.camera);
+      this.render();
     }
   }
 }

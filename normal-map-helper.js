@@ -2,7 +2,7 @@
 "use strict";
 
 class NormalMapHelper {
-  /** @private @type {number} */
+  /** @private */
   static renderId = 0;
 
   /**
@@ -240,17 +240,17 @@ class NormalMapHelper {
           normalVector.getVector4()
         );
 
-        normalMapShader.unbind();
-
         if (normalMapHelper.isRenderObsolete()) return;
 
         const normalMap = await normalMapRendering.getJsImage();
+
+        resolve(normalMap);
 
         if (uiImageElement && normalMap) {
           uiImageElement.src = normalMap.src;
         }
 
-        resolve(normalMap);
+        normalMapShader.unbind();
       }, 100);
     });
   }

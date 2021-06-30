@@ -89,3 +89,9 @@ img {
    max-width: 30%;
    max-height: 150px;
 }
+
+#pointCloudCanvas {
+   width: 100% !important;
+   height: 500px !important;
+   max-height: 60vh !important;
+}

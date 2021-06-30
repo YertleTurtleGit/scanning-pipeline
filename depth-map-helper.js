@@ -43,6 +43,7 @@ class DepthMapHelper {
             depthMapHelper.azimuthalAngles[i],
             gradientPixelArray
           );
+          if (depthMapHelper.isRenderObsolete()) return;
         }
 
         const integrals = await Promise.all(integralPromises);
@@ -57,12 +58,12 @@ class DepthMapHelper {
 
         const depthMap = await depthMapHelper.getDepthMapImage(integral);
 
+        resolve(depthMap);
+
         if (imageElement && depthMap) {
           imageElement.src = depthMap.src;
         }
-
-        resolve(depthMap);
-      }, 500);
+      }, 100);
     });
   }
 
@@ -183,7 +184,7 @@ class DepthMapHelper {
 
         if (this.isRenderObsolete()) return;
 
-        const normalizeDivisor = Math.abs(min) + max;
+        const normalizeDivisor = Math.abs(min) + Math.abs(max);
 
         resolve(
           integral.map((v) => {
@@ -229,8 +230,9 @@ class DepthMapHelper {
           result.getVector4()
         ).getPixelArray();
 
-        depthMapShader.purge();
         resolve(gradientPixelArray);
+
+        depthMapShader.unbind();
       });
     });
   }
@@ -242,19 +244,17 @@ class DepthMapHelper {
    * @returns {Promise<number[]>}
    */
   async calculateAnisotropicIntegral(azimuthalAngle, gradientPixelArray) {
-    const depthMapHelper = this;
-
     return new Promise((resolve) => {
       setTimeout(async () => {
-        if (depthMapHelper.isRenderObsolete()) return;
+        const gradientPixelArrayResolved = await gradientPixelArray;
 
         let integral = new Array(this.width * this.height);
         let pixelLines = this.getPixelLinesFromAzimuthalAngle(
           azimuthalAngle,
-          await gradientPixelArray
+          gradientPixelArrayResolved
         );
 
-        if (depthMapHelper.isRenderObsolete()) return;
+        if (this.isRenderObsolete()) return;
 
         for (let j = 0; j < pixelLines.length; j++) {
           let lineOffset = 0;
@@ -262,8 +262,15 @@ class DepthMapHelper {
             const index =
               pixelLines[j][k].x +
               (this.height - 1 - pixelLines[j][k].y) * this.width;
+
+            const slope = pixelLines[j][k].slope;
+
+            if (slope === 0) {
+              lineOffset = 0;
+            }
+
             integral[index] = lineOffset;
-            lineOffset += pixelLines[j][k].slope * -this.DEPTH_FACTOR;
+            lineOffset += slope * -this.DEPTH_FACTOR;
           }
         }
 
