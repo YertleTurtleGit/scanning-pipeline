@@ -2,7 +2,7 @@
    --backgroundColor0: hsl(0, 0%, 10%);
    --backgroundColor1: hsl(0, 0%, 20%);
    --fontColor: hsl(0, 0%, 90%);
-   --fontFamily: sans-serif;
+   --fontFamily: Arial, sans-serif;
 }
 
 * {
