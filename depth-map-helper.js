@@ -2,7 +2,10 @@
 "use strict";
 
 class DepthMapHelper {
-  /** @private @type {number} */
+  /** @private @constant */
+  static SLOPE_SHIFT = -255 / 2;
+
+  /** @private */
   static renderId = 0;
 
   /**
@@ -74,9 +77,6 @@ class DepthMapHelper {
 
     /** @constant */
     this.DEPTH_FACTOR = 1;
-
-    /** @constant */
-    this.SLOPE_SHIFT = -255 / 2;
 
     this.normalMap = normalMap;
     this.qualityPercent = qualityPercent;
@@ -415,8 +415,9 @@ class DepthMapHelper {
       return 0;
     }
 
-    const rightSlope = gradientPixelArray[index + 0] + this.SLOPE_SHIFT;
-    const topSlope = gradientPixelArray[index + 1] + this.SLOPE_SHIFT;
+    const rightSlope =
+      gradientPixelArray[index + 0] + DepthMapHelper.SLOPE_SHIFT;
+    const topSlope = gradientPixelArray[index + 1] + DepthMapHelper.SLOPE_SHIFT;
     return stepVector.x * rightSlope + stepVector.y * topSlope;
   }
 }
