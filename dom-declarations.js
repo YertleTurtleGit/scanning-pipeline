@@ -1,6 +1,3 @@
-//@ts-check
-"use strict";
-
 /**
  * @param {string} elementId
  * @returns {HTMLImageElement}

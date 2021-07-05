@@ -1,16 +1,16 @@
-//@ts-check
-"use strict";
+/* global THREE */
+/* exported PointCloudHelper */
+
+let PointCloudHelper_renderId = 0;
 
 class PointCloudHelper {
-   /** @private */
-   static renderId = 0;
-
    /**
     * @public
     * @param {HTMLImageElement} depthMapImage
     * @param {HTMLCanvasElement} renderCanvas
-    * @param {HTMLImageElement} textureImage
+    * @param {number} depthFactor
     * @param {boolean} cancelIfNewJobSpawned
+    * @param {HTMLImageElement} textureImage
     * @returns {Promise<number[]>}
     */
    static async calculatePointCloud(
@@ -134,9 +134,9 @@ class PointCloudHelper {
     * @param {boolean} cancelIfNewJobSpawned
     */
    constructor(renderCanvas, cancelIfNewJobSpawned) {
-      PointCloudHelper.renderId++;
+      PointCloudHelper_renderId++;
 
-      this.renderId = PointCloudHelper.renderId;
+      this.renderId = PointCloudHelper_renderId;
       this.cancelIfNewJobSpawned = cancelIfNewJobSpawned;
 
       this.renderingContext =
@@ -154,16 +154,12 @@ class PointCloudHelper {
    }
 }
 
+const PointCloudHelperRenderingContext_MAX_INSTANCES = 8;
+
+/** @type {PointCloudHelperRenderingContext[]} */
+const PointCloudHelperRenderingContext_instances = [];
+
 class PointCloudHelperRenderingContext {
-   /** @private @constant */
-   static MAX_INSTANCES = 8;
-
-   /**
-    * @private
-    * @type {PointCloudHelperRenderingContext[]}
-    */
-   static instances = [];
-
    /**
     * @public
     * @param {HTMLCanvasElement} renderCanvas
@@ -172,10 +168,10 @@ class PointCloudHelperRenderingContext {
    static getInstance(renderCanvas) {
       for (
          let i = 0;
-         i < PointCloudHelperRenderingContext.instances.length;
+         i < PointCloudHelperRenderingContext_instances.length;
          i++
       ) {
-         const testInstance = PointCloudHelperRenderingContext.instances[i];
+         const testInstance = PointCloudHelperRenderingContext_instances[i];
          if (testInstance.renderCanvas === renderCanvas) {
             const instance = testInstance;
             return instance;
@@ -214,16 +210,16 @@ class PointCloudHelperRenderingContext {
       });
       this.pointCloud = new THREE.Points(this.geometry, this.material);
 
-      PointCloudHelperRenderingContext.instances.push(this);
+      PointCloudHelperRenderingContext_instances.push(this);
 
       if (
-         PointCloudHelperRenderingContext.instances.length >
-         PointCloudHelperRenderingContext.MAX_INSTANCES
+         PointCloudHelperRenderingContext_instances.length >
+         PointCloudHelperRenderingContext_MAX_INSTANCES
       ) {
          console.warn(
             "PointCloudHelperRenderingContext exceeded maximum render canvas instance count. The last instance gets deleted."
          );
-         PointCloudHelperRenderingContext.instances.shift();
+         PointCloudHelperRenderingContext_instances.shift();
       }
    }
 

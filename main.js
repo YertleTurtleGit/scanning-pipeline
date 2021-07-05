@@ -1,6 +1,3 @@
-//@ts-check
-"use strict";
-
 async function calculateNormalMap() {
   NORMAL_MAP_AREA.classList.add("mainAreaLoading");
   DEPTH_MAP_AREA.classList.add("mainAreaLoading");
