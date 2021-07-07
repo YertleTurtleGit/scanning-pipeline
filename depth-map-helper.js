@@ -1,8 +1,9 @@
 /* global GLSL */
 /* exported DepthMapHelper */
 
-const DepthMapHelper_SLOPE_SHIFT = -255 / 2;
-let DepthMapHelper_renderId = 0;
+/** @constant */
+DepthMapHelper.SLOPE_SHIFT = -255 / 2;
+DepthMapHelper.renderId = 0;
 
 class DepthMapHelper {
    /**
@@ -73,7 +74,7 @@ class DepthMapHelper {
     * @param {boolean} cancelIfNewJobSpawned
     */
    constructor(normalMap, qualityPercent, cancelIfNewJobSpawned) {
-      DepthMapHelper_renderId++;
+      DepthMapHelper.renderId++;
 
       /** @constant */
       this.DEPTH_FACTOR = 1;
@@ -82,7 +83,7 @@ class DepthMapHelper {
       this.qualityPercent = qualityPercent;
       this.cancelIfNewJobSpawned = cancelIfNewJobSpawned;
 
-      this.renderId = DepthMapHelper_renderId;
+      this.renderId = DepthMapHelper.renderId;
       this.width = normalMap.width;
       this.height = normalMap.height;
 
@@ -109,7 +110,7 @@ class DepthMapHelper {
     */
    isRenderObsolete() {
       return (
-         this.cancelIfNewJobSpawned && this.renderId < DepthMapHelper_renderId
+         this.cancelIfNewJobSpawned && this.renderId < DepthMapHelper.renderId
       );
    }
 
@@ -421,9 +422,9 @@ class DepthMapHelper {
       }
 
       const rightSlope =
-         gradientPixelArray[index + 0] + DepthMapHelper_SLOPE_SHIFT;
+         gradientPixelArray[index + 0] + DepthMapHelper.SLOPE_SHIFT;
       const topSlope =
-         gradientPixelArray[index + 1] + DepthMapHelper_SLOPE_SHIFT;
+         gradientPixelArray[index + 1] + DepthMapHelper.SLOPE_SHIFT;
       return stepVector.x * rightSlope + stepVector.y * topSlope;
    }
 }

@@ -1,7 +1,8 @@
 /* global GLSL */
 /* exported NormalMapHelper */
 
-let NormalMapHelper_renderId = 0;
+NormalMapHelper.renderId = 0;
+
 class NormalMapHelper {
    /**
     * @public
@@ -379,9 +380,9 @@ class NormalMapHelper {
     * @param {boolean} cancelIfNewJobSpawned
     */
    constructor(cancelIfNewJobSpawned) {
-      NormalMapHelper_renderId++;
+      NormalMapHelper.renderId++;
 
-      this.renderId = NormalMapHelper_renderId;
+      this.renderId = NormalMapHelper.renderId;
       this.cancelIfNewJobSpawned = cancelIfNewJobSpawned;
    }
 
@@ -391,7 +392,7 @@ class NormalMapHelper {
     */
    isRenderObsolete() {
       return (
-         this.cancelIfNewJobSpawned && this.renderId < NormalMapHelper_renderId
+         this.cancelIfNewJobSpawned && this.renderId < NormalMapHelper.renderId
       );
    }
 }

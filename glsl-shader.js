@@ -902,11 +902,6 @@ class GlslImage {
     */
 }
 
-/**
- * @public
- * @static
- * @type {number}
- */
 GlslVariable.uniqueNumber = 0;
 
 /** @abstract */

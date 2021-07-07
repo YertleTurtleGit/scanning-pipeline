@@ -1,7 +1,7 @@
 /* global THREE */
 /* exported PointCloudHelper */
 
-let PointCloudHelper_renderId = 0;
+PointCloudHelper.renderId = 0;
 
 class PointCloudHelper {
    /**
@@ -134,9 +134,9 @@ class PointCloudHelper {
     * @param {boolean} cancelIfNewJobSpawned
     */
    constructor(renderCanvas, cancelIfNewJobSpawned) {
-      PointCloudHelper_renderId++;
+      PointCloudHelper.renderId++;
 
-      this.renderId = PointCloudHelper_renderId;
+      this.renderId = PointCloudHelper.renderId;
       this.cancelIfNewJobSpawned = cancelIfNewJobSpawned;
 
       this.renderingContext =
@@ -154,7 +154,8 @@ class PointCloudHelper {
    }
 }
 
-const PointCloudHelperRenderingContext_MAX_INSTANCES = 8;
+/** @constant */
+PointCloudHelperRenderingContext.MAX_INSTANCES = 8;
 
 /** @type {PointCloudHelperRenderingContext[]} */
 const PointCloudHelperRenderingContext_instances = [];
@@ -214,7 +215,7 @@ class PointCloudHelperRenderingContext {
 
       if (
          PointCloudHelperRenderingContext_instances.length >
-         PointCloudHelperRenderingContext_MAX_INSTANCES
+         PointCloudHelperRenderingContext.MAX_INSTANCES
       ) {
          console.warn(
             "PointCloudHelperRenderingContext exceeded maximum render canvas instance count. The last instance gets deleted."
