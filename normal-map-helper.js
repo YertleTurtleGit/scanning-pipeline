@@ -95,8 +95,6 @@ class NormalMapHelper {
                lightLuminances[i] = lightLuminances[i].divideFloat(all);
             }
 
-            console.log(GLSL.Vector3);
-
             /**
              * @param {GLSL.Float} originLuminance
              * @param {GLSL.Float} orthogonalLuminance
