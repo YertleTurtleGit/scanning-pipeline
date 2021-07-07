@@ -1,10 +1,6 @@
 /* global GLSL */
 /* exported DepthMapHelper */
 
-/** @constant */
-DepthMapHelper.SLOPE_SHIFT = -255 / 2;
-DepthMapHelper.renderId = 0;
-
 class DepthMapHelper {
    /**
     * @public
@@ -428,3 +424,7 @@ class DepthMapHelper {
       return stepVector.x * rightSlope + stepVector.y * topSlope;
    }
 }
+
+/** @constant */
+DepthMapHelper.SLOPE_SHIFT = -255 / 2;
+DepthMapHelper.renderId = 0;

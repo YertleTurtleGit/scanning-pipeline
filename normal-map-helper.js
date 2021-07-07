@@ -1,8 +1,6 @@
 /* global GLSL */
 /* exported NormalMapHelper */
 
-NormalMapHelper.renderId = 0;
-
 class NormalMapHelper {
    /**
     * @public
@@ -396,3 +394,5 @@ class NormalMapHelper {
       );
    }
 }
+
+NormalMapHelper.renderId = 0;

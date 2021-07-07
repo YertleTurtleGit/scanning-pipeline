@@ -1,8 +1,6 @@
 /* global THREE */
 /* exported PointCloudHelper */
 
-PointCloudHelper.renderId = 0;
-
 class PointCloudHelper {
    /**
     * @public
@@ -153,9 +151,8 @@ class PointCloudHelper {
       );
    }
 }
+PointCloudHelper.renderId = 0;
 
-/** @constant */
-PointCloudHelperRenderingContext.MAX_INSTANCES = 8;
 
 /** @type {PointCloudHelperRenderingContext[]} */
 const PointCloudHelperRenderingContext_instances = [];
@@ -278,3 +275,6 @@ class PointCloudHelperRenderingContext {
       }
    }
 }
+
+/** @constant */
+PointCloudHelperRenderingContext.MAX_INSTANCES = 8;
