@@ -1,5 +1,6 @@
 /* global DOM, DOM_ELEMENT, TYPE, NormalMapHelper, DepthMapHelper, PointCloudHelper, WebcamDatasetHelper */
 
+/** */
 async function calculateNormalMap() {
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
@@ -48,6 +49,7 @@ async function calculateNormalMap() {
    await calculateDepthMap();
 }
 
+/** */
 async function calculateDepthMap() {
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
@@ -61,6 +63,7 @@ async function calculateDepthMap() {
    await calculatePointCloud();
 }
 
+/** */
 async function calculatePointCloud() {
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
    await PointCloudHelper.calculatePointCloud(
@@ -72,6 +75,7 @@ async function calculatePointCloud() {
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.remove("mainAreaLoading");
 }
 
+/** */
 async function calculateEverything() {
    console.log("load images");
    await loadInputImages();
@@ -173,6 +177,7 @@ async function loadHTMLImage(image) {
    NORMAL_MAP_RESOLUTION_INPUT.min = String(sizeFactor);
 }*/
 
+/** */
 async function inputOrCalculationTypeChange() {
    DOM_ELEMENT.WEBCAM_AREA.style.display = "none";
    DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "none";
