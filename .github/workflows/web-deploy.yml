@@ -36,6 +36,11 @@ jobs:
     - name: Remove File
       uses: JesseTG/rm@v1.0.0
       with:
+        path: .eslintrc.js
+        
+    - name: Remove File
+      uses: JesseTG/rm@v1.0.0
+      with:
         path: ${{ github.event.repository.name }}.code-workspace
           
     - name: Minify
