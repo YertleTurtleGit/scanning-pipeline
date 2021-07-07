@@ -23,7 +23,8 @@ async function calculateNormalMap() {
          true,
          DOM_ELEMENT.NORMAL_MAP_IMAGE,
          Number(DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.value),
-         DOM_ELEMENT.INPUT_TYPE_SELECT.value === TYPE.INPUT_TYPE.WEBCAM
+         DOM_ELEMENT.INPUT_TYPE_SELECT.value === TYPE.INPUT_TYPE.WEBCAM,
+         Number(DOM_ELEMENT.MASK_THRESHOLD_INPUT.value)
       );
    } else if (
       DOM_ELEMENT.CALCULATION_TYPE_SELECT.value ===
@@ -230,6 +231,17 @@ async function inputOrCalculationTypeChange() {
       DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.disabled = true;
    }
 
+   if (
+      Math.min(
+         DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_NONE.naturalWidth,
+         DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_NONE.naturalHeight
+      ) > 0
+   ) {
+      DOM_ELEMENT.MASK_THRESHOLD_INPUT.disabled = false;
+   } else {
+      DOM_ELEMENT.MASK_THRESHOLD_INPUT.disabled = true;
+   }
+
    calculateEverything();
 }
 
@@ -241,12 +253,13 @@ DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.addEventListener(
    "input",
    calculateNormalMap
 );
-
 DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.addEventListener(
    "change",
    calculateNormalMap
 );
 DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.addEventListener("input", calculateNormalMap);
+DOM_ELEMENT.MASK_THRESHOLD_INPUT.addEventListener("change", calculateNormalMap);
+DOM_ELEMENT.MASK_THRESHOLD_INPUT.addEventListener("input", calculateNormalMap);
 
 DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.addEventListener(
    "change",

@@ -155,6 +155,22 @@
          />
          <output id="polarAngleDegOutput"></output>
          <label for="polarAngleDeg">polar angle</label>
+
+         <br />
+
+         <input
+            id="maskThreshold"
+            type="range"
+            name="maskThreshold"
+            min="0"
+            max="25"
+            value="5"
+            step="0.5"
+            onchange="maskThresholdOutput.value=value + '% '"
+            oninput="maskThresholdOutput.value=value + '% '"
+         />
+         <output id="maskThresholdOutput"></output>
+         <label for="maskThreshold">mask threshold</label>
       </div>
 
       <div class="mainArea mainAreaArrow" id="depthMapArea">

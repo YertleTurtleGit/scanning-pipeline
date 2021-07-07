@@ -19,7 +19,7 @@ class NormalMapHelper {
     * @param {HTMLImageElement} uiImageElement
     * @param {number} resolutionPercent
     * @param {boolean} cameraVerticalShift
-    * @param {number} maskThreshold
+    * @param {number} maskThresholdPercent
     * @returns {Promise<HTMLImageElement>}
     */
    static async getPhotometricStereoNormalMap(
@@ -37,8 +37,10 @@ class NormalMapHelper {
       uiImageElement = undefined,
       resolutionPercent = 100,
       cameraVerticalShift = false,
-      maskThreshold = 0.25
+      maskThresholdPercent = 5
    ) {
+      const maskThreshold = maskThresholdPercent / 100;
+
       const normalMapHelper = new NormalMapHelper(cancelIfNewJobSpawned);
 
       return new Promise((resolve) => {
@@ -93,6 +95,8 @@ class NormalMapHelper {
                lightLuminances[i] = lightLuminances[i].divideFloat(all);
             }
 
+            console.log(GLSL.Vector3);
+
             /**
              * @param {GLSL.Float} originLuminance
              * @param {GLSL.Float} orthogonalLuminance
@@ -100,7 +104,7 @@ class NormalMapHelper {
              * @param {number} originAzimuthalAngleDeg
              * @param {number} orthogonalAzimuthalAngleDeg
              * @param {number} oppositeAzimuthalAngleDeg
-             * @returns {GlslVector3}
+             * @returns {GLSL.Vector3}
              */
             function getAnisotropicNormalVector(
                originLuminance,
@@ -116,7 +120,7 @@ class NormalMapHelper {
                /**
                 * @param {number} azimuthalAngleDeg
                 * @param {number} polarAngleDeg
-                * @returns {GlslVector3}
+                * @returns {GLSL.Vector3}
                 */
                function getLightDirectionVector(
                   azimuthalAngleDeg,
@@ -176,7 +180,7 @@ class NormalMapHelper {
                   .divideFloat(new GLSL.Float(2));
             }
 
-            /** @type {[number, number, number][]} */
+            /** @type {number[][]} */
             const anisotropicCombinations = [
                [180, 270, 0],
                [180, 90, 0],

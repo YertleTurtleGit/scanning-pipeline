@@ -147,7 +147,7 @@ class DepthMapHelper {
    /**
     * @private
     * @param {number[][]} integrals
-    * @return {Promise<number[]>}
+    * @returns {Promise<number[]>}
     */
    async getAverageIntegralAsGrayscale(integrals) {
       return new Promise((resolve) => {
@@ -272,7 +272,6 @@ class DepthMapHelper {
                   lineOffset += slope * -this.DEPTH_FACTOR;
                }
             }
-
             resolve(integral);
          });
       });
@@ -282,7 +281,7 @@ class DepthMapHelper {
     * @private
     * @param {number} azimuthalAngle
     * @param {Uint8Array} gradientPixelArray
-    * @returns {{ x: number; y: number; slope: number }[][]}
+    * @returns {{x: number, y: number, slope: number}[][]}
     */
    getPixelLinesFromAzimuthalAngle(azimuthalAngle, gradientPixelArray) {
       const pixelLines = [];
@@ -332,7 +331,7 @@ class DepthMapHelper {
     */
    getEdgeFramePixels() {
       if (this.edgeFramePixels === undefined) {
-         /** @type {{ x: number; y: number; }[]} */
+         /** @type {{ x: number, y: number }[]} */
          this.edgeFramePixels = [];
 
          const topY = -1;
@@ -371,7 +370,7 @@ class DepthMapHelper {
     * @param {{x:number, y:number}} startPixel
     * @param {{x:number, y:number}} stepVector
     * @param {Uint8Array} gradientPixelArray
-    * @returns {{ x: number; y: number; slope: number }[]}
+    * @returns {{x: number, y: number, slope: number}[]}
     */
    getPixelLine(startPixel, stepVector, gradientPixelArray) {
       const pixelLine = [];
