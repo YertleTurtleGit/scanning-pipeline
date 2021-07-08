@@ -23,7 +23,7 @@ class PointCloudHelper {
          cancelIfNewJobSpawned
       );
 
-      return await new Promise((resolve) => {
+      return new Promise((resolve) => {
          setTimeout(async () => {
             if (pointCloudHelper.isRenderObsolete()) return;
             await pointCloudHelper.renderingContext.initialize();
@@ -56,8 +56,8 @@ class PointCloudHelper {
                dataCanvas.height
             ).data;
 
-            const vertexColors = [];
             const vertices = [];
+            const vertexColors = [];
 
             const maxDimension = Math.max(dataCanvas.width, dataCanvas.height);
             /*const aspectWidth = dataCanvas.width / dataCanvas.height;
@@ -80,6 +80,7 @@ class PointCloudHelper {
                if (pointCloudHelper.isRenderObsolete()) return;
             }
 
+            PointCloudHelper.vertices = vertices;
             resolve(vertices);
 
             pointCloudHelper.renderingContext.geometry.setAttribute(
@@ -101,6 +102,50 @@ class PointCloudHelper {
             pointCloudHelper.renderingContext.handleResize();
          }, 100);
       });
+   }
+
+   static async downloadOBJ() {
+      const vertices = PointCloudHelper.vertices;
+
+      if (vertices.length > 3) {
+         await new Promise((resolve) => {
+            setTimeout(() => {
+               const filename = "point_cloud.obj";
+               let objString = "";
+
+               for (
+                  let i = 0, vertexCount = vertices.length;
+                  i < vertexCount;
+                  i += 3
+               ) {
+                  const x = vertices[i];
+                  const y = vertices[i + 1];
+                  const z = vertices[i + 2];
+                  objString += "v " + x + " " + y + " " + z + "\n";
+               }
+
+               let element = document.createElement("a");
+               element.style.display = "none";
+
+               let blob = new Blob([objString], {
+                  type: "text/plain; charset = utf-8",
+               });
+
+               let url = window.URL.createObjectURL(blob);
+               element.setAttribute("href", window.URL.createObjectURL(blob));
+               element.setAttribute("download", filename);
+
+               document.body.appendChild(element);
+
+               element.click();
+
+               window.URL.revokeObjectURL(url);
+               element.remove();
+
+               resolve();
+            });
+         });
+      }
    }
 
    /**
@@ -152,7 +197,6 @@ class PointCloudHelper {
    }
 }
 PointCloudHelper.renderId = 0;
-
 
 /** @type {PointCloudHelperRenderingContext[]} */
 const PointCloudHelperRenderingContext_instances = [];
@@ -275,6 +319,8 @@ class PointCloudHelperRenderingContext {
       }
    }
 }
+
+PointCloudHelper.vertices = [];
 
 /** @constant */
 PointCloudHelperRenderingContext.MAX_INSTANCES = 8;

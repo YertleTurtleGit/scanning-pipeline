@@ -1,15 +1,14 @@
-/** @type {WebcamDatasetHelper[]} */
-let WebcamDatasetHelper_instances = [];
+/* exported WebcamDatasetHelper */
 
 class WebcamDatasetHelper {
    /**
     * @public
     */
    static purgeWebcamConnections() {
-      WebcamDatasetHelper_instances.forEach((instance) => {
+      WebcamDatasetHelper.instances.forEach((instance) => {
          instance.purge();
       });
-      WebcamDatasetHelper_instances = [];
+      WebcamDatasetHelper.instances = [];
    }
 
    /**
@@ -231,7 +230,7 @@ class WebcamDatasetHelper {
     */
    constructor(webcamPreview, captureButton) {
       captureButton.disabled = true;
-      WebcamDatasetHelper_instances.push(this);
+      WebcamDatasetHelper.instances.push(this);
       this.captureButton = captureButton;
       this.video = webcamPreview;
       this.canvas = document.createElement("canvas");
@@ -315,3 +314,6 @@ class WebcamDatasetHelper {
       });
    }
 }
+
+/** @type {WebcamDatasetHelper[]} */
+WebcamDatasetHelper.instances = [];

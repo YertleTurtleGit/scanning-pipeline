@@ -5,6 +5,7 @@ async function calculateNormalMap() {
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
 
    if (
       DOM_ELEMENT.CALCULATION_TYPE_SELECT.value ===
@@ -53,6 +54,7 @@ async function calculateNormalMap() {
 async function calculateDepthMap() {
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
    await DepthMapHelper.getDepthMap(
       DOM_ELEMENT.NORMAL_MAP_IMAGE,
       Number(DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.value),
@@ -66,6 +68,7 @@ async function calculateDepthMap() {
 /** */
 async function calculatePointCloud() {
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
    await PointCloudHelper.calculatePointCloud(
       DOM_ELEMENT.DEPTH_MAP_IMAGE,
       DOM_ELEMENT.POINT_CLOUD_CANVAS,
@@ -73,6 +76,7 @@ async function calculatePointCloud() {
       true
    );
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.remove("mainAreaLoading");
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "inherit";
 }
 
 /** */
@@ -91,6 +95,7 @@ async function loadInputImages() {
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
 
    let imagePromises;
 
@@ -297,6 +302,16 @@ DOM_ELEMENT.FILE_BROWSE_INPUT.addEventListener("change", () => {
       Array.from(DOM_ELEMENT.FILE_BROWSE_INPUT.files)
    );
    calculateEverything();
+});
+
+DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.addEventListener("click", async () => {
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "0";
+   DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
+   await PointCloudHelper.downloadOBJ();
+   setTimeout(() => {
+      DOM_ELEMENT.POINT_CLOUD_AREA.classList.remove("mainAreaLoading");
+      DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "1";
+   }, 1000);
 });
 
 inputOrCalculationTypeChange();

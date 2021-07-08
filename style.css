@@ -1,12 +1,32 @@
 :root {
    --backgroundColor0: hsl(0, 0%, 10%);
    --backgroundColor1: hsl(0, 0%, 20%);
-   --fontColor: hsl(0, 0%, 90%);
+   --fontColor: hsl(0, 0%, 80%);
    --fontFamily: Arial, sans-serif;
 }
 
 * {
    transition: all 0.5s;
+}
+
+#all {
+   opacity: 0;
+}
+
+#loadingAll {
+   content: " ";
+   position: absolute;
+   height: 3rem;
+   width: 3rem;
+   right: 50%;
+   top: 50%;
+   transform: translate(-50%, -50%);
+
+   border: 10px solid var(--fontColor);
+   border-top: 10px solid transparent;
+   border-radius: 50%;
+   animation: spin 1s linear infinite;
+   z-index: 10;
 }
 
 body {
@@ -17,6 +37,7 @@ body {
    background-color: var(--backgroundColor0);
    color: var(--fontColor);
    font-family: var(--fontFamily);
+   display: inherit;
 }
 
 video {
@@ -34,6 +55,7 @@ video {
    background-color: var(--backgroundColor1);
    border-radius: 10px;
    filter: drop-shadow(5px 7px 4px black);
+   border: 0.2rem solid var(--fontColor);
 }
 
 .mainAreaArrow:after {
@@ -47,6 +69,23 @@ video {
    border: 75px solid transparent;
    border-left: 30px solid var(--backgroundColor1);
    filter: drop-shadow(5px 7px 4px black);
+}
+
+.mainAreaDownloadButton {
+   border-radius: 25%;
+   cursor: pointer;
+   float: right;
+   border: none;
+   background-color: transparent;
+   font-size: x-large;
+   color: transparent;
+   text-shadow: 0 0 0 var(--fontColor);
+   transform: translateY(-150%);
+   border: 0.2rem solid transparent;
+}
+
+.mainAreaDownloadButton:hover {
+   border: 0.2rem solid var(--fontColor);
 }
 
 .mainAreaLoading:before {

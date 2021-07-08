@@ -226,6 +226,8 @@ const DOM_ELEMENT = {
    ),
    WEBCAM_CAPTURE_BUTTON: DOM.declareInput("webcamCapture"),
 
+   POINT_CLOUD_DOWNLOAD_BUTTON: DOM.declareInput("pointCloudDownloadButton"),
+
    POINT_CLOUD_CANVAS: /**@type {HTMLCanvasElement} */ (
       document.getElementById("pointCloudCanvas")
    ),
