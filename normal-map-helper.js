@@ -235,7 +235,7 @@ class NormalMapHelper {
             if (cameraVerticalShift) {
                // TODO: use cameraVerticalShift
 
-               const cameraAngle = Math.atan(
+               /*const cameraAngle = Math.atan(
                   1 / Math.tan(lightPolarAngleDeg * (Math.PI / 180))
                );
 
@@ -250,7 +250,7 @@ class NormalMapHelper {
                   [zero, sine.multiplyFloat(new GLSL.Float(-1)), cosine],
                ]);
 
-               normalVector = rotationMatrix.multiplyVector3(normalVector);
+               normalVector = rotationMatrix.multiplyVector3(normalVector);*/
             }
 
             const normalMapRendering = GLSL.Rendering.render(
