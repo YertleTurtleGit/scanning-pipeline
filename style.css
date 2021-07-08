@@ -133,4 +133,5 @@ img {
    width: 100% !important;
    height: 500px !important;
    max-height: 60vh !important;
+   cursor: all-scroll;
 }

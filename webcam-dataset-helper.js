@@ -44,6 +44,7 @@ class WebcamDatasetHelper {
             lightDivBackground.style.width = "100%";
             lightDivBackground.style.width = "100%";
             lightDivBackground.style.backgroundColor = "black";
+            lightDivBackground.style.cursor = "none";
             lightDivBackground.appendChild(lightCanvas);
             document.body.appendChild(lightDivBackground);
             await lightDivBackground.requestFullscreen();
@@ -149,6 +150,7 @@ class WebcamDatasetHelper {
             lightDivBackground.style.width = "100%";
             lightDivBackground.style.width = "100%";
             lightDivBackground.style.backgroundColor = "black";
+            lightDivBackground.style.cursor = "none";
             lightDivBackground.appendChild(lightDiv);
             document.body.appendChild(lightDivBackground);
             await lightDivBackground.requestFullscreen();
