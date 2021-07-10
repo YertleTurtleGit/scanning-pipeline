@@ -3,25 +3,11 @@
 class WebcamDatasetHelper {
    /**
     * @public
-    */
-   static purgeWebcamConnections() {
-      WebcamDatasetHelper.instances.forEach((instance) => {
-         instance.purge();
-      });
-      WebcamDatasetHelper.instances = [];
-   }
-
-   /**
-    * @public
     * @param {HTMLVideoElement} webcamPreview
     * @param {HTMLInputElement} captureButton
     * @returns {Promise<HTMLImageElement[]>}
     */
    static async getPhotometricStereoDataset(webcamPreview, captureButton) {
-      const tmpCaptureButton = captureButton.cloneNode(true);
-      captureButton.replaceWith(tmpCaptureButton);
-      captureButton = /**@type {HTMLInputElement} */ (tmpCaptureButton);
-
       const webcamDatasetHelper = new WebcamDatasetHelper(
          webcamPreview,
          captureButton
@@ -30,7 +16,10 @@ class WebcamDatasetHelper {
       await webcamDatasetHelper.initialize();
 
       return new Promise((resolve) => {
-         captureButton.addEventListener("click", async () => {
+         const handler = async () => {
+            captureButton.disabled = true;
+            captureButton.removeEventListener("click", handler);
+
             const lightDivBackground = /**@type {HTMLDivElement} */ (
                document.createElement("div")
             );
@@ -67,14 +56,8 @@ class WebcamDatasetHelper {
 
             const radius = lightDimension / 7;
             const context = lightCanvas.getContext("2d");
-            const lightImages = [];
 
-            await new Promise((resolve) => {
-               setTimeout(resolve, 1000);
-            });
-
-            const noLightImage = await webcamDatasetHelper.captureImage();
-
+            context.clearRect(0, 0, lightCanvas.width, lightCanvas.width);
             context.beginPath();
             context.arc(
                lightDimension - radius,
@@ -84,14 +67,40 @@ class WebcamDatasetHelper {
                2 * Math.PI
             );
             context.fillStyle = "white";
+            context.closePath();
             context.fill();
 
-            const lightDegrees = [0, 45, 90, 135, 180, 225, 270, 315];
+            await new Promise((resolve) => {
+               setTimeout(resolve, 1000);
+            });
 
+            const lightDegrees = [0, 45, 90, 135, 180, 225, 270, 315];
+            const lightImages = new Array(lightDegrees.length + 1);
+
+            /*const halfWidth = lightCanvas.width / 2;
+            const halfHeight = lightCanvas.height / 2;*/
             const inheritTransform = lightCanvas.style.transform;
 
             for (let i = 0; i < lightDegrees.length; i++) {
                console.log(lightDegrees[i]);
+
+               /*context.clearRect(0, 0, lightCanvas.width, lightCanvas.width);
+
+               context.beginPath();
+               context.arc(
+                  lightDimension - radius,
+                  lightDimension / 2,
+                  radius,
+                  0,
+                  2 * Math.PI
+               );
+               context.fillStyle = "white";
+               context.closePath();
+               context.fill();
+
+               context.translate(halfWidth, halfHeight);
+               context.rotate((Math.PI / 180) * lightDegrees[i]);
+               context.translate(-halfWidth, -halfHeight);*/
 
                lightCanvas.style.transform =
                   inheritTransform +
@@ -103,16 +112,27 @@ class WebcamDatasetHelper {
                   setTimeout(resolve, 500);
                });
 
-               lightImages.push(await webcamDatasetHelper.captureImage());
+               console.log("finished! " + String(lightDegrees[i]));
+
+               lightImages[i] = await webcamDatasetHelper.captureImage();
             }
 
-            lightImages.push(noLightImage);
+            console.log("no light image");
+
+            context.clearRect(0, 0, lightCanvas.width, lightCanvas.width);
+            lightImages[lightImages.length - 1] =
+               await webcamDatasetHelper.captureImage();
+
+            console.log("no light image finished!");
 
             resolve(lightImages);
-            document.exitFullscreen();
             lightCanvas.remove();
             lightDivBackground.remove();
-         });
+            document.exitFullscreen();
+            webcamDatasetHelper.purge();
+         };
+
+         captureButton.addEventListener("click", handler);
       });
    }
 
@@ -123,10 +143,6 @@ class WebcamDatasetHelper {
     * @returns {Promise<HTMLImageElement[]>}
     */
    static async getRapidGradientDataset(webcamPreview, captureButton) {
-      const tmpCaptureButton = captureButton.cloneNode(true);
-      captureButton.replaceWith(tmpCaptureButton);
-      captureButton = /**@type {HTMLInputElement} */ (tmpCaptureButton);
-
       const webcamDatasetHelper = new WebcamDatasetHelper(
          webcamPreview,
          captureButton
@@ -135,7 +151,9 @@ class WebcamDatasetHelper {
       await webcamDatasetHelper.initialize();
 
       return new Promise((resolve) => {
-         captureButton.addEventListener("click", async () => {
+         captureButton.addEventListener("click", async (event) => {
+            captureButton.removeEventListener("click", event);
+
             const lightDivBackground = /**@type {HTMLDivElement} */ (
                document.createElement("div")
             );
@@ -218,9 +236,11 @@ class WebcamDatasetHelper {
             lightImages.push(allLightImage, frontLightImage, noLightImage);
 
             resolve(lightImages);
+
             document.exitFullscreen();
             lightDiv.remove();
             lightDivBackground.remove();
+            webcamDatasetHelper.purge();
          });
       });
    }
@@ -242,7 +262,14 @@ class WebcamDatasetHelper {
     * @private
     */
    purge() {
-      this.captureButton.disabled = true;
+      console.log("purging");
+      DOM_ELEMENT.WEBCAM_AREA.style.display = "none";
+
+      this.stream.getTracks().forEach((track) => {
+         track.stop();
+      });
+
+      this.captureButton.disabled = false;
       this.video.srcObject = null;
       this.canvas.remove();
    }
@@ -251,8 +278,8 @@ class WebcamDatasetHelper {
     * @private
     */
    async initialize() {
-      this.video.srcObject = await this.getStream();
-      this.video.play();
+      this.stream = await this.getStream();
+      this.video.srcObject = this.stream;
 
       await new Promise((resolve) => {
          this.video.addEventListener("canplay", () => {
@@ -262,6 +289,8 @@ class WebcamDatasetHelper {
 
             this.context.translate(this.video.videoWidth, 0);
             this.context.scale(-1, 1);
+            this.video.play();
+
             resolve();
          });
       });

@@ -6,21 +6,15 @@ class DepthMapHelper {
     * @public
     * @param {HTMLImageElement} normalMap
     * @param {number} qualityPercent
-    * @param {boolean} cancelIfNewJobSpawned
     * @param {HTMLImageElement} imageElement
     * @returns {Promise<HTMLImageElement>}
     */
    static async getDepthMap(
       normalMap,
       qualityPercent = 0.001,
-      cancelIfNewJobSpawned = false,
       imageElement = undefined
    ) {
-      const depthMapHelper = new DepthMapHelper(
-         normalMap,
-         qualityPercent,
-         cancelIfNewJobSpawned
-      );
+      const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
       return new Promise((resolve) => {
          setTimeout(async () => {
@@ -29,9 +23,14 @@ class DepthMapHelper {
             const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
 
             const anglesCount = depthMapHelper.azimuthalAngles.length;
+
+            /** @type {Promise[]} */
             const integralPromises = new Array(anglesCount);
 
             if (depthMapHelper.isRenderObsolete()) return;
+
+            /** @todo Implement progress bar. */
+            //let promiseResolveCount = 0;
 
             for (let i = 0; i < anglesCount; i++) {
                integralPromises[i] =
@@ -39,6 +38,10 @@ class DepthMapHelper {
                      depthMapHelper.azimuthalAngles[i],
                      gradientPixelArray
                   );
+               integralPromises[i].then(() => {
+                  //promiseResolveCount++;
+               });
+
                if (depthMapHelper.isRenderObsolete()) return;
             }
 
@@ -64,20 +67,23 @@ class DepthMapHelper {
    }
 
    /**
+    * @public
+    */
+   static cancelRenderJobs() {
+      DepthMapHelper.renderId++;
+   }
+
+   /**
     * @private
     * @param {HTMLImageElement} normalMap
     * @param {number} qualityPercent
-    * @param {boolean} cancelIfNewJobSpawned
     */
-   constructor(normalMap, qualityPercent, cancelIfNewJobSpawned) {
-      DepthMapHelper.renderId++;
-
+   constructor(normalMap, qualityPercent) {
       /** @constant */
       this.DEPTH_FACTOR = 1;
 
       this.normalMap = normalMap;
       this.qualityPercent = qualityPercent;
-      this.cancelIfNewJobSpawned = cancelIfNewJobSpawned;
 
       this.renderId = DepthMapHelper.renderId;
       this.width = normalMap.width;
@@ -105,9 +111,7 @@ class DepthMapHelper {
     * @returns {boolean}
     */
    isRenderObsolete() {
-      return (
-         this.cancelIfNewJobSpawned && this.renderId < DepthMapHelper.renderId
-      );
+      return this.renderId < DepthMapHelper.renderId;
    }
 
    /**

@@ -14,7 +14,6 @@ class NormalMapHelper {
     * @param {HTMLImageElement} lightImage_270
     * @param {HTMLImageElement} lightImage_315
     * @param {HTMLImageElement} lightImage_NONE
-    * @param {boolean} cancelIfNewJobSpawned
     * @param {HTMLImageElement} uiImageElement
     * @param {number} resolutionPercent
     * @param {boolean} cameraVerticalShift
@@ -32,7 +31,6 @@ class NormalMapHelper {
       lightImage_270,
       lightImage_315,
       lightImage_NONE = undefined,
-      cancelIfNewJobSpawned = false,
       uiImageElement = undefined,
       resolutionPercent = 100,
       cameraVerticalShift = false,
@@ -40,7 +38,7 @@ class NormalMapHelper {
    ) {
       const maskThreshold = maskThresholdPercent / 100;
 
-      const normalMapHelper = new NormalMapHelper(cancelIfNewJobSpawned);
+      const normalMapHelper = new NormalMapHelper();
 
       return new Promise((resolve) => {
          setTimeout(async () => {
@@ -234,7 +232,6 @@ class NormalMapHelper {
 
             if (cameraVerticalShift) {
                // TODO: use cameraVerticalShift
-
                /*const cameraAngle = Math.atan(
                   1 / Math.tan(lightPolarAngleDeg * (Math.PI / 180))
                );
@@ -281,7 +278,6 @@ class NormalMapHelper {
     * @param {HTMLImageElement} lightImage_ALL
     * @param {HTMLImageElement} lightImage_FRONT
     * @param {HTMLImageElement} lightImage_NONE
-    * @param {boolean} cancelIfNewJobSpawned
     * @param {HTMLImageElement} uiImageElement
     * @param {number} resolutionPercent
     * @returns {Promise<HTMLImageElement>}
@@ -294,11 +290,10 @@ class NormalMapHelper {
       lightImage_ALL,
       lightImage_FRONT,
       lightImage_NONE = undefined,
-      cancelIfNewJobSpawned = false,
       uiImageElement = undefined,
       resolutionPercent = 100
    ) {
-      const normalMapHelper = new NormalMapHelper(cancelIfNewJobSpawned);
+      const normalMapHelper = new NormalMapHelper();
 
       if (normalMapHelper.isRenderObsolete()) return;
 
@@ -374,14 +369,17 @@ class NormalMapHelper {
    }
 
    /**
-    * @private
-    * @param {boolean} cancelIfNewJobSpawned
+    * @public
     */
-   constructor(cancelIfNewJobSpawned) {
+   static cancelRenderJobs() {
       NormalMapHelper.renderId++;
+   }
 
+   /**
+    * @private
+    */
+   constructor() {
       this.renderId = NormalMapHelper.renderId;
-      this.cancelIfNewJobSpawned = cancelIfNewJobSpawned;
    }
 
    /**
@@ -389,9 +387,7 @@ class NormalMapHelper {
     * @returns {boolean}
     */
    isRenderObsolete() {
-      return (
-         this.cancelIfNewJobSpawned && this.renderId < NormalMapHelper.renderId
-      );
+      return this.renderId < NormalMapHelper.renderId;
    }
 }
 

@@ -61,13 +61,13 @@ class DOM {
       DOM.reset();
       if (sourceFiles && sourceFiles.length > 0) {
          // TODO: sort
-         sourceFiles.sort((a, b) => {
+         /*sourceFiles.sort((a, b) => {
             return a.name.localeCompare(
                b.name,
                navigator.languages[0] || navigator.language,
                { numeric: true, ignorePunctuation: true }
             );
-         });
+         });*/
 
          let i = 0;
          PHOTOMETRIC_STEREO_IMAGES.forEach((image) => {

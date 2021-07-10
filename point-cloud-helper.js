@@ -7,7 +7,6 @@ class PointCloudHelper {
     * @param {HTMLImageElement} depthMapImage
     * @param {HTMLCanvasElement} renderCanvas
     * @param {number} depthFactor
-    * @param {boolean} cancelIfNewJobSpawned
     * @param {HTMLImageElement} textureImage
     * @returns {Promise<number[]>}
     */
@@ -15,13 +14,9 @@ class PointCloudHelper {
       depthMapImage,
       renderCanvas,
       depthFactor = 0.15,
-      cancelIfNewJobSpawned = false,
       textureImage = depthMapImage
    ) {
-      const pointCloudHelper = new PointCloudHelper(
-         renderCanvas,
-         cancelIfNewJobSpawned
-      );
+      const pointCloudHelper = new PointCloudHelper(renderCanvas);
 
       return new Promise((resolve) => {
          setTimeout(async () => {
@@ -150,6 +145,13 @@ class PointCloudHelper {
 
    /**
     * @public
+    */
+   static cancelRenderJobs() {
+      PointCloudHelper.renderId++;
+   }
+
+   /**
+    * @public
     * @param {HTMLCanvasElement} canvas
     */
    static clearCanvas(canvas) {
@@ -174,13 +176,9 @@ class PointCloudHelper {
    /**
     * @private
     * @param {HTMLCanvasElement} renderCanvas
-    * @param {boolean} cancelIfNewJobSpawned
     */
-   constructor(renderCanvas, cancelIfNewJobSpawned) {
-      PointCloudHelper.renderId++;
-
+   constructor(renderCanvas) {
       this.renderId = PointCloudHelper.renderId;
-      this.cancelIfNewJobSpawned = cancelIfNewJobSpawned;
 
       this.renderingContext =
          PointCloudHelperRenderingContext.getInstance(renderCanvas);
@@ -191,9 +189,7 @@ class PointCloudHelper {
     * @returns {boolean}
     */
    isRenderObsolete() {
-      return (
-         this.cancelIfNewJobSpawned && this.renderId < PointCloudHelper.renderId
-      );
+      return this.renderId < PointCloudHelper.renderId;
    }
 }
 PointCloudHelper.renderId = 0;

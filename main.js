@@ -2,6 +2,10 @@
 
 /** */
 async function calculateNormalMap() {
+   NormalMapHelper.cancelRenderJobs();
+   DepthMapHelper.cancelRenderJobs();
+   PointCloudHelper.cancelRenderJobs();
+
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
@@ -22,7 +26,6 @@ async function calculateNormalMap() {
          DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_270,
          DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_315,
          DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_NONE,
-         true,
          DOM_ELEMENT.NORMAL_MAP_IMAGE,
          Number(DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.value),
          DOM_ELEMENT.INPUT_TYPE_SELECT.value === TYPE.INPUT_TYPE.WEBCAM,
@@ -40,7 +43,6 @@ async function calculateNormalMap() {
          DOM_ELEMENT.RAPID_GRADIENT_IMAGE_ALL,
          DOM_ELEMENT.RAPID_GRADIENT_IMAGE_FRONT,
          DOM_ELEMENT.RAPID_GRADIENT_IMAGE_NONE,
-         true,
          DOM_ELEMENT.NORMAL_MAP_IMAGE,
          Number(DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.value)
       );
@@ -52,13 +54,15 @@ async function calculateNormalMap() {
 
 /** */
 async function calculateDepthMap() {
+   DepthMapHelper.cancelRenderJobs();
+   PointCloudHelper.cancelRenderJobs();
+
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
    await DepthMapHelper.getDepthMap(
       DOM_ELEMENT.NORMAL_MAP_IMAGE,
       Number(DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.value),
-      true,
       DOM_ELEMENT.DEPTH_MAP_IMAGE
    );
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.remove("mainAreaLoading");
@@ -67,13 +71,14 @@ async function calculateDepthMap() {
 
 /** */
 async function calculatePointCloud() {
+   PointCloudHelper.cancelRenderJobs();
+
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
    await PointCloudHelper.calculatePointCloud(
       DOM_ELEMENT.DEPTH_MAP_IMAGE,
       DOM_ELEMENT.POINT_CLOUD_CANVAS,
-      Number(DOM_ELEMENT.POINT_CLOUD_DEPTH_FACTOR_INPUT.value),
-      true
+      Number(DOM_ELEMENT.POINT_CLOUD_DEPTH_FACTOR_INPUT.value)
    );
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.remove("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "inherit";
@@ -184,11 +189,19 @@ async function loadHTMLImage(image) {
 
 /** */
 async function inputOrCalculationTypeChange() {
-   DOM_ELEMENT.WEBCAM_AREA.style.display = "none";
-   DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "none";
-   WebcamDatasetHelper.purgeWebcamConnections();
+   NormalMapHelper.cancelRenderJobs();
+   DepthMapHelper.cancelRenderJobs();
+   PointCloudHelper.cancelRenderJobs();
 
    DOM.setInputImagesSourceFiles();
+
+   DOM_ELEMENT.NORMAL_MAP_AREA.classList.remove("mainAreaLoading");
+   DOM_ELEMENT.DEPTH_MAP_AREA.classList.remove("mainAreaLoading");
+   DOM_ELEMENT.POINT_CLOUD_AREA.classList.remove("mainAreaLoading");
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
+
+   DOM_ELEMENT.WEBCAM_AREA.style.display = "none";
+   DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "none";
 
    if (DOM_ELEMENT.INPUT_TYPE_SELECT.value === TYPE.INPUT_TYPE.TEST) {
       if (
@@ -203,9 +216,6 @@ async function inputOrCalculationTypeChange() {
          DOM.setImagesToRapidGradientTest();
       }
    } else if (DOM_ELEMENT.INPUT_TYPE_SELECT.value === TYPE.INPUT_TYPE.FILE) {
-      DOM.setInputImagesSourceFiles(
-         Array.from(DOM_ELEMENT.FILE_BROWSE_INPUT.files)
-      );
       DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "inherit";
    } else if (DOM_ELEMENT.INPUT_TYPE_SELECT.value === TYPE.INPUT_TYPE.WEBCAM) {
       DOM_ELEMENT.WEBCAM_AREA.style.display = "inherit";
@@ -298,9 +308,7 @@ DOM_ELEMENT.CALCULATION_TYPE_SELECT.addEventListener(
    inputOrCalculationTypeChange
 );
 DOM_ELEMENT.FILE_BROWSE_INPUT.addEventListener("change", () => {
-   DOM.setInputImagesSourceFiles(
-      Array.from(DOM_ELEMENT.FILE_BROWSE_INPUT.files)
-   );
+   DOM.setInputImagesSourceFiles(DOM_ELEMENT.FILE_BROWSE_INPUT.files);
    calculateEverything();
 });
 

@@ -9,7 +9,65 @@
    transition: all 0.5s;
 }
 
+select {
+   overflow: auto;
+   height: 3rem;
+   width: auto;
+   background-color: transparent;
+   color: var(--fontColor);
+   border: none;
+   cursor: pointer;
+}
+
+select option {
+   border-radius: 5%;
+   border: transparent solid 0.2rem;
+}
+
+select option:hover {
+   border: var(--fontColor) solid 0.2rem;
+}
+
+.selectMenu option {
+   float: left;
+   border-radius: 25%;
+   cursor: pointer;
+   background-color: transparent;
+   font-size: x-large;
+   border: transparent solid 0.2rem;
+}
+
+.selectMenu option:hover {
+   border: var(--fontColor) solid 0.2rem;
+}
+
+select:focus,
+select:active,
+select:hover {
+   outline: none;
+}
+
+.icon {
+   color: transparent;
+   text-shadow: 0 0 0 var(--fontColor);
+}
+
+.mainAreaButtonArea button {
+   float: right;
+   border-radius: 25%;
+   cursor: pointer;
+   background-color: transparent;
+   border: transparent solid 0.2rem;
+   font-size: x-large;
+   transform: translateY(-150%);
+}
+
+.mainAreaButtonArea button:hover {
+   border: var(--fontColor) solid 0.2rem;
+}
+
 #all {
+   transition: none;
    opacity: 0;
 }
 
@@ -69,23 +127,6 @@ video {
    border: 75px solid transparent;
    border-left: 30px solid var(--backgroundColor1);
    filter: drop-shadow(5px 7px 4px black);
-}
-
-.mainAreaDownloadButton {
-   border-radius: 25%;
-   cursor: pointer;
-   float: right;
-   border: none;
-   background-color: transparent;
-   font-size: x-large;
-   color: transparent;
-   text-shadow: 0 0 0 var(--fontColor);
-   transform: translateY(-150%);
-   border: 0.2rem solid transparent;
-}
-
-.mainAreaDownloadButton:hover {
-   border: 0.2rem solid var(--fontColor);
 }
 
 .mainAreaLoading:before {

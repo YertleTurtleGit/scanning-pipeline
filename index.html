@@ -15,16 +15,24 @@
          <div class="mainArea mainAreaArrow" id="inputArea">
             <h2>Input</h2>
 
-            <select id="calculationType">
-               <option value="photometric stereo">photometric stereo</option>
+            <select id="calculationType" size="2">
+               <option value="photometric stereo" selected
+                  >photometric stereo</option
+               >
                <option value="rapid gradient">rapid gradient</option>
             </select>
 
-            <select id="inputType">
-               <option value="test">test dataset</option>
-               <option value="file">file</option>
-               <option value="webcam">webcam</option>
-               <option value="render" disabled>render</option>
+            <select id="inputType" class="selectMenu" size="4">
+               <option value="test" title="test dataset" class="icon" selected>🧪</option>
+               <option
+                  value="file"
+                  title="file"
+                  class="icon"
+                  style="transform: rotate(180deg)"
+                  >📥</option
+               >
+               <option value="webcam" title="webcam" class="icon">🎥</option>
+               <!-- <option value="render" disabled>render</option> -->
             </select>
 
             <div class="imageArea">
@@ -126,6 +134,16 @@
          <div class="mainArea mainAreaArrow" id="normalMapArea">
             <h2>Normal Mapping</h2>
 
+            <div class="mainAreaButtonArea">
+               <!--
+                 <button
+                  id="normalMapUploadButton"
+                  style="transform: translateY(-150%) rotate(180deg)"
+                  >📥</button
+               >
+              -->
+            </div>
+
             <img id="normalMapImage" title="normal mapping" />
 
             <br />
@@ -200,9 +218,9 @@
          <div class="mainArea" id="pointCloudArea">
             <h2>Point Cloud</h2>
 
-            <button id="pointCloudDownloadButton" class="mainAreaDownloadButton"
-               >📥</button
-            >
+            <div class="mainAreaButtonArea">
+               <button id="pointCloudDownloadButton" class="icon">📥</button>
+            </div>
 
             <canvas
                id="pointCloudCanvas"
