@@ -240,6 +240,7 @@ async function inputOrCalculationTypeChange() {
             )
          );
       }
+      DOM_ELEMENT.INPUT_TYPE_SELECT.selectedIndex = -1; // deselect all
    }
 
    if (
