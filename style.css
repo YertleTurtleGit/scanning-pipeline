@@ -29,6 +29,7 @@ select option:hover {
 }
 
 .selectMenu option {
+   display: block;
    float: left;
    border-radius: 25%;
    cursor: pointer;
