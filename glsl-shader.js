@@ -1620,20 +1620,22 @@ class GlslMatrix3 extends GlslMatrix {
 }
 
 /**
+ * @global
  * @typedef {Shader} GLSL.Shader
- * @typedef {GlslRendering} GLSL.Rendering
+ * @typedef {GlslRendering.render} GLSL.render
  * @typedef {GlslFloat} GLSL.Float
  * @typedef {GlslImage} GLSL.image
- * @typedef {GlslFloat} GLSL.Float
  * @typedef {GlslVector3} GLSL.Vector3
+ * @typedef {GlslVector4} GLSL.Vector4
  * @typedef {GlslMatrix3} GLSL.Matrix3
  */
 const GLSL = {
    Shader: Shader,
-   Rendering: GlslRendering,
+   render: GlslRendering.render,
    Image: GlslImage,
    Integer: GlslInteger,
    Float: GlslFloat,
    Vector3: GlslVector3,
+   Vector4: GlslVector4,
    Matrix3: GlslMatrix3,
 };

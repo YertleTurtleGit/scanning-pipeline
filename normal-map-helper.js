@@ -250,7 +250,7 @@ class NormalMapHelper {
                normalVector = rotationMatrix.multiplyVector3(normalVector);*/
             }
 
-            const normalMapRendering = GLSL.Rendering.render(
+            const normalMapRendering = GLSL.render(
                normalVector.getVector4()
             );
 
@@ -351,7 +351,7 @@ class NormalMapHelper {
 
             if (normalMapHelper.isRenderObsolete()) return;
 
-            const normalMapRendering = GLSL.Rendering.render(
+            const normalMapRendering = GLSL.render(
                normalVector.normalize().getVector4()
             );
 

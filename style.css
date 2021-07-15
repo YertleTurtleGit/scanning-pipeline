@@ -85,6 +85,7 @@ select:hover {
    border-radius: 50%;
    animation: spin 1s linear infinite;
    z-index: 10;
+   transition: opacity 1s linear;
 }
 
 body {

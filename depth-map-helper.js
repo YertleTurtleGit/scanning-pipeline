@@ -226,7 +226,7 @@ class DepthMapHelper {
 
             if (this.isRenderObsolete()) return;
 
-            const gradientPixelArray = GLSL.Rendering.render(
+            const gradientPixelArray = GLSL.render(
                result.getVector4()
             ).getPixelArray();
 
