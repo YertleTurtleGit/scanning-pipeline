@@ -1,5 +1,5 @@
 /* global PointCloudHelper */
-/* exported DOM, DOM_ELEMENTS, TYPE */
+/* exported DOM, DOM_ELEMENTS, INPUT_TYPE, CALCULATION_TYPE */
 
 class DOM {
    /**
@@ -41,42 +41,45 @@ class DOM {
    }
 
    /**
-    * @private
-    * @param {File} file
-    * @param {HTMLImageElement} outputImage
+    * @returns {CALCULATION_TYPE}
     */
-   static readImageFile(file, outputImage) {
-      const fileReader = new FileReader();
-      fileReader.addEventListener("load", () => {
-         outputImage.src = String(fileReader.result);
-      });
-      fileReader.readAsDataURL(file);
+   static getCalculationType() {
+      return DOM_ELEMENT.CALCULATION_TYPE_SELECT.value;
    }
 
    /**
-    * @public
-    * @param {File[]} sourceFiles
+    * @returns {INPUT_TYPE}
+    */
+   static getInputType() {
+      return DOM_ELEMENT.INPUT_TYPE_SELECT.value;
+   }
+
+   /**
+    * @returns {HTMLImageElement[]}
+    */
+   static getCurrentInputImages() {
+      if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
+         return PHOTOMETRIC_STEREO_IMAGES;
+      } else if (DOM.getCalculationType() === CALCULATION_TYPE.RAPID_GRADIENT) {
+         return RAPID_GRADIENT_IMAGES;
+      }
+   }
+
+   /**
+    * @param {FileList} sourceFiles
     */
    static setInputImagesSourceFiles(sourceFiles = undefined) {
       DOM.reset();
       if (sourceFiles && sourceFiles.length > 0) {
-         // TODO: sort
-         /*sourceFiles.sort((a, b) => {
-            return a.name.localeCompare(
-               b.name,
-               navigator.languages[0] || navigator.language,
-               { numeric: true, ignorePunctuation: true }
-            );
-         });*/
-
-         let i = 0;
-         PHOTOMETRIC_STEREO_IMAGES.forEach((image) => {
-            DOM.readImageFile(sourceFiles[i], image);
-            i++;
-         });
-      } else {
-         PHOTOMETRIC_STEREO_IMAGES.forEach((image) => {
-            image.src = "";
+         Array.from(sourceFiles).forEach((image, index) => {
+            const fileReader = new FileReader();
+            fileReader.addEventListener("load", async () => {
+               const dataURL = String(fileReader.result);
+               DOM.getCurrentInputImages()[index].src = (
+                  await DOM.loadImage(dataURL)
+               ).src;
+            });
+            fileReader.readAsDataURL(image);
          });
       }
    }
@@ -233,12 +236,13 @@ const DOM_ELEMENT = {
    ),
 };
 
-const TYPE = {
-   INPUT_TYPE: { TEST: "test", FILE: "file", WEBCAM: "webcam" },
-   CALCULATION_TYPE: {
-      PHOTOMETRIC_STEREO: "photometric stereo",
-      RAPID_GRADIENT: "rapid gradient",
-   },
+/** @typedef {string} INPUT_TYPE */
+const INPUT_TYPE = { TEST: "test", FILE: "file", WEBCAM: "webcam" };
+
+/** @typedef {string} CALCULATION_TYPE */
+const CALCULATION_TYPE = {
+   PHOTOMETRIC_STEREO: "photometric stereo",
+   RAPID_GRADIENT: "rapid gradient",
 };
 
 const TEST_SRC_PHOTOMETRIC_STEREO_IMAGE_000 =
