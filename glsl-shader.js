@@ -1471,7 +1471,7 @@ class GlslVector4 extends GlslVector {
     * @returns {GlslFloat}
     * @memberof GlslVector4
     */
-   getLuminanceFloat() {
+   getLuminance() {
       return this.getGlslFloatResult([this], GLSL_OPERATOR.LUMINANCE);
    }
 }

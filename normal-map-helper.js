@@ -54,14 +54,14 @@ class NormalMapHelper {
             normalMapShader.bind();
 
             const lightLuminances = [
-               GLSL.Image.load(lightImage_000).getLuminanceFloat(),
-               GLSL.Image.load(lightImage_045).getLuminanceFloat(),
-               GLSL.Image.load(lightImage_090).getLuminanceFloat(),
-               GLSL.Image.load(lightImage_135).getLuminanceFloat(),
-               GLSL.Image.load(lightImage_180).getLuminanceFloat(),
-               GLSL.Image.load(lightImage_225).getLuminanceFloat(),
-               GLSL.Image.load(lightImage_270).getLuminanceFloat(),
-               GLSL.Image.load(lightImage_315).getLuminanceFloat(),
+               GLSL.Image.load(lightImage_000).getLuminance(),
+               GLSL.Image.load(lightImage_045).getLuminance(),
+               GLSL.Image.load(lightImage_090).getLuminance(),
+               GLSL.Image.load(lightImage_135).getLuminance(),
+               GLSL.Image.load(lightImage_180).getLuminance(),
+               GLSL.Image.load(lightImage_225).getLuminance(),
+               GLSL.Image.load(lightImage_270).getLuminance(),
+               GLSL.Image.load(lightImage_315).getLuminance(),
             ];
 
             const all = new GLSL.Float(0).maximum(...lightLuminances);
@@ -76,7 +76,7 @@ class NormalMapHelper {
                ) > 0
             ) {
                const lightLuminance_NONE =
-                  GLSL.Image.load(lightImage_NONE).getLuminanceFloat();
+                  GLSL.Image.load(lightImage_NONE).getLuminance();
 
                for (let i = 0; i < lightLuminances.length; i++) {
                   lightLuminances[i] =
@@ -250,9 +250,7 @@ class NormalMapHelper {
                normalVector = rotationMatrix.multiplyVector3(normalVector);*/
             }
 
-            const normalMapRendering = GLSL.render(
-               normalVector.getVector4()
-            );
+            const normalMapRendering = GLSL.render(normalVector.getVector4());
 
             if (normalMapHelper.isRenderObsolete()) return;
 
@@ -306,19 +304,19 @@ class NormalMapHelper {
             normalMapShader.bind();
 
             let lightLuminance_ALL =
-               GLSL.Image.load(lightImage_ALL).getLuminanceFloat();
+               GLSL.Image.load(lightImage_ALL).getLuminance();
 
             const lightLuminances = [
-               GLSL.Image.load(lightImage_000).getLuminanceFloat(),
-               GLSL.Image.load(lightImage_090).getLuminanceFloat(),
-               GLSL.Image.load(lightImage_180).getLuminanceFloat(),
-               GLSL.Image.load(lightImage_270).getLuminanceFloat(),
-               GLSL.Image.load(lightImage_FRONT).getLuminanceFloat(),
+               GLSL.Image.load(lightImage_000).getLuminance(),
+               GLSL.Image.load(lightImage_090).getLuminance(),
+               GLSL.Image.load(lightImage_180).getLuminance(),
+               GLSL.Image.load(lightImage_270).getLuminance(),
+               GLSL.Image.load(lightImage_FRONT).getLuminance(),
             ];
 
             if (lightImage_NONE) {
                const lightLuminance_NONE =
-                  GLSL.Image.load(lightImage_NONE).getLuminanceFloat();
+                  GLSL.Image.load(lightImage_NONE).getLuminance();
 
                for (let i = 0; i < lightLuminances.length; i++) {
                   lightLuminances[i] =
