@@ -152,8 +152,8 @@ class WebcamDatasetHelper {
       await webcamDatasetHelper.initialize();
 
       return new Promise((resolve) => {
-         captureButton.addEventListener("click", async (event) => {
-            captureButton.removeEventListener("click", event);
+         const clickEventHandler = async () => {
+            captureButton.removeEventListener("click", clickEventHandler);
 
             const lightDivBackground = /**@type {HTMLDivElement} */ (
                document.createElement("div")
@@ -242,7 +242,9 @@ class WebcamDatasetHelper {
             lightDiv.remove();
             lightDivBackground.remove();
             webcamDatasetHelper.purge();
-         });
+         };
+
+         captureButton.addEventListener("click", clickEventHandler);
       });
    }
 

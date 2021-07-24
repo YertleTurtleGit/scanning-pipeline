@@ -32,8 +32,15 @@ class DOM {
     */
    static async loadImage(url) {
       const image = new Image();
-      image.src = url;
-      return DOM.loadHTMLImage(image);
+      return new Promise((resolve) => {
+         image.addEventListener("load", () => {
+            resolve(image);
+         });
+         image.addEventListener("error", () => {
+            resolve(null);
+         });
+         image.src = url;
+      });
    }
 
    /**
@@ -49,7 +56,7 @@ class DOM {
       function isImageLoaded(image) {
          if (
             image.src.endsWith("null") ||
-            image.src.endsWith("html") ||
+            image.src.endsWith(".html") ||
             image.src === ""
          ) {
             return true;
@@ -67,7 +74,6 @@ class DOM {
       return new Promise((resolve) => {
          setTimeout(() => {
             image.addEventListener("load", () => {
-               console.log("loaded");
                resolve(image);
             });
          });
@@ -118,7 +124,6 @@ class DOM {
                      DOM.getCurrentInputImages()[index].src = (
                         await DOM.loadImage(dataURL)
                      ).src;
-                     console.log("file loaded");
                      resolve();
                   });
                   fileReader.readAsDataURL(image);
