@@ -1,5 +1,5 @@
 /* global PointCloudHelper */
-/* exported DOM, DOM_ELEMENTS, TYPE */
+/* exported DOM, DOM_ELEMENTS, INPUT_TYPE, CALCULATION_TYPE */
 
 class DOM {
    /**
@@ -30,54 +30,107 @@ class DOM {
     * @param {string} url
     * @returns {Promise<HTMLImageElement>}
     */
-   static loadImage(url) {
+   static async loadImage(url) {
+      const image = new Image();
       return new Promise((resolve) => {
-         const image = new Image();
          image.addEventListener("load", () => {
             resolve(image);
+         });
+         image.addEventListener("error", () => {
+            resolve(null);
          });
          image.src = url;
       });
    }
 
    /**
-    * @private
-    * @param {File} file
-    * @param {HTMLImageElement} outputImage
+    * @public
+    * @param {HTMLImageElement} image
+    * @returns {Promise<HTMLImageElement>}
     */
-   static readImageFile(file, outputImage) {
-      const fileReader = new FileReader();
-      fileReader.addEventListener("load", () => {
-         outputImage.src = String(fileReader.result);
+   static async loadHTMLImage(image) {
+      /**
+       * @param {HTMLImageElement} image
+       * @returns {boolean}
+       */
+      function isImageLoaded(image) {
+         if (
+            image.src.endsWith("null") ||
+            image.src.endsWith(".html") ||
+            image.src === ""
+         ) {
+            return true;
+         }
+         if (!image.complete || image.naturalWidth === 0) {
+            return false;
+         }
+         return true;
+      }
+
+      if (isImageLoaded(image)) {
+         return image;
+      }
+
+      return new Promise((resolve) => {
+         setTimeout(() => {
+            image.addEventListener("load", () => {
+               resolve(image);
+            });
+         });
       });
-      fileReader.readAsDataURL(file);
    }
 
    /**
-    * @public
-    * @param {File[]} sourceFiles
+    * @returns {CALCULATION_TYPE}
     */
-   static setInputImagesSourceFiles(sourceFiles = undefined) {
+   static getCalculationType() {
+      return DOM_ELEMENT.CALCULATION_TYPE_SELECT.value;
+   }
+
+   /**
+    * @returns {INPUT_TYPE}
+    */
+   static getInputType() {
+      return DOM_ELEMENT.INPUT_TYPE_SELECT.value;
+   }
+
+   /**
+    * @returns {HTMLImageElement[]}
+    */
+   static getCurrentInputImages() {
+      if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
+         return PHOTOMETRIC_STEREO_IMAGES;
+      } else if (
+         DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
+      ) {
+         return SPHERICAL_GRADIENT_IMAGES;
+      }
+   }
+
+   /**
+    * @param {FileList} sourceFiles
+    */
+   static async setInputImagesSourceFiles(sourceFiles = undefined) {
       DOM.reset();
       if (sourceFiles && sourceFiles.length > 0) {
-         // TODO: sort
-         /*sourceFiles.sort((a, b) => {
-            return a.name.localeCompare(
-               b.name,
-               navigator.languages[0] || navigator.language,
-               { numeric: true, ignorePunctuation: true }
-            );
-         });*/
+         const sourceFilesLoadPromises = [];
+         Array.from(sourceFiles).forEach((image, index) => {
+            sourceFilesLoadPromises.push(
+               new Promise((resolve) => {
+                  const fileReader = new FileReader();
 
-         let i = 0;
-         PHOTOMETRIC_STEREO_IMAGES.forEach((image) => {
-            DOM.readImageFile(sourceFiles[i], image);
-            i++;
+                  fileReader.addEventListener("load", async () => {
+                     const dataURL = String(fileReader.result);
+                     DOM.getCurrentInputImages()[index].src = (
+                        await DOM.loadImage(dataURL)
+                     ).src;
+                     resolve();
+                  });
+                  fileReader.readAsDataURL(image);
+               })
+            );
          });
-      } else {
-         PHOTOMETRIC_STEREO_IMAGES.forEach((image) => {
-            image.src = "";
-         });
+         await Promise.all(sourceFilesLoadPromises);
       }
    }
 
@@ -101,7 +154,7 @@ class DOM {
    static setRapidGradientInputImages(inputImages) {
       DOM.reset();
       let i = 0;
-      RAPID_GRADIENT_IMAGES.forEach((image) => {
+      SPHERICAL_GRADIENT_IMAGES.forEach((image) => {
          image.src = inputImages[i].src;
          i++;
       });
@@ -136,19 +189,19 @@ class DOM {
     */
    static setImagesToRapidGradientTest() {
       DOM.reset();
-      DOM_ELEMENT.RAPID_GRADIENT_IMAGE_000.src =
-         TEST_SRC_RAPID_GRADIENT_IMAGE_000;
-      DOM_ELEMENT.RAPID_GRADIENT_IMAGE_090.src =
-         TEST_SRC_RAPID_GRADIENT_IMAGE_090;
-      DOM_ELEMENT.RAPID_GRADIENT_IMAGE_180.src =
-         TEST_SRC_RAPID_GRADIENT_IMAGE_180;
-      DOM_ELEMENT.RAPID_GRADIENT_IMAGE_270.src =
-         TEST_SRC_RAPID_GRADIENT_IMAGE_270;
-      DOM_ELEMENT.RAPID_GRADIENT_IMAGE_ALL.src =
-         TEST_SRC_RAPID_GRADIENT_IMAGE_ALL;
-      DOM_ELEMENT.RAPID_GRADIENT_IMAGE_FRONT.src =
-         TEST_SRC_RAPID_GRADIENT_IMAGE_FRONT;
-      DOM_ELEMENT.RAPID_GRADIENT_IMAGE_NONE.src = "null";
+      DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_000.src =
+         TEST_SRC_SPHERICAL_GRADIENT_IMAGE_000;
+      DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_090.src =
+         TEST_SRC_SPHERICAL_GRADIENT_IMAGE_090;
+      DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_180.src =
+         TEST_SRC_SPHERICAL_GRADIENT_IMAGE_180;
+      DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_270.src =
+         TEST_SRC_SPHERICAL_GRADIENT_IMAGE_270;
+      DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_ALL.src =
+         TEST_SRC_SPHERICAL_GRADIENT_IMAGE_ALL;
+      DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_FRONT.src =
+         TEST_SRC_SPHERICAL_GRADIENT_IMAGE_FRONT;
+      DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_NONE.src = "null";
    }
 
    /**
@@ -158,7 +211,7 @@ class DOM {
       PHOTOMETRIC_STEREO_IMAGES.forEach((image) => {
          image.src = "";
       });
-      RAPID_GRADIENT_IMAGES.forEach((image) => {
+      SPHERICAL_GRADIENT_IMAGES.forEach((image) => {
          image.src = "";
       });
       DOM_ELEMENT.NORMAL_MAP_IMAGE.src = "";
@@ -194,13 +247,17 @@ const DOM_ELEMENT = {
       "photometricStereoImage_NONE"
    ),
 
-   RAPID_GRADIENT_IMAGE_000: DOM.declareImage("rapidGradientImage_000"),
-   RAPID_GRADIENT_IMAGE_090: DOM.declareImage("rapidGradientImage_090"),
-   RAPID_GRADIENT_IMAGE_180: DOM.declareImage("rapidGradientImage_180"),
-   RAPID_GRADIENT_IMAGE_270: DOM.declareImage("rapidGradientImage_270"),
-   RAPID_GRADIENT_IMAGE_ALL: DOM.declareImage("rapidGradientImage_ALL"),
-   RAPID_GRADIENT_IMAGE_FRONT: DOM.declareImage("rapidGradientImage_FRONT"),
-   RAPID_GRADIENT_IMAGE_NONE: DOM.declareImage("rapidGradientImage_NONE"),
+   SPHERICAL_GRADIENT_IMAGE_000: DOM.declareImage("sphericalGradientImage_000"),
+   SPHERICAL_GRADIENT_IMAGE_090: DOM.declareImage("sphericalGradientImage_090"),
+   SPHERICAL_GRADIENT_IMAGE_180: DOM.declareImage("sphericalGradientImage_180"),
+   SPHERICAL_GRADIENT_IMAGE_270: DOM.declareImage("sphericalGradientImage_270"),
+   SPHERICAL_GRADIENT_IMAGE_ALL: DOM.declareImage("sphericalGradientImage_ALL"),
+   SPHERICAL_GRADIENT_IMAGE_FRONT: DOM.declareImage(
+      "sphericalGradientImage_FRONT"
+   ),
+   SPHERICAL_GRADIENT_IMAGE_NONE: DOM.declareImage(
+      "sphericalGradientImage_NONE"
+   ),
 
    INPUT_AREA: document.getElementById("inputArea"),
    NORMAL_MAP_AREA: document.getElementById("normalMapArea"),
@@ -210,7 +267,9 @@ const DOM_ELEMENT = {
    PHOTOMETRIC_STEREO_IMAGE_AREA: document.getElementById(
       "photometricStereoImages"
    ),
-   RAPID_GRADIENT_IMAGE_AREA: document.getElementById("rapidGradientImages"),
+   SPHERICAL_GRADIENT_IMAGE_AREA: document.getElementById(
+      "sphericalGradientImages"
+   ),
 
    NORMAL_MAP_RESOLUTION_INPUT: DOM.declareInput("normalMapResolution"),
    POLAR_ANGLE_DEG_INPUT: DOM.declareInput("polarAngleDeg"),
@@ -233,12 +292,13 @@ const DOM_ELEMENT = {
    ),
 };
 
-const TYPE = {
-   INPUT_TYPE: { TEST: "test", FILE: "file", WEBCAM: "webcam" },
-   CALCULATION_TYPE: {
-      PHOTOMETRIC_STEREO: "photometric stereo",
-      RAPID_GRADIENT: "rapid gradient",
-   },
+/** @typedef {string} INPUT_TYPE */
+const INPUT_TYPE = { TEST: "test", FILE: "file", WEBCAM: "webcam" };
+
+/** @typedef {string} CALCULATION_TYPE */
+const CALCULATION_TYPE = {
+   PHOTOMETRIC_STEREO: "photometric stereo",
+   SPHERICAL_GRADIENT: "spherical gradient",
 };
 
 const TEST_SRC_PHOTOMETRIC_STEREO_IMAGE_000 =
@@ -258,18 +318,18 @@ const TEST_SRC_PHOTOMETRIC_STEREO_IMAGE_270 =
 const TEST_SRC_PHOTOMETRIC_STEREO_IMAGE_315 =
    "./test-datasets/photometric-stereo/test_315_036.jpg";
 
-const TEST_SRC_RAPID_GRADIENT_IMAGE_000 =
-   "./test-datasets/rapid-gradient/test_000.jpg";
-const TEST_SRC_RAPID_GRADIENT_IMAGE_090 =
-   "./test-datasets/rapid-gradient/test_090.jpg";
-const TEST_SRC_RAPID_GRADIENT_IMAGE_180 =
-   "./test-datasets/rapid-gradient/test_180.jpg";
-const TEST_SRC_RAPID_GRADIENT_IMAGE_270 =
-   "./test-datasets/rapid-gradient/test_270.jpg";
-const TEST_SRC_RAPID_GRADIENT_IMAGE_ALL =
-   "./test-datasets/rapid-gradient/test_ALL.jpg";
-const TEST_SRC_RAPID_GRADIENT_IMAGE_FRONT =
-   "./test-datasets/rapid-gradient/test_FRONT.jpg";
+const TEST_SRC_SPHERICAL_GRADIENT_IMAGE_000 =
+   "./test-datasets/spherical-gradient/test_000.jpg";
+const TEST_SRC_SPHERICAL_GRADIENT_IMAGE_090 =
+   "./test-datasets/spherical-gradient/test_090.jpg";
+const TEST_SRC_SPHERICAL_GRADIENT_IMAGE_180 =
+   "./test-datasets/spherical-gradient/test_180.jpg";
+const TEST_SRC_SPHERICAL_GRADIENT_IMAGE_270 =
+   "./test-datasets/spherical-gradient/test_270.jpg";
+const TEST_SRC_SPHERICAL_GRADIENT_IMAGE_ALL =
+   "./test-datasets/spherical-gradient/test_ALL.jpg";
+const TEST_SRC_SPHERICAL_GRADIENT_IMAGE_FRONT =
+   "./test-datasets/spherical-gradient/test_FRONT.jpg";
 
 const PHOTOMETRIC_STEREO_IMAGES = [
    DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_000,
@@ -283,12 +343,12 @@ const PHOTOMETRIC_STEREO_IMAGES = [
    DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_NONE,
 ];
 
-const RAPID_GRADIENT_IMAGES = [
-   DOM_ELEMENT.RAPID_GRADIENT_IMAGE_000,
-   DOM_ELEMENT.RAPID_GRADIENT_IMAGE_090,
-   DOM_ELEMENT.RAPID_GRADIENT_IMAGE_180,
-   DOM_ELEMENT.RAPID_GRADIENT_IMAGE_270,
-   DOM_ELEMENT.RAPID_GRADIENT_IMAGE_ALL,
-   DOM_ELEMENT.RAPID_GRADIENT_IMAGE_FRONT,
-   DOM_ELEMENT.RAPID_GRADIENT_IMAGE_NONE,
+const SPHERICAL_GRADIENT_IMAGES = [
+   DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_000,
+   DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_090,
+   DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_180,
+   DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_270,
+   DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_ALL,
+   DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_FRONT,
+   DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_NONE,
 ];

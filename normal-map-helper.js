@@ -282,7 +282,7 @@ class NormalMapHelper {
     * @param {number} resolutionPercent
     * @returns {Promise<HTMLImageElement>}
     */
-   static async getRapidGradientNormalMap(
+   static async getSphericalGradientNormalMap(
       lightImage_000,
       lightImage_090,
       lightImage_180,
