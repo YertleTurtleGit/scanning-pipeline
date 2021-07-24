@@ -19,7 +19,7 @@
                <option value="photometric stereo" selected
                   >photometric stereo</option
                >
-               <option value="rapid gradient">rapid gradient</option>
+               <option value="spherical gradient">spherical gradient</option>
             </select>
 
             <select id="inputType" class="selectMenu" size="3">
@@ -86,39 +86,39 @@
                   />
                </div>
 
-               <div id="rapidGradientImages">
+               <div id="sphericalGradientImages">
                   <img
-                     id="rapidGradientImage_000"
+                     id="sphericalGradientImage_000"
                      title="← 0° light"
                      crossorigin="anonymous"
                   />
                   <img
-                     id="rapidGradientImage_090"
+                     id="sphericalGradientImage_090"
                      title="↑ 90° light"
                      crossorigin="anonymous"
                   />
                   <img
-                     id="rapidGradientImage_180"
+                     id="sphericalGradientImage_180"
                      title="→ 180° light"
                      crossorigin="anonymous"
                   />
                   <img
-                     id="rapidGradientImage_270"
+                     id="sphericalGradientImage_270"
                      title="↓ 270° light"
                      crossorigin="anonymous"
                   />
                   <img
-                     id="rapidGradientImage_ALL"
+                     id="sphericalGradientImage_ALL"
                      title="all lights"
                      crossorigin="anonymous"
                   />
                   <img
-                     id="rapidGradientImage_FRONT"
+                     id="sphericalGradientImage_FRONT"
                      title="front light"
                      crossorigin="anonymous"
                   />
                   <img
-                     id="rapidGradientImage_NONE"
+                     id="sphericalGradientImage_NONE"
                      title="no lights (optional)"
                      crossorigin="anonymous"
                   />
@@ -259,8 +259,6 @@
       <script src="./dom-declarations.js"></script>
 
       <script src="./main.js"></script>
-
-      <script src="./tests/glsl-shader.test.js"></script>
 
       <script>
          document.getElementById("all").style.opacity = "1";

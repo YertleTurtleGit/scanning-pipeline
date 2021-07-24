@@ -28,15 +28,17 @@ async function calculateNormalMap() {
          DOM.getInputType() === INPUT_TYPE.WEBCAM,
          Number(DOM_ELEMENT.MASK_THRESHOLD_INPUT.value)
       );
-   } else if (DOM.getCalculationType() === CALCULATION_TYPE.RAPID_GRADIENT) {
-      await NormalMapHelper.getRapidGradientNormalMap(
-         DOM_ELEMENT.RAPID_GRADIENT_IMAGE_000,
-         DOM_ELEMENT.RAPID_GRADIENT_IMAGE_090,
-         DOM_ELEMENT.RAPID_GRADIENT_IMAGE_180,
-         DOM_ELEMENT.RAPID_GRADIENT_IMAGE_270,
-         DOM_ELEMENT.RAPID_GRADIENT_IMAGE_ALL,
-         DOM_ELEMENT.RAPID_GRADIENT_IMAGE_FRONT,
-         DOM_ELEMENT.RAPID_GRADIENT_IMAGE_NONE,
+   } else if (
+      DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
+   ) {
+      await NormalMapHelper.getSphericalGradientNormalMap(
+         DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_000,
+         DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_090,
+         DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_180,
+         DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_270,
+         DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_ALL,
+         DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_FRONT,
+         DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_NONE,
          DOM_ELEMENT.NORMAL_MAP_IMAGE,
          Number(DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.value)
       );
@@ -100,69 +102,39 @@ async function loadInputImages() {
 
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
       DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_AREA.style.display = "inherit";
-      DOM_ELEMENT.RAPID_GRADIENT_IMAGE_AREA.style.display = "none";
+      DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_AREA.style.display = "none";
 
       imagePromises = [
-         loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_000),
-         loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_045),
-         loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_090),
-         loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_135),
-         loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_180),
-         loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_225),
-         loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_270),
-         loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_315),
-         loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_NONE),
+         DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_000),
+         DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_045),
+         DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_090),
+         DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_135),
+         DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_180),
+         DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_225),
+         DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_270),
+         DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_315),
+         DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_NONE),
       ];
-   } else if (DOM.getCalculationType() === CALCULATION_TYPE.RAPID_GRADIENT) {
+   } else if (
+      DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
+   ) {
       DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_AREA.style.display = "none";
-      DOM_ELEMENT.RAPID_GRADIENT_IMAGE_AREA.style.display = "inherit";
+      DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_AREA.style.display = "inherit";
 
       imagePromises = [
-         loadHTMLImage(DOM_ELEMENT.RAPID_GRADIENT_IMAGE_000),
-         loadHTMLImage(DOM_ELEMENT.RAPID_GRADIENT_IMAGE_090),
-         loadHTMLImage(DOM_ELEMENT.RAPID_GRADIENT_IMAGE_180),
-         loadHTMLImage(DOM_ELEMENT.RAPID_GRADIENT_IMAGE_270),
-         loadHTMLImage(DOM_ELEMENT.RAPID_GRADIENT_IMAGE_ALL),
-         loadHTMLImage(DOM_ELEMENT.RAPID_GRADIENT_IMAGE_FRONT),
-         loadHTMLImage(DOM_ELEMENT.RAPID_GRADIENT_IMAGE_NONE),
+         DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_000),
+         DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_090),
+         DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_180),
+         DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_270),
+         DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_ALL),
+         DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_FRONT),
+         DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_NONE),
       ];
    }
 
    const images = await Promise.all(imagePromises);
    DOM_ELEMENT.INPUT_AREA.classList.remove("mainAreaLoading");
    return images;
-}
-
-/**
- * @param {HTMLImageElement} image
- * @returns {Promise<HTMLImageElement>}
- */
-async function loadHTMLImage(image) {
-   /**
-    * @param {HTMLImageElement} image
-    * @returns {boolean}
-    */
-   function isImageLoaded(image) {
-      if (image.src.endsWith("null")) {
-         return true;
-      }
-      if (!image.complete || image.naturalWidth === 0) {
-         return false;
-      }
-      return true;
-   }
-
-   if (isImageLoaded(image)) {
-      return image;
-   }
-
-   return new Promise((resolve) => {
-      setTimeout(() => {
-         image.addEventListener("load", () => {
-            resolve(image);
-         });
-      });
-   });
 }
 
 /*function calculateNormalMapResolution() {
@@ -194,7 +166,9 @@ async function inputOrCalculationTypeChange() {
    if (DOM.getInputType() === INPUT_TYPE.TEST) {
       if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
          DOM.setImagesToPhotometricStereoTest();
-      } else if (DOM.getCalculationType() === CALCULATION_TYPE.RAPID_GRADIENT) {
+      } else if (
+         DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
+      ) {
          DOM.setImagesToRapidGradientTest();
       }
    } else if (DOM.getInputType() === INPUT_TYPE.FILE) {
@@ -208,7 +182,9 @@ async function inputOrCalculationTypeChange() {
                DOM_ELEMENT.WEBCAM_CAPTURE_BUTTON
             )
          );
-      } else if (DOM.getCalculationType() === CALCULATION_TYPE.RAPID_GRADIENT) {
+      } else if (
+         DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
+      ) {
          DOM.setRapidGradientInputImages(
             await WebcamDatasetHelper.getRapidGradientDataset(
                DOM_ELEMENT.WEBCAM_PREVIEW,
@@ -281,8 +257,8 @@ DOM_ELEMENT.CALCULATION_TYPE_SELECT.addEventListener(
    "change",
    inputOrCalculationTypeChange
 );
-DOM_ELEMENT.FILE_BROWSE_INPUT.addEventListener("change", () => {
-   DOM.setInputImagesSourceFiles(DOM_ELEMENT.FILE_BROWSE_INPUT.files);
+DOM_ELEMENT.FILE_BROWSE_INPUT.addEventListener("change", async () => {
+   await DOM.setInputImagesSourceFiles(DOM_ELEMENT.FILE_BROWSE_INPUT.files);
    calculateEverything();
 });
 

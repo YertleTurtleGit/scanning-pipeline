@@ -1,3 +1,4 @@
+/* global DOM_ELEMENT */
 /* exported WebcamDatasetHelper */
 
 class WebcamDatasetHelper {
