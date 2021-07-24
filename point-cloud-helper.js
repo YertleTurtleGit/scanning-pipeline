@@ -239,6 +239,7 @@ class PointCloudHelperRenderingContext {
          0.01,
          1000
       );
+
       this.controls = new THREE.OrbitControls(this.camera, this.renderCanvas);
       this.scene = new THREE.Scene();
       this.geometry = new THREE.BufferGeometry();

@@ -113,8 +113,16 @@ class DOM {
    static async setInputImagesSourceFiles(sourceFiles = undefined) {
       DOM.reset();
       if (sourceFiles && sourceFiles.length > 0) {
+         const sourceFilesArray = Array.from(sourceFiles);
+         sourceFilesArray.sort((a, b) =>
+            a.name.localeCompare(b.name, navigator.languages[0] || navigator.language, {
+               numeric: true,
+               ignorePunctuation: true,
+            })
+         );
+
          const sourceFilesLoadPromises = [];
-         Array.from(sourceFiles).forEach((image, index) => {
+         sourceFilesArray.forEach((image, index) => {
             sourceFilesLoadPromises.push(
                new Promise((resolve) => {
                   const fileReader = new FileReader();
