@@ -108,17 +108,22 @@ class DOM {
    }
 
    /**
+    * @public
     * @param {FileList} sourceFiles
     */
    static async setInputImagesSourceFiles(sourceFiles = undefined) {
-      DOM.reset();
       if (sourceFiles && sourceFiles.length > 0) {
+         DOM.reset();
          const sourceFilesArray = Array.from(sourceFiles);
          sourceFilesArray.sort((a, b) =>
-            a.name.localeCompare(b.name, navigator.languages[0] || navigator.language, {
-               numeric: true,
-               ignorePunctuation: true,
-            })
+            a.name.localeCompare(
+               b.name,
+               navigator.languages[0] || navigator.language,
+               {
+                  numeric: true,
+                  ignorePunctuation: true,
+               }
+            )
          );
 
          const sourceFilesLoadPromises = [];
@@ -139,6 +144,30 @@ class DOM {
             );
          });
          await Promise.all(sourceFilesLoadPromises);
+      }
+   }
+
+   /**
+    * @public
+    * @param {File} sourceFile
+    */
+   static async setNormalMapSourceFile(sourceFile) {
+      console.log(sourceFile);
+      if (sourceFile) {
+         DOM.reset();
+
+         await new Promise((resolve) => {
+            const fileReader = new FileReader();
+
+            fileReader.addEventListener("load", async () => {
+               const dataURL = String(fileReader.result);
+               DOM_ELEMENT.NORMAL_MAP_IMAGE.src = (
+                  await DOM.loadImage(dataURL)
+               ).src;
+               resolve();
+            });
+            fileReader.readAsDataURL(sourceFile);
+         });
       }
    }
 
@@ -293,6 +322,8 @@ const DOM_ELEMENT = {
    ),
    WEBCAM_CAPTURE_BUTTON: DOM.declareInput("webcamCapture"),
 
+   NORMAL_MAP_UPLOAD_BUTTON: DOM.declareInput("normalMapUploadButton"),
+   NORMAL_MAP_UPLOAD_FILE_INPUT: DOM.declareInput("normalMapUploadFileInput"),
    POINT_CLOUD_DOWNLOAD_BUTTON: DOM.declareInput("pointCloudDownloadButton"),
 
    POINT_CLOUD_CANVAS: /**@type {HTMLCanvasElement} */ (

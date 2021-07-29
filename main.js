@@ -11,6 +11,9 @@ async function calculateNormalMap() {
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
 
+   DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.transform =
+      "translate(-100%, -150%) rotate(180deg)";
+
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
       await NormalMapHelper.getPhotometricStereoNormalMap(
          Number(DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value),
@@ -44,6 +47,8 @@ async function calculateNormalMap() {
       );
    }
 
+   DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.transform =
+      "translate(0%, -150%) rotate(180deg)";
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.remove("mainAreaLoading");
    await calculateDepthMap();
 }
@@ -260,6 +265,20 @@ DOM_ELEMENT.CALCULATION_TYPE_SELECT.addEventListener(
 DOM_ELEMENT.FILE_BROWSE_INPUT.addEventListener("change", async () => {
    await DOM.setInputImagesSourceFiles(DOM_ELEMENT.FILE_BROWSE_INPUT.files);
    calculateEverything();
+});
+
+DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.addEventListener("click", async () => {
+   DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.opacity = "0";
+
+   console.log(DOM_ELEMENT.NORMAL_MAP_UPLOAD_FILE_INPUT.files);
+
+   await DOM.setNormalMapSourceFile(
+      DOM_ELEMENT.NORMAL_MAP_UPLOAD_FILE_INPUT.files[0]
+   );
+
+   setTimeout(() => {
+      DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.opacity = "1";
+   }, 1000);
 });
 
 DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.addEventListener("click", async () => {
