@@ -88,22 +88,26 @@ async function calculatePointCloud() {
 /** */
 async function calculateEverything() {
    console.log("load images");
-   await loadInputImages();
-   console.log("images loaded");
-   await calculateNormalMap();
+   const allRequiredInputImagesDefined = await loadInputImages();
+
+   if (allRequiredInputImagesDefined) {
+      console.log("images loaded");
+      await calculateNormalMap();
+   } else {
+      DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "inherit";
+      console.log("images not loaded");
+   }
 }
 
 /**
- * @returns {Promise<HTMLImageElement[]>}
+ * @returns {Promise<boolean>} allRequiredInputImagesDefined
  */
 async function loadInputImages() {
    DOM_ELEMENT.INPUT_AREA.classList.add("mainAreaLoading");
-   DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
-   DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
-   DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
-   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
 
    let imagePromises;
+   let allRequiredInputImagesDefined = true;
+   const requiredImageIndices = [];
 
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
       DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_AREA.style.display = "inherit";
@@ -120,6 +124,7 @@ async function loadInputImages() {
          DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_315),
          DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_NONE),
       ];
+      requiredImageIndices.push(0, 1, 2, 3, 4, 5, 6, 7);
    } else if (
       DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
    ) {
@@ -135,11 +140,26 @@ async function loadInputImages() {
          DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_FRONT),
          DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_NONE),
       ];
+      requiredImageIndices.push(0, 1, 2, 3, 4, 5);
    }
 
    const images = await Promise.all(imagePromises);
+   requiredImageIndices.forEach((index) => {
+      if (!images[index]) {
+         allRequiredInputImagesDefined = false;
+         return;
+      }
+   });
+
+   if (allRequiredInputImagesDefined) {
+      DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
+      DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
+      DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
+      DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
+   }
    DOM_ELEMENT.INPUT_AREA.classList.remove("mainAreaLoading");
-   return images;
+
+   return allRequiredInputImagesDefined;
 }
 
 /*function calculateNormalMapResolution() {

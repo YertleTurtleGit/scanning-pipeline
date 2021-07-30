@@ -37,7 +37,7 @@ class DOM {
             resolve(image);
          });
          image.addEventListener("error", () => {
-            resolve(null);
+            resolve(undefined);
          });
          image.src = url;
       });
@@ -49,25 +49,14 @@ class DOM {
     * @returns {Promise<HTMLImageElement>}
     */
    static async loadHTMLImage(image) {
-      /**
-       * @param {HTMLImageElement} image
-       * @returns {boolean}
-       */
-      function isImageLoaded(image) {
-         if (
-            image.src.endsWith("null") ||
-            image.src.endsWith(".html") ||
-            image.src === ""
-         ) {
-            return true;
-         }
-         if (!image.complete || image.naturalWidth === 0) {
-            return false;
-         }
-         return true;
+      if (
+         image.src.endsWith("null") ||
+         image.src.endsWith(".html") ||
+         image.src === ""
+      ) {
+         return undefined;
       }
-
-      if (isImageLoaded(image)) {
+      if (image.complete || image.naturalWidth > 0) {
          return image;
       }
 
@@ -75,6 +64,9 @@ class DOM {
          setTimeout(() => {
             image.addEventListener("load", () => {
                resolve(image);
+            });
+            image.addEventListener("error", async () => {
+               resolve(undefined);
             });
          });
       });
@@ -139,6 +131,10 @@ class DOM {
                      ).src;
                      resolve();
                   });
+                  fileReader.addEventListener("error", async () => {
+                     resolve();
+                  });
+
                   fileReader.readAsDataURL(image);
                })
             );
@@ -167,7 +163,6 @@ class DOM {
                resolve();
             });
             fileReader.addEventListener("error", async () => {
-               console.error("Could not read input image.");
                resolve();
             });
 
