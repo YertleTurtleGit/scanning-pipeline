@@ -267,19 +267,22 @@ DOM_ELEMENT.FILE_BROWSE_INPUT.addEventListener("change", async () => {
    calculateEverything();
 });
 
-DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.addEventListener("click", async () => {
-   DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.opacity = "0";
+DOM_ELEMENT.NORMAL_MAP_UPLOAD_FILE_INPUT.addEventListener(
+   "change",
+   async () => {
+      DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.opacity = "0";
 
-   console.log(DOM_ELEMENT.NORMAL_MAP_UPLOAD_FILE_INPUT.files);
+      await DOM.setNormalMapSourceFile(
+         DOM_ELEMENT.NORMAL_MAP_UPLOAD_FILE_INPUT.files[0]
+      );
 
-   await DOM.setNormalMapSourceFile(
-      DOM_ELEMENT.NORMAL_MAP_UPLOAD_FILE_INPUT.files[0]
-   );
+      calculateDepthMap();
 
-   setTimeout(() => {
-      DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.opacity = "1";
-   }, 1000);
-});
+      setTimeout(() => {
+         DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.opacity = "1";
+      }, 1000);
+   }
+);
 
 DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.addEventListener("click", async () => {
    DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "0";

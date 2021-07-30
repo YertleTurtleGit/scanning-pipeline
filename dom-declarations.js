@@ -166,8 +166,15 @@ class DOM {
                ).src;
                resolve();
             });
+            fileReader.addEventListener("error", async () => {
+               console.error("Could not read input image.");
+               resolve();
+            });
+
             fileReader.readAsDataURL(sourceFile);
          });
+
+         DOM_ELEMENT.INPUT_TYPE_SELECT.value = "file";
       }
    }
 
