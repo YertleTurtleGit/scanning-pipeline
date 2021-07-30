@@ -130,20 +130,26 @@
                </div>
             </div>
 
-            <input id="fileBrowse" type="file" multiple />
+            <input id="fileBrowse" type="file" accept="image/*" multiple />
          </div>
 
          <div class="mainArea mainAreaArrow" id="normalMapArea">
             <h2>Normal Mapping</h2>
 
             <div class="mainAreaButtonArea">
-               <!--
-                 <button
+               <button
                   id="normalMapUploadButton"
-                  style="transform: translateY(-150%) rotate(180deg)"
+                  style="transform: translate(-100%, -150%) rotate(180deg)"
+                  class="icon"
+                  onclick="document.getElementById('normalMapUploadFileInput').click();"
                   >📥</button
                >
-              -->
+               <input
+                  type="file"
+                  accept="image/*"
+                  style="display: none"
+                  id="normalMapUploadFileInput"
+               />
             </div>
 
             <img id="normalMapImage" title="normal mapping" />

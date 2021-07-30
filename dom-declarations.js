@@ -37,7 +37,7 @@ class DOM {
             resolve(image);
          });
          image.addEventListener("error", () => {
-            resolve(null);
+            resolve(undefined);
          });
          image.src = url;
       });
@@ -49,25 +49,14 @@ class DOM {
     * @returns {Promise<HTMLImageElement>}
     */
    static async loadHTMLImage(image) {
-      /**
-       * @param {HTMLImageElement} image
-       * @returns {boolean}
-       */
-      function isImageLoaded(image) {
-         if (
-            image.src.endsWith("null") ||
-            image.src.endsWith(".html") ||
-            image.src === ""
-         ) {
-            return true;
-         }
-         if (!image.complete || image.naturalWidth === 0) {
-            return false;
-         }
-         return true;
+      if (
+         image.src.endsWith("null") ||
+         image.src.endsWith(".html") ||
+         image.src === ""
+      ) {
+         return undefined;
       }
-
-      if (isImageLoaded(image)) {
+      if (image.complete || image.naturalWidth > 0) {
          return image;
       }
 
@@ -75,6 +64,9 @@ class DOM {
          setTimeout(() => {
             image.addEventListener("load", () => {
                resolve(image);
+            });
+            image.addEventListener("error", async () => {
+               resolve(undefined);
             });
          });
       });
@@ -108,17 +100,22 @@ class DOM {
    }
 
    /**
+    * @public
     * @param {FileList} sourceFiles
     */
    static async setInputImagesSourceFiles(sourceFiles = undefined) {
-      DOM.reset();
       if (sourceFiles && sourceFiles.length > 0) {
+         DOM.reset();
          const sourceFilesArray = Array.from(sourceFiles);
          sourceFilesArray.sort((a, b) =>
-            a.name.localeCompare(b.name, navigator.languages[0] || navigator.language, {
-               numeric: true,
-               ignorePunctuation: true,
-            })
+            a.name.localeCompare(
+               b.name,
+               navigator.languages[0] || navigator.language,
+               {
+                  numeric: true,
+                  ignorePunctuation: true,
+               }
+            )
          );
 
          const sourceFilesLoadPromises = [];
@@ -134,11 +131,45 @@ class DOM {
                      ).src;
                      resolve();
                   });
+                  fileReader.addEventListener("error", async () => {
+                     resolve();
+                  });
+
                   fileReader.readAsDataURL(image);
                })
             );
          });
          await Promise.all(sourceFilesLoadPromises);
+      }
+   }
+
+   /**
+    * @public
+    * @param {File} sourceFile
+    */
+   static async setNormalMapSourceFile(sourceFile) {
+      console.log(sourceFile);
+      if (sourceFile) {
+         DOM.reset();
+
+         await new Promise((resolve) => {
+            const fileReader = new FileReader();
+
+            fileReader.addEventListener("load", async () => {
+               const dataURL = String(fileReader.result);
+               DOM_ELEMENT.NORMAL_MAP_IMAGE.src = (
+                  await DOM.loadImage(dataURL)
+               ).src;
+               resolve();
+            });
+            fileReader.addEventListener("error", async () => {
+               resolve();
+            });
+
+            fileReader.readAsDataURL(sourceFile);
+         });
+
+         DOM_ELEMENT.INPUT_TYPE_SELECT.value = "file";
       }
    }
 
@@ -293,6 +324,8 @@ const DOM_ELEMENT = {
    ),
    WEBCAM_CAPTURE_BUTTON: DOM.declareInput("webcamCapture"),
 
+   NORMAL_MAP_UPLOAD_BUTTON: DOM.declareInput("normalMapUploadButton"),
+   NORMAL_MAP_UPLOAD_FILE_INPUT: DOM.declareInput("normalMapUploadFileInput"),
    POINT_CLOUD_DOWNLOAD_BUTTON: DOM.declareInput("pointCloudDownloadButton"),
 
    POINT_CLOUD_CANVAS: /**@type {HTMLCanvasElement} */ (

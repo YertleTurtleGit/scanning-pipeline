@@ -11,6 +11,9 @@ async function calculateNormalMap() {
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
 
+   DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.transform =
+      "translate(-100%, -150%) rotate(180deg)";
+
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
       await NormalMapHelper.getPhotometricStereoNormalMap(
          Number(DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value),
@@ -44,6 +47,8 @@ async function calculateNormalMap() {
       );
    }
 
+   DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.transform =
+      "translate(0%, -150%) rotate(180deg)";
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.remove("mainAreaLoading");
    await calculateDepthMap();
 }
@@ -83,22 +88,26 @@ async function calculatePointCloud() {
 /** */
 async function calculateEverything() {
    console.log("load images");
-   await loadInputImages();
-   console.log("images loaded");
-   await calculateNormalMap();
+   const allRequiredInputImagesDefined = await loadInputImages();
+
+   if (allRequiredInputImagesDefined) {
+      console.log("images loaded");
+      await calculateNormalMap();
+   } else {
+      DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "inherit";
+      console.log("images not loaded");
+   }
 }
 
 /**
- * @returns {Promise<HTMLImageElement[]>}
+ * @returns {Promise<boolean>} allRequiredInputImagesDefined
  */
 async function loadInputImages() {
    DOM_ELEMENT.INPUT_AREA.classList.add("mainAreaLoading");
-   DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
-   DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
-   DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
-   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
 
    let imagePromises;
+   let allRequiredInputImagesDefined = true;
+   const requiredImageIndices = [];
 
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
       DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_AREA.style.display = "inherit";
@@ -115,6 +124,7 @@ async function loadInputImages() {
          DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_315),
          DOM.loadHTMLImage(DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_NONE),
       ];
+      requiredImageIndices.push(0, 1, 2, 3, 4, 5, 6, 7);
    } else if (
       DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
    ) {
@@ -130,11 +140,26 @@ async function loadInputImages() {
          DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_FRONT),
          DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_NONE),
       ];
+      requiredImageIndices.push(0, 1, 2, 3, 4, 5);
    }
 
    const images = await Promise.all(imagePromises);
+   requiredImageIndices.forEach((index) => {
+      if (!images[index]) {
+         allRequiredInputImagesDefined = false;
+         return;
+      }
+   });
+
+   if (allRequiredInputImagesDefined) {
+      DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
+      DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
+      DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
+      DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
+   }
    DOM_ELEMENT.INPUT_AREA.classList.remove("mainAreaLoading");
-   return images;
+
+   return allRequiredInputImagesDefined;
 }
 
 /*function calculateNormalMapResolution() {
@@ -261,6 +286,23 @@ DOM_ELEMENT.FILE_BROWSE_INPUT.addEventListener("change", async () => {
    await DOM.setInputImagesSourceFiles(DOM_ELEMENT.FILE_BROWSE_INPUT.files);
    calculateEverything();
 });
+
+DOM_ELEMENT.NORMAL_MAP_UPLOAD_FILE_INPUT.addEventListener(
+   "change",
+   async () => {
+      DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.opacity = "0";
+
+      await DOM.setNormalMapSourceFile(
+         DOM_ELEMENT.NORMAL_MAP_UPLOAD_FILE_INPUT.files[0]
+      );
+
+      calculateDepthMap();
+
+      setTimeout(() => {
+         DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.opacity = "1";
+      }, 1000);
+   }
+);
 
 DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.addEventListener("click", async () => {
    DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "0";
