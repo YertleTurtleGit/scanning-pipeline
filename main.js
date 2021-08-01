@@ -9,7 +9,7 @@ async function calculateNormalMap() {
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
-   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "0";
 
    DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.transform =
       "translate(-100%, -150%) rotate(180deg)";
@@ -60,7 +60,7 @@ async function calculateDepthMap() {
 
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
-   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "0";
    await DepthMapHelper.getDepthMap(
       DOM_ELEMENT.NORMAL_MAP_IMAGE,
       Number(DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.value),
@@ -75,14 +75,14 @@ async function calculatePointCloud() {
    PointCloudHelper.cancelRenderJobs();
 
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
-   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "0";
    await PointCloudHelper.calculatePointCloud(
       DOM_ELEMENT.DEPTH_MAP_IMAGE,
       DOM_ELEMENT.POINT_CLOUD_CANVAS,
       Number(DOM_ELEMENT.POINT_CLOUD_DEPTH_FACTOR_INPUT.value)
    );
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.remove("mainAreaLoading");
-   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "inherit";
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "1";
 }
 
 /** */
@@ -94,7 +94,7 @@ async function calculateEverything() {
       console.log("images loaded");
       await calculateNormalMap();
    } else {
-      DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "inherit";
+      DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "1";
       console.log("images not loaded");
    }
 }
@@ -155,7 +155,7 @@ async function loadInputImages() {
       DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
       DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
       DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
-      DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
+      DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "1";
    }
    DOM_ELEMENT.INPUT_AREA.classList.remove("mainAreaLoading");
 
@@ -183,7 +183,7 @@ async function inputOrCalculationTypeChange() {
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.remove("mainAreaLoading");
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.remove("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.remove("mainAreaLoading");
-   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.display = "none";
+   DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "0";
 
    DOM_ELEMENT.WEBCAM_AREA.style.display = "none";
    DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "none";
