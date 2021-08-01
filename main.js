@@ -218,6 +218,8 @@ async function inputOrCalculationTypeChange() {
          );
       }
       DOM_ELEMENT.INPUT_TYPE_SELECT.selectedIndex = -1; // deselect all
+   } else if (DOM.getInputType() === INPUT_TYPE.RENDER) {
+      //TODO: do stuff
    }
 
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {

@@ -22,7 +22,7 @@
                <option value="spherical gradient">spherical gradient</option>
             </select>
 
-            <select id="inputType" class="selectMenu" size="3">
+            <select id="inputType" class="selectMenu" size="4">
                <option value="test" title="test dataset" class="icon" selected
                   >🧪</option
                >
@@ -34,7 +34,7 @@
                   >📥</option
                >
                <option value="webcam" title="webcam" class="icon">🎥</option>
-               <!-- <option value="render" disabled>render</option> -->
+               <option value="render" title="render" class="icon">🖥️</option>
             </select>
 
             <div class="imageArea">
@@ -127,6 +127,10 @@
                <div id="webcamArea">
                   <video id="webcamPreview"></video>
                   <button id="webcamCapture">capture</button>
+               </div>
+
+               <div id="renderArea">
+                  <canvas id="renderCanvas"></canvas>
                </div>
             </div>
 

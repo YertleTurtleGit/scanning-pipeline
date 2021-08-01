@@ -334,7 +334,12 @@ const DOM_ELEMENT = {
 };
 
 /** @typedef {string} INPUT_TYPE */
-const INPUT_TYPE = { TEST: "test", FILE: "file", WEBCAM: "webcam" };
+const INPUT_TYPE = {
+   TEST: "test",
+   FILE: "file",
+   WEBCAM: "webcam",
+   RENDER: "render",
+};
 
 /** @typedef {string} CALCULATION_TYPE */
 const CALCULATION_TYPE = {
