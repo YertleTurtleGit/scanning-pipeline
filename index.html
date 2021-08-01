@@ -129,8 +129,48 @@
                   <button id="webcamCapture">capture</button>
                </div>
 
-               <div id="renderArea">
-                  <canvas id="renderCanvas"></canvas>
+               <div id="inputRenderArea">
+                  <canvas id="inputRenderCanvas"></canvas>
+
+                  <input
+                     id="lightPolarAngle"
+                     type="range"
+                     name="lightPolarAngle"
+                     min="0"
+                     max="90"
+                     value="35"
+                     onchange="lightPolarAngleOutput.value=value + '° '"
+                     oninput="lightPolarAngleOutput.value=value + '° '"
+                  />
+                  <output id="lightPolarAngleOutput"></output>
+                  <label for="lightPolarAngle">light polar angle</label>
+
+                  <input
+                     id="cameraDistance"
+                     type="range"
+                     name="cameraDistance"
+                     min="0"
+                     max="15"
+                     value="8"
+                     step="0.5"
+                     onchange="cameraDistanceOutput.value=value + ' lu '"
+                     oninput="cameraDistanceOutput.value=value + ' lu '"
+                  />
+                  <output id="cameraDistanceOutput"></output>
+                  <label for="cameraDistance">camera distance</label>
+
+                  <input
+                     id="lightDistance"
+                     type="range"
+                     name="lightDistance"
+                     min="0"
+                     max="15"
+                     value="8"
+                     onchange="lightDistanceOutput.value=value + ' lu '"
+                     oninput="lightDistanceOutput.value=value + ' lu '"
+                  />
+                  <output id="lightDistanceOutput"></output>
+                  <label for="lightDistance">light distance</label>
                </div>
             </div>
 
@@ -266,6 +306,7 @@
       <script src="./depth-map-helper.js"></script>
       <script src="./point-cloud-helper.js"></script>
       <script src="./webcam-dataset-helper.js"></script>
+      <script src="./virtual-input-renderer.js"></script>
       <script src="./dom-declarations.js"></script>
 
       <script src="./main.js"></script>

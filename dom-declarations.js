@@ -331,6 +331,11 @@ const DOM_ELEMENT = {
    POINT_CLOUD_CANVAS: /**@type {HTMLCanvasElement} */ (
       document.getElementById("pointCloudCanvas")
    ),
+
+   INPUT_RENDER_AREA: document.getElementById("inputRenderArea"),
+   INPUT_RENDER_CANVAS: /**@type {HTMLCanvasElement} */ (
+      document.getElementById("inputRenderCanvas")
+   ),
 };
 
 /** @typedef {string} INPUT_TYPE */

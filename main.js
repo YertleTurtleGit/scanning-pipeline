@@ -1,4 +1,5 @@
-/* global DOM, DOM_ELEMENT, INPUT_TYPE, CALCULATION_TYPE NormalMapHelper, DepthMapHelper, PointCloudHelper, WebcamDatasetHelper */
+/* global DOM, DOM_ELEMENT, INPUT_TYPE, CALCULATION_TYPE 
+NormalMapHelper, DepthMapHelper, PointCloudHelper, WebcamDatasetHelper, VirtualInputRenderer */
 
 /** */
 async function calculateNormalMap() {
@@ -187,6 +188,7 @@ async function inputOrCalculationTypeChange() {
 
    DOM_ELEMENT.WEBCAM_AREA.style.display = "none";
    DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "none";
+   DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "none";
 
    if (DOM.getInputType() === INPUT_TYPE.TEST) {
       if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
@@ -217,9 +219,9 @@ async function inputOrCalculationTypeChange() {
             )
          );
       }
-      DOM_ELEMENT.INPUT_TYPE_SELECT.selectedIndex = -1; // deselect all
+      DOM_ELEMENT.INPUT_TYPE_SELECT.selectedIndex = -1; // deselects all options
    } else if (DOM.getInputType() === INPUT_TYPE.RENDER) {
-      //TODO: do stuff
+      DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "inherit";
    }
 
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
@@ -315,5 +317,9 @@ DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.addEventListener("click", async () => {
       DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "1";
    }, 1000);
 });
+
+const virtualInputRenderer = new VirtualInputRenderer(
+   DOM_ELEMENT.INPUT_RENDER_CANVAS
+);
 
 inputOrCalculationTypeChange();
