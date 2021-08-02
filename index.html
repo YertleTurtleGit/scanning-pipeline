@@ -132,6 +132,8 @@
                <div id="inputRenderArea">
                   <canvas id="inputRenderCanvas"></canvas>
 
+                  <br />
+
                   <input
                      id="lightPolarAngle"
                      type="range"
@@ -144,6 +146,8 @@
                   />
                   <output id="lightPolarAngleOutput"></output>
                   <label for="lightPolarAngle">light polar angle</label>
+
+                  <br />
 
                   <input
                      id="cameraDistance"
@@ -158,6 +162,8 @@
                   />
                   <output id="cameraDistanceOutput"></output>
                   <label for="cameraDistance">camera distance</label>
+
+                  <br />
 
                   <input
                      id="lightDistance"
@@ -286,7 +292,7 @@
                id="depthFactor"
                type="range"
                name="depthFactor"
-               min="0.01"
+               min="0"
                step="0.01"
                max="1"
                value="0.15"
@@ -300,6 +306,7 @@
 
       <script src="./lib/three.min.js"></script>
       <script src="./lib/OrbitControls.js"></script>
+      <script src="./lib/GLTFLoader.js"></script>
 
       <script src="./glsl-shader.js"></script>
       <script src="./normal-map-helper.js"></script>

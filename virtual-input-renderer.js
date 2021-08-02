@@ -3,38 +3,113 @@
 
 class VirtualInputRenderer {
    /**
-    * @private
-    * @param {HTMLCanvasElement} renderCanvas
+    * @public
+    * @param {HTMLCanvasElement} uiCanvas
     * @param {string} modelUrl
     * @param {{width: number, height: number}} renderDimensions
     */
    constructor(
-      renderCanvas,
+      uiCanvas,
       modelUrl = "./test-datasets/models/torus.glb",
       renderDimensions = { width: 150, height: 150 }
    ) {
-      this.renderCanvas = renderCanvas;
+      this.uiCanvas = uiCanvas;
       this.modelUrl = modelUrl;
       this.renderDimensions = renderDimensions;
-      this.lightDistance = 8; //TODO: remove hard code
       this.initialized = false;
-      this.initialize();
    }
 
+   /**
+    * @public
+    * @param {number} lightPolarAngleDeg
+    */
+   setLightPolarAngleDeg(lightPolarAngleDeg) {
+      this.lightPolarAngleDeg = lightPolarAngleDeg;
+      this.render();
+   }
+
+   /**
+    * @public
+    * @param {number} lightDistance
+    */
+   setLightDistance(lightDistance) {
+      this.lightDistance = lightDistance;
+      this.render();
+   }
+
+   /**
+    * @public
+    * @param {number} cameraDistance
+    */
+   setCameraDistance(cameraDistance) {
+      this.cameraDistance = cameraDistance;
+      this.render();
+   }
+
+   /**
+    * @private
+    */
+   setLightPositions() {
+      const correctedLightPolarDegree = 360 - 90 - this.lightPolarAngleDeg;
+
+      /**
+       * @param {THREE.Light} light
+       * @param {number} lightAzimuthalDegree
+       */
+      const setSingleLightAzimuthalAngle = (light, lightAzimuthalDegree) => {
+         let lightVector = new THREE.Vector3(this.lightDistance, 0, 0);
+
+         let lightPolarRotationAxis = new THREE.Vector3(0, 1, 0).normalize();
+         lightVector.applyAxisAngle(
+            lightPolarRotationAxis,
+            correctedLightPolarDegree * (Math.PI / 180)
+         );
+
+         lightAzimuthalDegree += 180;
+         lightAzimuthalDegree *= -1;
+         const lightRotation = lightAzimuthalDegree * (Math.PI / 180);
+         const lightRotationAxis = new THREE.Vector3(0, 0, 1).normalize();
+         lightVector.applyAxisAngle(lightRotationAxis, lightRotation);
+
+         light.position.set(lightVector.x, lightVector.y, lightVector.z);
+      };
+
+      const lightCount = this.lights.length;
+      for (let i = 0; i < lightCount; i++) {
+         setSingleLightAzimuthalAngle(this.lights[i], i * (360 / lightCount));
+      }
+   }
+
+   /**
+    * @private
+    */
+   async render() {
+      await this.initialize();
+   }
+
+   /**
+    * @private
+    */
    async initialize() {
+      if (this.initialized) {
+         return;
+      }
+
+      const initLightDistance = 8; // TODO: remove hard coding
+
       this.scene = new THREE.Scene();
       this.scene.background = new THREE.Color("rgb(32, 32, 32)");
 
       this.camera = new THREE.PerspectiveCamera(
          25,
-         this.renderDimensions.width / this.renderCanvas.clientHeight,
+         this.renderDimensions.width / this.uiCanvas.clientHeight,
          6,
          9
       );
 
       this.uiCamera = new THREE.PerspectiveCamera(
          75,
-         this.renderCanvas.clientWidth / this.renderCanvas.clientHeight
+         this.uiCanvas.clientWidth / this.uiCanvas.clientHeight
       );
 
       this.cameraHelper = new THREE.CameraHelper(this.camera);
@@ -58,9 +133,9 @@ class VirtualInputRenderer {
 
       for (let i = 0; i < 8; i++) {
          this.lights[i] = new THREE.PointLight("white", 25);
-         this.lights[i].position.set(0, 0, this.lightDistance);
+         this.lights[i].position.set(0, 0, initLightDistance);
          this.lights[i].castShadow = true;
-         this.lights[i].distance = this.lightDistance * 2;
+         this.lights[i].distance = initLightDistance * 2;
          this.lights[i].shadow.mapSize.width = 512 * 2;
          this.lights[i].shadow.mapSize.height = 512 * 2;
          this.lightHelpers[i] = new THREE.PointLightHelper(this.lights[i], 0.2);
@@ -85,3 +160,5 @@ class VirtualInputRenderer {
       this.scene.add(this.object);
    }
 }
+/** @type {VirtualInputRenderer[]} */
+VirtualInputRenderer.instances = [];
