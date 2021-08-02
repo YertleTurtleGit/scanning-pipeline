@@ -244,6 +244,25 @@ async function inputOrCalculationTypeChange() {
    calculateEverything();
 }
 
+const virtualInputRenderer = new VirtualInputRenderer(
+   DOM_ELEMENT.INPUT_RENDER_CANVAS
+);
+
+DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.addEventListener(
+   "input",
+   virtualInputRenderer.setLightPolarAngleDeg.bind(
+      virtualInputRenderer,
+      Number(DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value)
+   )
+);
+DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.addEventListener(
+   "change",
+   virtualInputRenderer.setLightPolarAngleDeg.bind(
+      virtualInputRenderer,
+      Number(DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value)
+   )
+);
+
 DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.addEventListener(
    "change",
    calculateNormalMap
@@ -317,9 +336,5 @@ DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.addEventListener("click", async () => {
       DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "1";
    }, 1000);
 });
-
-const virtualInputRenderer = new VirtualInputRenderer(
-   DOM_ELEMENT.INPUT_RENDER_CANVAS
-);
 
 inputOrCalculationTypeChange();

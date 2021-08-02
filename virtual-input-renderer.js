@@ -1,6 +1,7 @@
 /* global THREE */
 /* exported VirtualInputRenderer */
 
+// TODO: make abstract and implement spherical gradient
 class VirtualInputRenderer {
    /**
     * @public
@@ -17,14 +18,16 @@ class VirtualInputRenderer {
       this.modelUrl = modelUrl;
       this.renderDimensions = renderDimensions;
       this.initialized = false;
+      this.renderId = 0;
    }
 
    /**
     * @public
     * @param {number} lightPolarAngleDeg
     */
-   setLightPolarAngleDeg(lightPolarAngleDeg) {
+   setLightPolarAngleDeg(lightPolarAngleDeg = 35) {
       this.lightPolarAngleDeg = lightPolarAngleDeg;
+      this.updateLightPositions;
       this.render();
    }
 
@@ -32,8 +35,14 @@ class VirtualInputRenderer {
     * @public
     * @param {number} lightDistance
     */
-   setLightDistance(lightDistance) {
+   setLightDistance(lightDistance = 8) {
       this.lightDistance = lightDistance;
+      this.updateLightPositions();
+
+      this.lights.forEach((light) => {
+         light.distance = this.lightDistance * 2;
+      });
+
       this.render();
    }
 
@@ -41,15 +50,17 @@ class VirtualInputRenderer {
     * @public
     * @param {number} cameraDistance
     */
-   setCameraDistance(cameraDistance) {
+   setCameraDistance(cameraDistance = 8) {
       this.cameraDistance = cameraDistance;
+      this.camera.position.set(0, 0, this.cameraDistance);
+      this.uiCamera.lookAt(new THREE.Vector3(0, 0, this.cameraDistance / 3));
       this.render();
    }
 
    /**
     * @private
     */
-   setLightPositions() {
+   updateLightPositions() {
       const correctedLightPolarDegree = 360 - 90 - this.lightPolarAngleDeg;
 
       /**
@@ -82,9 +93,53 @@ class VirtualInputRenderer {
 
    /**
     * @private
+    * @returns {Promise<HTMLImageElement[]>}
     */
    async render() {
+      this.renderId++;
+      const renderId = this.renderId;
+
       await this.initialize();
+
+      console.log("rendering...");
+
+      if (renderId < this.renderId) return;
+
+      setTimeout(
+         this.uiRenderer.render.bind(this.uiRenderer, this.scene, this.uiCamera)
+      );
+
+      const renderPromises = [];
+
+      const lightCount = this.lights.length;
+      for (let i = 0; i < lightCount; i++) {
+         for (let j = 0; j < lightCount; j++) {
+            if (j === i) {
+               this.lights[j].visible = true;
+            } else {
+               this.lights[j].visible = false;
+            }
+         }
+
+         if (renderId < this.renderId) return;
+
+         this.renderer.render(this.scene, this.camera);
+         const renderImageDataUrl = this.renderer.domElement.toDataURL();
+
+         renderPromises.push(
+            new Promise((resolve) => {
+               setTimeout(() => {
+                  const image = new Image();
+                  image.addEventListener("load", () => {
+                     resolve(image);
+                  });
+                  image.src = renderImageDataUrl;
+               });
+            })
+         );
+      }
+
+      return Promise.all(renderPromises);
    }
 
    /**
@@ -94,6 +149,8 @@ class VirtualInputRenderer {
       if (this.initialized) {
          return;
       }
+
+      this.initialized = true;
 
       const initLightDistance = 8; // TODO: remove hard coding
 
@@ -111,11 +168,15 @@ class VirtualInputRenderer {
          75,
          this.uiCanvas.clientWidth / this.uiCanvas.clientHeight
       );
+      this.uiCamera.position.set(10, 2, 10 / 2);
+      this.uiCamera.lookAt(new THREE.Vector3(0, 0, this.cameraDistance / 3));
+      this.uiCamera.rotateZ(90 * (Math.PI / 180));
 
       this.cameraHelper = new THREE.CameraHelper(this.camera);
       this.scene.add(this.cameraHelper);
       this.cameraHelper.visible = false;
 
+      // TODO: remove preserve to enable swapping for better performance
       this.renderer = new THREE.WebGLRenderer({
          preserveDrawingBuffer: true,
       });
@@ -128,20 +189,30 @@ class VirtualInputRenderer {
       );
       this.renderer.shadowMap.enabled = true;
 
-      this.lights = new Array(8);
+      this.uiRenderer = new THREE.WebGL1Renderer({
+         canvas: this.uiCanvas,
+         preserveDrawingBuffer: true,
+      });
+      this.uiRenderer.setClearColor("rgb(32, 32, 32)");
+      this.uiRenderer.setPixelRatio(window.devicePixelRatio);
+      this.uiRenderer.setSize(
+         this.uiCanvas.clientWidth,
+         this.uiCanvas.clientHeight
+      );
+
+      this.lights = new Array(8).fill(new THREE.PointLight("white", 25));
       this.lightHelpers = new Array(8);
 
-      for (let i = 0; i < 8; i++) {
-         this.lights[i] = new THREE.PointLight("white", 25);
-         this.lights[i].position.set(0, 0, initLightDistance);
-         this.lights[i].castShadow = true;
-         this.lights[i].distance = initLightDistance * 2;
-         this.lights[i].shadow.mapSize.width = 512 * 2;
-         this.lights[i].shadow.mapSize.height = 512 * 2;
-         this.lightHelpers[i] = new THREE.PointLightHelper(this.lights[i], 0.2);
-         this.scene.add(this.lights[i]);
-         this.scene.add(this.lightHelpers[i]);
-      }
+      this.lights.forEach((light, index) => {
+         light.position.set(0, 0, initLightDistance);
+         light.castShadow = true;
+         light.distance = initLightDistance * 2;
+         light.shadow.mapSize.width = 512 * 2;
+         light.shadow.mapSize.height = 512 * 2;
+         this.lightHelpers[index] = new THREE.PointLightHelper(light, 0.2);
+         this.scene.add(light);
+         this.scene.add(this.lightHelpers[index]);
+      });
 
       const loader = new THREE.GLTFLoader();
 
@@ -158,6 +229,10 @@ class VirtualInputRenderer {
       this.object.receiveShadow = true;
 
       this.scene.add(this.object);
+
+      this.setCameraDistance();
+      this.setLightDistance();
+      this.setLightPolarAngleDeg();
    }
 }
 /** @type {VirtualInputRenderer[]} */

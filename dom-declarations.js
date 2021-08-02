@@ -336,6 +336,9 @@ const DOM_ELEMENT = {
    INPUT_RENDER_CANVAS: /**@type {HTMLCanvasElement} */ (
       document.getElementById("inputRenderCanvas")
    ),
+   RENDER_LIGHT_POLAR_DEG_INPUT: DOM.declareInput("lightPolarAngle"),
+   RENDER_CAMERA_DISTANCE_INPUT: DOM.declareInput("cameraDistance"),
+   RENDER_LIGHT_DISTANCE_INPUT: DOM.declareInput("lightDistance"),
 };
 
 /** @typedef {string} INPUT_TYPE */
