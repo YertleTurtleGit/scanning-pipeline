@@ -155,7 +155,6 @@ class VirtualInputRenderer {
       const initLightDistance = 8; // TODO: remove hard coding
 
       this.scene = new THREE.Scene();
-      this.scene.background = new THREE.Color("rgb(32, 32, 32)");
 
       this.camera = new THREE.PerspectiveCamera(
          25,
@@ -181,7 +180,6 @@ class VirtualInputRenderer {
          preserveDrawingBuffer: true,
       });
       this.renderer.physicallyCorrectLights = true;
-      this.renderer.setClearColor("rgb(32, 32, 32)");
       this.renderer.setPixelRatio(window.devicePixelRatio);
       this.renderer.setSize(
          this.renderDimensions.width,
@@ -191,9 +189,9 @@ class VirtualInputRenderer {
 
       this.uiRenderer = new THREE.WebGL1Renderer({
          canvas: this.uiCanvas,
-         preserveDrawingBuffer: true,
+         alpha: true,
       });
-      this.uiRenderer.setClearColor("rgb(32, 32, 32)");
+      this.uiRenderer.setClearColor(0x000000, 0);
       this.uiRenderer.setPixelRatio(window.devicePixelRatio);
       this.uiRenderer.setSize(
          this.uiCanvas.clientWidth,
@@ -227,6 +225,8 @@ class VirtualInputRenderer {
 
       this.object.castShadow = true;
       this.object.receiveShadow = true;
+
+      this.scene.background = null;
 
       this.scene.add(this.object);
 

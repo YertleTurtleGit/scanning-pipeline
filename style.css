@@ -172,7 +172,8 @@ img {
    max-height: 150px;
 }
 
-#pointCloudCanvas {
+#pointCloudCanvas,
+#inputRenderCanvas {
    width: 100% !important;
    height: 500px !important;
    max-height: 60vh !important;
