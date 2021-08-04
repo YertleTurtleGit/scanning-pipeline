@@ -25,42 +25,43 @@ class VirtualInputRenderer {
     * @public
     * @param {number} lightPolarAngleDeg
     */
-   setLightPolarAngleDeg(lightPolarAngleDeg = 35) {
+   async setLightPolarAngleDeg(lightPolarAngleDeg) {
+      await this.initialize();
       this.lightPolarAngleDeg = lightPolarAngleDeg;
-      this.updateLightPositions;
-      this.render();
+      this.updateLightPositions();
    }
 
    /**
     * @public
     * @param {number} lightDistance
     */
-   setLightDistance(lightDistance = 8) {
+   async setLightDistance(lightDistance) {
+      await this.initialize();
       this.lightDistance = lightDistance;
+      for (let i = 0; i < this.lights.length; i++) {
+         this.lights[i].distance = this.lightDistance * 2;
+      }
       this.updateLightPositions();
-
-      this.lights.forEach((light) => {
-         light.distance = this.lightDistance * 2;
-      });
-
-      this.render();
    }
 
    /**
     * @public
     * @param {number} cameraDistance
     */
-   setCameraDistance(cameraDistance = 8) {
+   async setCameraDistance(cameraDistance) {
+      await this.initialize();
       this.cameraDistance = cameraDistance;
       this.camera.position.set(0, 0, this.cameraDistance);
+      this.camera.updateProjectionMatrix();
       this.uiCamera.lookAt(new THREE.Vector3(0, 0, this.cameraDistance / 3));
-      this.render();
+      this.uiCamera.updateProjectionMatrix();
+      this.uiControls.update();
    }
 
    /**
     * @private
     */
-   updateLightPositions() {
+   async updateLightPositions() {
       const correctedLightPolarDegree = 360 - 90 - this.lightPolarAngleDeg;
 
       /**
@@ -93,6 +94,15 @@ class VirtualInputRenderer {
 
    /**
     * @private
+    * @param {number} renderId
+    * @returns {boolean}
+    */
+   isRenderObsolete(renderId) {
+      return this.renderId < renderId;
+   }
+
+   /**
+    * @public
     * @returns {Promise<HTMLImageElement[]>}
     */
    async render() {
@@ -101,27 +111,24 @@ class VirtualInputRenderer {
 
       await this.initialize();
 
-      console.log("rendering...");
-
-      if (renderId < this.renderId) return;
-
-      setTimeout(
-         this.uiRenderer.render.bind(this.uiRenderer, this.scene, this.uiCamera)
-      );
-
-      const renderPromises = [];
+      if (this.isRenderObsolete(renderId)) return;
 
       const lightCount = this.lights.length;
-      for (let i = 0; i < lightCount; i++) {
-         for (let j = 0; j < lightCount; j++) {
-            if (j === i) {
-               this.lights[j].visible = true;
-            } else {
-               this.lights[j].visible = false;
-            }
-         }
+      const renderPromises = [];
 
-         if (renderId < this.renderId) return;
+      for (let i = 0; i < lightCount; i++) {
+         this.lightHelpers[i].visible = false;
+      }
+      this.cameraHelper.visible = false;
+
+      for (let i = 0; i < lightCount; i++) {
+         for (let i = 0; i < lightCount; i++) {
+            this.lights[i].visible = false;
+         }
+         this.lights[i].visible = true;
+         this.lights[i].intensity = 25;
+
+         if (this.isRenderObsolete(renderId)) return;
 
          this.renderer.render(this.scene, this.camera);
          const renderImageDataUrl = this.renderer.domElement.toDataURL();
@@ -139,6 +146,15 @@ class VirtualInputRenderer {
          );
       }
 
+      for (let i = 0; i < lightCount; i++) {
+         this.lights[i].visible = true;
+         this.lightHelpers[i].visible = true;
+         this.lights[i].intensity = 0.25;
+      }
+      this.cameraHelper.visible = true;
+
+      this.uiRenderer.render(this.scene, this.uiCamera);
+
       return Promise.all(renderPromises);
    }
 
@@ -149,7 +165,6 @@ class VirtualInputRenderer {
       if (this.initialized) {
          return;
       }
-
       this.initialized = true;
 
       const initLightDistance = 8; // TODO: remove hard coding
@@ -158,7 +173,7 @@ class VirtualInputRenderer {
 
       this.camera = new THREE.PerspectiveCamera(
          25,
-         this.renderDimensions.width / this.uiCanvas.clientHeight,
+         this.renderDimensions.width / this.renderDimensions.height,
          6,
          9
       );
@@ -169,11 +184,10 @@ class VirtualInputRenderer {
       );
       this.uiCamera.position.set(10, 2, 10 / 2);
       this.uiCamera.lookAt(new THREE.Vector3(0, 0, this.cameraDistance / 3));
-      this.uiCamera.rotateZ(90 * (Math.PI / 180));
+      this.uiCamera.rotateZ(180 * (Math.PI / 180));
 
       this.cameraHelper = new THREE.CameraHelper(this.camera);
       this.scene.add(this.cameraHelper);
-      this.cameraHelper.visible = false;
 
       // TODO: remove preserve to enable swapping for better performance
       this.renderer = new THREE.WebGLRenderer({
@@ -198,19 +212,20 @@ class VirtualInputRenderer {
          this.uiCanvas.clientHeight
       );
 
-      this.lights = new Array(8).fill(new THREE.PointLight("white", 25));
+      this.lights = new Array(8);
       this.lightHelpers = new Array(8);
 
-      this.lights.forEach((light, index) => {
-         light.position.set(0, 0, initLightDistance);
-         light.castShadow = true;
-         light.distance = initLightDistance * 2;
-         light.shadow.mapSize.width = 512 * 2;
-         light.shadow.mapSize.height = 512 * 2;
-         this.lightHelpers[index] = new THREE.PointLightHelper(light, 0.2);
-         this.scene.add(light);
-         this.scene.add(this.lightHelpers[index]);
-      });
+      for (let i = 0; i < 8; i++) {
+         this.lights[i] = new THREE.PointLight("white", 0.25);
+         this.lights[i].position.set(0, 0, initLightDistance);
+         this.lights[i].castShadow = true;
+         this.lights[i].distance = initLightDistance * 2;
+         this.lights[i].shadow.mapSize.width = 512 * 2;
+         this.lights[i].shadow.mapSize.height = 512 * 2;
+         this.lightHelpers[i] = new THREE.PointLightHelper(this.lights[i], 0.2);
+         this.scene.add(this.lights[i]);
+         this.scene.add(this.lightHelpers[i]);
+      }
 
       const loader = new THREE.GLTFLoader();
 
@@ -228,11 +243,27 @@ class VirtualInputRenderer {
 
       this.scene.background = null;
 
+      const material = new THREE.MeshPhysicalMaterial({});
+
+      this.object.traverse((node) => {
+         if (node instanceof THREE.Mesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            node.material = material;
+         }
+      });
+
       this.scene.add(this.object);
 
-      this.setCameraDistance();
-      this.setLightDistance();
-      this.setLightPolarAngleDeg();
+      this.uiControls = new THREE.OrbitControls(this.uiCamera, this.uiCanvas);
+      this.uiControls.target = new THREE.Vector3(0, 0, 0);
+      this.uiControls.addEventListener("change", () => {
+         this.cameraHelper.visible = true;
+         this.uiRenderer.render(this.scene, this.uiCamera);
+      });
+      this.uiControls.update();
+
+      this.initialized = true;
    }
 }
 /** @type {VirtualInputRenderer[]} */

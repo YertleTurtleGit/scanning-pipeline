@@ -3,9 +3,7 @@ NormalMapHelper, DepthMapHelper, PointCloudHelper, WebcamDatasetHelper, VirtualI
 
 /** */
 async function calculateNormalMap() {
-   NormalMapHelper.cancelRenderJobs();
-   DepthMapHelper.cancelRenderJobs();
-   PointCloudHelper.cancelRenderJobs();
+   cancelAllRenderJobs();
 
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
@@ -88,27 +86,38 @@ async function calculatePointCloud() {
 
 /** */
 async function calculateEverything() {
-   console.log("load images");
+   cancelAllRenderJobs();
    const allRequiredInputImagesDefined = await loadInputImages();
 
    if (allRequiredInputImagesDefined) {
-      console.log("images loaded");
       await calculateNormalMap();
    } else {
       DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "1";
-      console.log("images not loaded");
    }
 }
 
+/** */
+function cancelAllRenderJobs() {
+   NormalMapHelper.cancelRenderJobs();
+   DepthMapHelper.cancelRenderJobs();
+   PointCloudHelper.cancelRenderJobs();
+}
+
+let inputImageId = 0;
 /**
  * @returns {Promise<boolean>} allRequiredInputImagesDefined
  */
 async function loadInputImages() {
+   inputImageId++;
+   const thisInputImageId = inputImageId;
+
    DOM_ELEMENT.INPUT_AREA.classList.add("mainAreaLoading");
 
    let imagePromises;
    let allRequiredInputImagesDefined = true;
    const requiredImageIndices = [];
+
+   if (inputImageId > thisInputImageId) return;
 
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
       DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_AREA.style.display = "inherit";
@@ -144,7 +153,12 @@ async function loadInputImages() {
       requiredImageIndices.push(0, 1, 2, 3, 4, 5);
    }
 
+   if (inputImageId > thisInputImageId) return;
+
    const images = await Promise.all(imagePromises);
+
+   if (inputImageId > thisInputImageId) return;
+
    requiredImageIndices.forEach((index) => {
       if (!images[index]) {
          allRequiredInputImagesDefined = false;
@@ -202,6 +216,7 @@ async function inputOrCalculationTypeChange() {
       DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "inherit";
    } else if (DOM.getInputType() === INPUT_TYPE.WEBCAM) {
       DOM_ELEMENT.WEBCAM_AREA.style.display = "inherit";
+
       if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
          DOM.setPhotometricStereoInputImages(
             await WebcamDatasetHelper.getPhotometricStereoDataset(
@@ -222,6 +237,22 @@ async function inputOrCalculationTypeChange() {
       DOM_ELEMENT.INPUT_TYPE_SELECT.selectedIndex = -1; // deselects all options
    } else if (DOM.getInputType() === INPUT_TYPE.RENDER) {
       DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "inherit";
+
+      if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
+         await virtualInputRenderer.setCameraDistance(
+            Number(DOM_ELEMENT.RENDER_CAMERA_DISTANCE_INPUT.value)
+         );
+         await virtualInputRenderer.setLightDistance(
+            Number(DOM_ELEMENT.RENDER_LIGHT_DISTANCE_INPUT.value)
+         );
+         await virtualInputRenderer.setLightPolarAngleDeg(
+            Number(DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value)
+         );
+
+         DOM.setPhotometricStereoInputImages(
+            await virtualInputRenderer.render()
+         );
+      }
    }
 
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
@@ -248,19 +279,55 @@ const virtualInputRenderer = new VirtualInputRenderer(
    DOM_ELEMENT.INPUT_RENDER_CANVAS
 );
 
-DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.addEventListener(
-   "input",
-   virtualInputRenderer.setLightPolarAngleDeg.bind(
-      virtualInputRenderer,
-      Number(DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value)
-   )
+DOM_ELEMENT.RENDER_CAMERA_DISTANCE_INPUT.addEventListener("input", async () => {
+   virtualInputRenderer.setCameraDistance(
+      Number(DOM_ELEMENT.RENDER_CAMERA_DISTANCE_INPUT.value)
+   );
+   DOM.setPhotometricStereoInputImages(await virtualInputRenderer.render());
+   calculateEverything();
+});
+DOM_ELEMENT.RENDER_CAMERA_DISTANCE_INPUT.addEventListener(
+   "change",
+   async () => {
+      virtualInputRenderer.setCameraDistance(
+         Number(DOM_ELEMENT.RENDER_CAMERA_DISTANCE_INPUT.value)
+      );
+      DOM.setPhotometricStereoInputImages(await virtualInputRenderer.render());
+      calculateEverything();
+   }
 );
+
+DOM_ELEMENT.RENDER_LIGHT_DISTANCE_INPUT.addEventListener("input", async () => {
+   virtualInputRenderer.setLightDistance(
+      Number(DOM_ELEMENT.RENDER_LIGHT_DISTANCE_INPUT.value)
+   );
+   DOM.setPhotometricStereoInputImages(await virtualInputRenderer.render());
+   calculateEverything();
+});
+DOM_ELEMENT.RENDER_LIGHT_DISTANCE_INPUT.addEventListener("change", async () => {
+   virtualInputRenderer.setLightDistance(
+      Number(DOM_ELEMENT.RENDER_LIGHT_DISTANCE_INPUT.value)
+   );
+   DOM.setPhotometricStereoInputImages(await virtualInputRenderer.render());
+   calculateEverything();
+});
+
+DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.addEventListener("input", async () => {
+   virtualInputRenderer.setLightPolarAngleDeg(
+      Number(DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value)
+   );
+   DOM.setPhotometricStereoInputImages(await virtualInputRenderer.render());
+   calculateEverything();
+});
 DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.addEventListener(
    "change",
-   virtualInputRenderer.setLightPolarAngleDeg.bind(
-      virtualInputRenderer,
-      Number(DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value)
-   )
+   async () => {
+      virtualInputRenderer.setLightPolarAngleDeg(
+         Number(DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value)
+      );
+      DOM.setPhotometricStereoInputImages(await virtualInputRenderer.render());
+      calculateEverything();
+   }
 );
 
 DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.addEventListener(

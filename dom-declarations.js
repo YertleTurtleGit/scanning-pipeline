@@ -178,11 +178,10 @@ class DOM {
     * @param {HTMLImageElement[]} inputImages
     */
    static setPhotometricStereoInputImages(inputImages) {
-      DOM.reset();
-      let i = 0;
-      PHOTOMETRIC_STEREO_IMAGES.forEach((image) => {
-         image.src = inputImages[i].src;
-         i++;
+      PHOTOMETRIC_STEREO_IMAGES.forEach((image, index) => {
+         if (inputImages[index]) {
+            image.src = inputImages[index].src;
+         }
       });
    }
 
@@ -191,11 +190,8 @@ class DOM {
     * @param {HTMLImageElement[]} inputImages
     */
    static setRapidGradientInputImages(inputImages) {
-      DOM.reset();
-      let i = 0;
-      SPHERICAL_GRADIENT_IMAGES.forEach((image) => {
-         image.src = inputImages[i].src;
-         i++;
+      SPHERICAL_GRADIENT_IMAGES.forEach((image, index) => {
+         image.src = inputImages[index].src;
       });
    }
 
@@ -336,7 +332,7 @@ const DOM_ELEMENT = {
    INPUT_RENDER_CANVAS: /**@type {HTMLCanvasElement} */ (
       document.getElementById("inputRenderCanvas")
    ),
-   RENDER_LIGHT_POLAR_DEG_INPUT: DOM.declareInput("lightPolarAngle"),
+   RENDER_LIGHT_POLAR_DEG_INPUT: DOM.declareInput("renderLightPolarAngle"),
    RENDER_CAMERA_DISTANCE_INPUT: DOM.declareInput("cameraDistance"),
    RENDER_LIGHT_DISTANCE_INPUT: DOM.declareInput("lightDistance"),
 };
