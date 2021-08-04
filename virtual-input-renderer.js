@@ -62,7 +62,7 @@ class VirtualInputRenderer {
     * @private
     */
    async updateLightPositions() {
-      const correctedLightPolarDegree = 360 - 90 - this.lightPolarAngleDeg;
+      const correctedLightPolarDegree = 360 - this.lightPolarAngleDeg;
 
       /**
        * @param {THREE.Light} light
@@ -77,8 +77,8 @@ class VirtualInputRenderer {
             correctedLightPolarDegree * (Math.PI / 180)
          );
 
-         lightAzimuthalDegree += 180;
-         lightAzimuthalDegree *= -1;
+         //lightAzimuthalDegree += 180;
+         //lightAzimuthalDegree *= -1;
          const lightRotation = lightAzimuthalDegree * (Math.PI / 180);
          const lightRotationAxis = new THREE.Vector3(0, 0, 1).normalize();
          lightVector.applyAxisAngle(lightRotationAxis, lightRotation);

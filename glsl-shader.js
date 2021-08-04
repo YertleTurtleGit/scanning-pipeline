@@ -85,13 +85,12 @@ class Shader {
       /**
        * @private
        * @type {GlslShader}
-       * @memberof Shader
        */
       this.glslShader = null;
       this.dimensions = dimensions;
    }
    /**
-    * @returns {void}@memberof Shader
+    * @returns {void}
     */
    bind() {
       if (this.glslShader !== null) {
@@ -100,14 +99,14 @@ class Shader {
       this.glslShader = new GlslShader(this.dimensions);
    }
    /**
-    * @returns {void}@memberof Shader
+    * @returns {void}
     */
    unbind() {
       GlslShader.currentShader = null;
       this.glslShader = null;
    }
    /**
-    * @returns {void}@memberof Shader
+    * @returns {void}
     */
    purge() {
       if (this.glslShader === null) {
@@ -122,7 +121,6 @@ class Shader {
 class GlslShader {
    /**
     * @param  {{ width: number, height: number }} dimensions
-    * @memberof GlslShader
     */
    constructor(dimensions) {
       GlslShader.currentShader = this;
@@ -160,7 +158,7 @@ class GlslShader {
    /**
     * @static
     * @param  {string} glslCommand
-    * @returns {void}@memberof GlslShader
+    * @returns {void}
     */
    static addGlslCommandToCurrentShader(glslCommand) {
       GlslShader.getCurrentShader().addGlslCommand(glslCommand);
@@ -168,7 +166,7 @@ class GlslShader {
    /**
     * @static
     * @param  {GlslImage} glslImage
-    * @returns {void}@memberof GlslShader
+    * @returns {void}
     */
    static addGlslImageToCurrentShader(glslImage) {
       GlslShader.getCurrentShader().addGlslImage(glslImage);
@@ -397,7 +395,7 @@ class GlslContext {
 
    /**
     * @param  {WebGLVertexArrayObject} vaoFrame
-    * @returns {void}@memberof GlslContext
+    * @returns {void}
     */
    drawArraysFromVAO(vaoFrame) {
       this.glContext.viewport(0, 0, this.glCanvas.width, this.glCanvas.height);
@@ -706,7 +704,6 @@ class GlslImage {
    /**
     * @abstract
     * @param {string} [customDeclaration=""]
-    * @memberof GlslVariable
     */
    constructor(customDeclaration = "") {
       this.glslName = GlslVariable.getUniqueName(this.getGlslVarType());
@@ -1431,14 +1428,12 @@ class GlslVector4 extends GlslVector {
    }
    /**
     * @returns {GlslFloat}
-    * @memberof GlslVector4
     */
    length() {
       return this.getGlslFloatResult([this], GLSL_OPERATOR.LENGTH);
    }
    /**
     * @returns {GlslVector4}
-    * @memberof GlslVector4
     */
    normalize() {
       return this.getGlslVector4Result([this], GLSL_OPERATOR.NORMALIZE);
@@ -1446,7 +1441,6 @@ class GlslVector4 extends GlslVector {
    /**
     * @param  {...GlslVariable} parameters
     * @returns {GlslVector4}
-    * @memberof GlslVector4
     */
    maximum(...parameters) {
       return this.getGlslVector4Result(parameters, GLSL_OPERATOR.MAXIMUM);
@@ -1454,7 +1448,6 @@ class GlslVector4 extends GlslVector {
    /**
     * @param  {...GlslVariable} parameters
     * @returns {GlslVector4}
-    * @memberof GlslVector4
     */
    minimum(...parameters) {
       return this.getGlslVector4Result(parameters, GLSL_OPERATOR.MINIMUM);
@@ -1462,14 +1455,12 @@ class GlslVector4 extends GlslVector {
    /**
     * @param  {GlslVector} parameter
     * @returns {GlslFloat}
-    * @memberof GlslVector4
     */
    dot(parameter) {
       return this.getGlslFloatResult([this, parameter], GLSL_OPERATOR.DOT);
    }
    /**
     * @returns {GlslFloat}
-    * @memberof GlslVector4
     */
    getLuminance() {
       return this.getGlslFloatResult([this], GLSL_OPERATOR.LUMINANCE);

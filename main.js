@@ -238,6 +238,9 @@ async function inputOrCalculationTypeChange() {
    } else if (DOM.getInputType() === INPUT_TYPE.RENDER) {
       DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "inherit";
 
+      DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value =
+         DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value;
+
       if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
          await virtualInputRenderer.setCameraDistance(
             Number(DOM_ELEMENT.RENDER_CAMERA_DISTANCE_INPUT.value)
@@ -255,7 +258,10 @@ async function inputOrCalculationTypeChange() {
       }
    }
 
-   if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
+   if (
+      DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO &&
+      DOM.getInputType() !== INPUT_TYPE.RENDER
+   ) {
       DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.disabled = false;
    } else {
       DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.disabled = true;
@@ -313,6 +319,10 @@ DOM_ELEMENT.RENDER_LIGHT_DISTANCE_INPUT.addEventListener("change", async () => {
 });
 
 DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.addEventListener("input", async () => {
+   DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value =
+      DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value;
+   DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.dispatchEvent(new Event("change"));
+
    virtualInputRenderer.setLightPolarAngleDeg(
       Number(DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value)
    );
@@ -322,6 +332,10 @@ DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.addEventListener("input", async () => {
 DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.addEventListener(
    "change",
    async () => {
+      DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value =
+         DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value;
+      DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.dispatchEvent(new Event("change"));
+
       virtualInputRenderer.setLightPolarAngleDeg(
          Number(DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value)
       );
