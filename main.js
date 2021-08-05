@@ -204,6 +204,7 @@ async function inputOrCalculationTypeChange() {
    DOM_ELEMENT.WEBCAM_AREA.style.display = "none";
    DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "none";
    DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "none";
+   DOM_ELEMENT.CALCULATION_TYPE_SELECT.style.display = "inherit";
 
    DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.disabled = false;
    DOM_ELEMENT.CALCULATION_TYPE_SELECT.disabled = false;
@@ -240,6 +241,8 @@ async function inputOrCalculationTypeChange() {
       }
       DOM_ELEMENT.INPUT_TYPE_SELECT.selectedIndex = -1; // deselects all options
    } else if (DOM.getInputType() === INPUT_TYPE.RENDER) {
+      DOM_ELEMENT.CALCULATION_TYPE_SELECT.selectedIndex = 0; // photometric stereo
+      DOM_ELEMENT.CALCULATION_TYPE_SELECT.style.display = "none";
       DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "inherit";
 
       DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value =
