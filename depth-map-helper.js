@@ -7,18 +7,25 @@ class DepthMapHelper {
     * @param {HTMLImageElement} normalMap
     * @param {number} qualityPercent
     * @param {HTMLImageElement} imageElement
+    * @param {HTMLProgressElement} progressElement
     * @returns {Promise<HTMLImageElement>}
     */
    static async getDepthMap(
       normalMap,
       qualityPercent = 0.001,
-      imageElement = undefined
+      imageElement = undefined,
+      progressElement = undefined
    ) {
       const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
       return new Promise((resolve) => {
          setTimeout(async () => {
             if (depthMapHelper.isRenderObsolete()) return;
+
+            if (progressElement) {
+               progressElement.removeAttribute("value");
+               progressElement.style.height = "1.25rem";
+            }
 
             const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
 
@@ -29,8 +36,7 @@ class DepthMapHelper {
 
             if (depthMapHelper.isRenderObsolete()) return;
 
-            /** @todo Implement progress bar. */
-            //let promiseResolveCount = 0;
+            let promiseResolveCount = 0;
 
             for (let i = 0; i < anglesCount; i++) {
                integralPromises[i] =
@@ -38,10 +44,14 @@ class DepthMapHelper {
                      depthMapHelper.azimuthalAngles[i],
                      gradientPixelArray
                   );
-               integralPromises[i].then(() => {
-                  //promiseResolveCount++;
-               });
 
+               if (progressElement) {
+                  integralPromises[i].then(() => {
+                     promiseResolveCount++;
+                     const percent = (promiseResolveCount / anglesCount) * 90;
+                     progressElement.value = percent;
+                  });
+               }
                if (depthMapHelper.isRenderObsolete()) return;
             }
 
@@ -53,6 +63,10 @@ class DepthMapHelper {
                integrals
             );
 
+            if (progressElement) {
+               progressElement.value = 95;
+            }
+
             if (depthMapHelper.isRenderObsolete()) return;
 
             const depthMap = await depthMapHelper.getDepthMapImage(integral);
@@ -61,6 +75,11 @@ class DepthMapHelper {
 
             if (imageElement && depthMap) {
                imageElement.src = depthMap.src;
+            }
+
+            if (progressElement) {
+               progressElement.value = 100;
+               progressElement.style.height = "0";
             }
          }, 100);
       });

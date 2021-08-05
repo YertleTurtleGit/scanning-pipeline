@@ -335,6 +335,10 @@ const DOM_ELEMENT = {
    RENDER_LIGHT_POLAR_DEG_INPUT: DOM.declareInput("renderLightPolarAngle"),
    RENDER_CAMERA_DISTANCE_INPUT: DOM.declareInput("cameraDistance"),
    RENDER_LIGHT_DISTANCE_INPUT: DOM.declareInput("lightDistance"),
+
+   DEPTH_MAP_PROGRESS: /** @type {HTMLProgressElement} */ (
+      document.getElementById("depthMapProgress")
+   ),
 };
 
 /** @typedef {string} INPUT_TYPE */

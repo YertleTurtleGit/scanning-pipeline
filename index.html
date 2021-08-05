@@ -10,8 +10,6 @@
    <body>
       <div id="loadingAll"></div>
       <div id="all">
-         <h1>Scanning Pipeline</h1>
-
          <div class="mainArea mainAreaArrow" id="inputArea">
             <h2>Input</h2>
 
@@ -124,6 +122,8 @@
                   />
                </div>
 
+               <br />
+
                <div id="webcamArea">
                   <video id="webcamPreview"></video>
                   <button id="webcamCapture">capture</button>
@@ -132,6 +132,7 @@
                <div id="inputRenderArea">
                   <canvas id="inputRenderCanvas"></canvas>
 
+                  <br />
                   <br />
 
                   <input
@@ -205,6 +206,7 @@
             <img id="normalMapImage" title="normal mapping" />
 
             <br />
+            <br />
 
             <input
                id="normalMapResolution"
@@ -254,8 +256,11 @@
          <div class="mainArea mainAreaArrow" id="depthMapArea">
             <h2>Depth Mapping</h2>
 
+            <progress max="100" id="depthMapProgress"></progress>
+
             <img id="depthMapImage" title="depth mapping" />
 
+            <br />
             <br />
 
             <input
@@ -286,6 +291,7 @@
                style="width: 100%; height: auto"
             ></canvas>
 
+            <br />
             <br />
 
             <input

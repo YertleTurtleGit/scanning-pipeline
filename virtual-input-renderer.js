@@ -12,7 +12,7 @@ class VirtualInputRenderer {
    constructor(
       uiCanvas,
       modelUrl = "./test-datasets/models/torus.glb",
-      renderDimensions = { width: 150, height: 150 }
+      renderDimensions = { width: 300, height: 300 }
    ) {
       this.uiCanvas = uiCanvas;
       this.modelUrl = modelUrl;
@@ -77,8 +77,6 @@ class VirtualInputRenderer {
             correctedLightPolarDegree * (Math.PI / 180)
          );
 
-         //lightAzimuthalDegree += 180;
-         //lightAzimuthalDegree *= -1;
          const lightRotation = lightAzimuthalDegree * (Math.PI / 180);
          const lightRotationAxis = new THREE.Vector3(0, 0, 1).normalize();
          lightVector.applyAxisAngle(lightRotationAxis, lightRotation);

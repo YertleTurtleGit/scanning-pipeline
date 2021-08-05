@@ -63,7 +63,8 @@ async function calculateDepthMap() {
    await DepthMapHelper.getDepthMap(
       DOM_ELEMENT.NORMAL_MAP_IMAGE,
       Number(DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.value),
-      DOM_ELEMENT.DEPTH_MAP_IMAGE
+      DOM_ELEMENT.DEPTH_MAP_IMAGE,
+      DOM_ELEMENT.DEPTH_MAP_PROGRESS
    );
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.remove("mainAreaLoading");
    await calculatePointCloud();
@@ -203,6 +204,9 @@ async function inputOrCalculationTypeChange() {
    DOM_ELEMENT.WEBCAM_AREA.style.display = "none";
    DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "none";
    DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "none";
+
+   DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.disabled = false;
+   DOM_ELEMENT.CALCULATION_TYPE_SELECT.disabled = false;
 
    if (DOM.getInputType() === INPUT_TYPE.TEST) {
       if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
@@ -400,7 +404,13 @@ DOM_ELEMENT.NORMAL_MAP_UPLOAD_FILE_INPUT.addEventListener(
          DOM_ELEMENT.NORMAL_MAP_UPLOAD_FILE_INPUT.files[0]
       );
 
+      inputOrCalculationTypeChange();
       calculateDepthMap();
+
+      DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.disabled = true;
+      DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.disabled = true;
+      DOM_ELEMENT.CALCULATION_TYPE_SELECT.disabled = true;
+      DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "none";
 
       setTimeout(() => {
          DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.opacity = "1";
