@@ -11,7 +11,7 @@ class VirtualInputRenderer {
     */
    constructor(
       uiCanvas,
-      modelUrl = "./test-datasets/models/torus.glb",
+      modelUrl = "./test-datasets/models/monkey.glb",
       renderDimensions = { width: 300, height: 300 }
    ) {
       this.uiCanvas = uiCanvas;
@@ -97,6 +97,92 @@ class VirtualInputRenderer {
     */
    isRenderObsolete(renderId) {
       return this.renderId < renderId;
+   }
+
+   /**
+    * @public
+    * @returns {Promise<HTMLImageElement>}
+    */
+   async renderNormalMapGroundTruth() {
+      await this.initialize();
+
+      for (let i = 0; i < this.lightHelpers.length; i++) {
+         this.lightHelpers[i].visible = false;
+      }
+      this.cameraHelper.visible = false;
+
+      this.scene.traverse((node) => {
+         if (node instanceof THREE.Mesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            node.material = new THREE.MeshNormalMaterial();
+         }
+      });
+
+      this.renderer.render(this.scene, this.camera);
+
+      this.scene.traverse((node) => {
+         if (node instanceof THREE.Mesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            node.material = this.material;
+         }
+      });
+
+      const renderImageDataUrl = this.renderer.domElement.toDataURL();
+
+      return new Promise((resolve) => {
+         setTimeout(() => {
+            const image = new Image();
+            image.addEventListener("load", () => {
+               resolve(image);
+            });
+            image.src = renderImageDataUrl;
+         });
+      });
+   }
+
+   /**
+    * @public
+    * @returns {Promise<HTMLImageElement>}
+    */
+   async renderDepthMapGroundTruth() {
+      await this.initialize();
+
+      for (let i = 0; i < this.lightHelpers.length; i++) {
+         this.lightHelpers[i].visible = false;
+      }
+      this.cameraHelper.visible = false;
+
+      this.scene.traverse((node) => {
+         if (node instanceof THREE.Mesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            node.material = new THREE.MeshDepthMaterial();
+         }
+      });
+
+      this.renderer.render(this.scene, this.camera);
+
+      this.scene.traverse((node) => {
+         if (node instanceof THREE.Mesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            node.material = this.material;
+         }
+      });
+
+      const renderImageDataUrl = this.renderer.domElement.toDataURL();
+
+      return new Promise((resolve) => {
+         setTimeout(() => {
+            const image = new Image();
+            image.addEventListener("load", () => {
+               resolve(image);
+            });
+            image.src = renderImageDataUrl;
+         });
+      });
    }
 
    /**
@@ -225,6 +311,7 @@ class VirtualInputRenderer {
          this.scene.add(this.lightHelpers[i]);
       }
 
+      // @ts-ignore
       const loader = new THREE.GLTFLoader();
 
       const data = await new Promise((resolve, reject) => {
@@ -241,18 +328,19 @@ class VirtualInputRenderer {
 
       this.scene.background = null;
 
-      const material = new THREE.MeshPhysicalMaterial({});
+      this.material = new THREE.MeshPhysicalMaterial({});
 
       this.object.traverse((node) => {
          if (node instanceof THREE.Mesh) {
             node.castShadow = true;
             node.receiveShadow = true;
-            node.material = material;
+            node.material = this.material;
          }
       });
 
       this.scene.add(this.object);
 
+      // @ts-ignore
       this.uiControls = new THREE.OrbitControls(this.uiCamera, this.uiCanvas);
       this.uiControls.target = new THREE.Vector3(0, 0, 0);
       this.uiControls.addEventListener("change", () => {

@@ -250,7 +250,16 @@ class NormalMapHelper {
                normalVector = rotationMatrix.multiplyVector3(normalVector);*/
             }
 
-            const normalMapRendering = GLSL.render(normalVector.getVector4());
+            // TODO: fix alpha
+            const alpha = normalVector
+               .channel(0)
+               .minimum(normalVector.channel(1), normalVector.channel(2))
+               .multiplyFloat(new GLSL.Float(99999))
+               .minimum(new GLSL.Float(1));
+
+            const normalMapRendering = GLSL.render(
+               normalVector.getVector4(alpha)
+            );
 
             if (normalMapHelper.isRenderObsolete()) return;
 
@@ -262,7 +271,7 @@ class NormalMapHelper {
                uiImageElement.src = normalMap.src;
             }
 
-            normalMapShader.unbind();
+            normalMapShader.purge();
          }, 100);
       });
    }
@@ -353,7 +362,7 @@ class NormalMapHelper {
                normalVector.normalize().getVector4()
             );
 
-            normalMapShader.unbind();
+            normalMapShader.purge();
 
             const normalMap = await normalMapRendering.getJsImage();
 
@@ -386,6 +395,101 @@ class NormalMapHelper {
     */
    isRenderObsolete() {
       return this.renderId < NormalMapHelper.renderId;
+   }
+
+   /**
+    * @public
+    * @param {HTMLImageElement} normalMap
+    * @param {HTMLImageElement} groundTruthImage
+    * @returns {Promise<number>}
+    */
+   static async getDifferenceValue(normalMap, groundTruthImage) {
+      const differenceImage = await NormalMapHelper.getDifferenceMap(
+         normalMap,
+         groundTruthImage
+      );
+
+      const width = differenceImage.width;
+      const height = differenceImage.height;
+
+      const imageCanvas = document.createElement("canvas");
+      imageCanvas.width = width;
+      imageCanvas.height = height;
+      const imageContext = imageCanvas.getContext("2d");
+      imageContext.drawImage(differenceImage, 0, 0, width, height);
+      const imageData = imageContext.getImageData(0, 0, width, height).data;
+
+      let differenceValue = 0;
+      for (let x = 0; x < width - 1; x++) {
+         for (let y = 0; y < height - 1; y++) {
+            const index = (x + y * width) * 4;
+            const localDifference = imageData[index] / 255;
+            differenceValue += localDifference;
+         }
+      }
+      differenceValue /= width * height;
+
+      return differenceValue;
+   }
+
+   /**
+    * @public
+    * @param {HTMLImageElement} normalMap
+    * @param {HTMLImageElement} groundTruthImage
+    * @returns {Promise<HTMLImageElement>}
+    */
+   static async getDifferenceMap(normalMap, groundTruthImage) {
+      return new Promise((resolve) => {
+         const differenceShader = new GLSL.Shader({
+            width: normalMap.width,
+            height: normalMap.height,
+         });
+         differenceShader.bind();
+
+         const normalImage = GLSL.Image.load(normalMap);
+         const groundTruthShaderImage = GLSL.Image.load(groundTruthImage);
+
+         let normal = new GLSL.Vector3([
+            normalImage.channel(0),
+            normalImage.channel(1),
+            normalImage.channel(2),
+         ]);
+
+         let groundTruth = new GLSL.Vector3([
+            groundTruthShaderImage.channel(0),
+            groundTruthShaderImage.channel(1),
+            groundTruthShaderImage.channel(2),
+         ]);
+
+         const zeroAsErrorSummand = new GLSL.Float(1).subtractFloat(
+            normal.length().step().divideFloat(groundTruth.length().step())
+         );
+
+         groundTruth = groundTruth.normalize();
+
+         const differenceAngle = normal
+            .dot(groundTruth)
+            .acos()
+            .abs()
+            .addFloat(zeroAsErrorSummand);
+
+         normal = normal.normalize();
+
+         const differenceMap = new Image();
+         differenceMap.addEventListener("load", () => {
+            resolve(differenceMap);
+         });
+         differenceMap.src = GLSL.render(
+            new GLSL.Vector4([
+               differenceAngle,
+               differenceAngle,
+               differenceAngle,
+               new GLSL.Float(1),
+            ])
+         ).getDataUrl();
+
+         differenceShader.purge();
+      });
    }
 }
 

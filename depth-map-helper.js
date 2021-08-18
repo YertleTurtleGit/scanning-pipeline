@@ -63,18 +63,18 @@ class DepthMapHelper {
                integrals
             );
 
-            if (progressElement) {
-               progressElement.value = 95;
-            }
+            if (progressElement) progressElement.value = 95;
 
             if (depthMapHelper.isRenderObsolete()) return;
 
             const depthMap = await depthMapHelper.getDepthMapImage(integral);
 
-            resolve(depthMap);
+            const maskedDepthMap = await depthMapHelper.applyMask(depthMap);
 
-            if (imageElement && depthMap) {
-               imageElement.src = depthMap.src;
+            resolve(maskedDepthMap);
+
+            if (imageElement && maskedDepthMap) {
+               imageElement.src = maskedDepthMap.src;
             }
 
             if (progressElement) {
@@ -218,6 +218,41 @@ class DepthMapHelper {
    }
 
    /**
+    * @param {HTMLImageElement} inputImage
+    * @returns {Promise<HTMLImageElement>}
+    */
+   async applyMask(inputImage) {
+      return new Promise((resolve) => {
+         const maskShader = new GLSL.Shader({
+            width: inputImage.width,
+            height: inputImage.height,
+         });
+
+         maskShader.bind();
+
+         const input = GLSL.Image.load(inputImage);
+         const normal = GLSL.Image.load(this.normalMap);
+
+         const mask = normal.channel(0).step(new GLSL.Float(0.001));
+
+         const maskedInput = input.multiplyFloat(mask);
+
+         resolve(
+            GLSL.render(
+               new GLSL.Vector4([
+                  maskedInput.channel(0),
+                  maskedInput.channel(1),
+                  maskedInput.channel(2),
+                  new GLSL.Float(1),
+               ])
+            ).getJsImage()
+         );
+
+         maskShader.purge();
+      });
+   }
+
+   /**
     * @private
     * @returns {Promise<Uint8Array>}
     */
@@ -251,7 +286,7 @@ class DepthMapHelper {
 
             resolve(gradientPixelArray);
 
-            depthMapShader.unbind();
+            depthMapShader.purge();
          });
       });
    }
@@ -292,6 +327,7 @@ class DepthMapHelper {
                   lineOffset += slope * -this.DEPTH_FACTOR;
                }
             }
+
             resolve(integral);
          });
       });
@@ -445,6 +481,86 @@ class DepthMapHelper {
       const topSlope =
          gradientPixelArray[index + 1] + DepthMapHelper.SLOPE_SHIFT;
       return stepVector.x * rightSlope + stepVector.y * topSlope;
+   }
+
+   /**
+    * @public
+    * @param {HTMLImageElement} depthMapA
+    * @param {HTMLImageElement} depthMapB
+    * @returns {Promise<number>}
+    */
+   static async getDifferenceValue(depthMapA, depthMapB) {
+      const differenceImage = await DepthMapHelper.getDifferenceMap(
+         depthMapA,
+         depthMapB
+      );
+
+      const width = differenceImage.width;
+      const height = differenceImage.height;
+
+      const imageCanvas = document.createElement("canvas");
+      imageCanvas.width = width;
+      imageCanvas.height = height;
+      const imageContext = imageCanvas.getContext("2d");
+      imageContext.drawImage(differenceImage, 0, 0, width, height);
+      const imageData = imageContext.getImageData(0, 0, width, height).data;
+
+      let differenceValue = 0;
+      for (let x = 0; x < width - 1; x++) {
+         for (let y = 0; y < height - 1; y++) {
+            const index = (x + y * width) * 4;
+            const localDifference = imageData[index] / 255;
+            differenceValue += localDifference;
+         }
+      }
+      differenceValue /= width * height;
+
+      return differenceValue;
+   }
+
+   /**
+    * @public
+    * @param {HTMLImageElement} depthMap
+    * @param {HTMLImageElement} groundTruthImage
+    * @returns {Promise<HTMLImageElement>}
+    */
+   static async getDifferenceMap(depthMap, groundTruthImage) {
+      return new Promise((resolve) => {
+         const differenceShader = new GLSL.Shader({
+            width: depthMap.width,
+            height: depthMap.height,
+         });
+         differenceShader.bind();
+
+         const depth = GLSL.Image.load(depthMap).channel(0);
+         const groundTruth = GLSL.Image.load(groundTruthImage).channel(0);
+
+         const zeroAsErrorSummand = new GLSL.Float(1).subtractFloat(
+            depth
+               .step(new GLSL.Float(0.001))
+               .divideFloat(groundTruth.step(new GLSL.Float(0.001)))
+         );
+
+         const differenceValue = depth
+            .subtractFloat(groundTruth)
+            .abs()
+            .addFloat(zeroAsErrorSummand);
+
+         const differenceMap = new Image();
+         differenceMap.addEventListener("load", () => {
+            resolve(differenceMap);
+         });
+         differenceMap.src = GLSL.render(
+            new GLSL.Vector4([
+               differenceValue,
+               differenceValue,
+               differenceValue,
+               new GLSL.Float(1),
+            ])
+         ).getDataUrl();
+
+         differenceShader.purge();
+      });
    }
 }
 

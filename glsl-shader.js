@@ -1136,7 +1136,7 @@ class GlslFloat extends GlslVariable {
     * @param {GlslFloat} edge
     * @returns {GlslFloat} Is zero if input is smaller than edge and otherwise one.
     */
-   step(edge) {
+   step(edge = new GLSL.Float(0.5)) {
       return this.getGlslFloatResult([edge, this], GLSL_OPERATOR.STEP);
    }
 }

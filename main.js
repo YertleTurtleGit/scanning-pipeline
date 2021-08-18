@@ -1,8 +1,13 @@
 /* global DOM, DOM_ELEMENT, INPUT_TYPE, CALCULATION_TYPE 
-NormalMapHelper, DepthMapHelper, PointCloudHelper, WebcamDatasetHelper, VirtualInputRenderer */
+NormalMapHelper, DepthMapHelper, PointCloudHelper, WebcamDatasetHelper, VirtualInputRenderer, BulkChartHelper */
 
-/** */
-async function calculateNormalMap() {
+/**
+ * @param {boolean} pipeline
+ * @returns {Promise<HTMLImageElement>}
+ */
+async function calculateNormalMap(pipeline = true) {
+   let normalMap;
+
    cancelAllRenderJobs();
 
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.add("mainAreaLoading");
@@ -14,7 +19,7 @@ async function calculateNormalMap() {
       "translate(-100%, -150%) rotate(180deg)";
 
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
-      await NormalMapHelper.getPhotometricStereoNormalMap(
+      normalMap = await NormalMapHelper.getPhotometricStereoNormalMap(
          Number(DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value),
          DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_000,
          DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_045,
@@ -33,7 +38,7 @@ async function calculateNormalMap() {
    } else if (
       DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
    ) {
-      await NormalMapHelper.getSphericalGradientNormalMap(
+      normalMap = await NormalMapHelper.getSphericalGradientNormalMap(
          DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_000,
          DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_090,
          DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_180,
@@ -49,25 +54,34 @@ async function calculateNormalMap() {
    DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.transform =
       "translate(0%, -150%) rotate(180deg)";
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.remove("mainAreaLoading");
-   await calculateDepthMap();
+   if (pipeline) {
+      await calculateDepthMap();
+   }
+   return normalMap;
 }
 
-/** */
-async function calculateDepthMap() {
+/**
+ * @param {boolean} pipeline
+ * @returns {Promise<HTMLImageElement>}
+ */
+async function calculateDepthMap(pipeline = true) {
    DepthMapHelper.cancelRenderJobs();
    PointCloudHelper.cancelRenderJobs();
 
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "0";
-   await DepthMapHelper.getDepthMap(
+   const depthMap = await DepthMapHelper.getDepthMap(
       DOM_ELEMENT.NORMAL_MAP_IMAGE,
       Number(DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.value),
       DOM_ELEMENT.DEPTH_MAP_IMAGE,
       DOM_ELEMENT.DEPTH_MAP_PROGRESS
    );
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.remove("mainAreaLoading");
-   await calculatePointCloud();
+   if (pipeline) {
+      await calculatePointCloud();
+   }
+   return depthMap;
 }
 
 /** */
@@ -353,27 +367,36 @@ DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.addEventListener(
 
 DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.addEventListener(
    "change",
-   calculateNormalMap
+   calculateNormalMap.bind()
 );
 DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.addEventListener(
    "input",
-   calculateNormalMap
+   calculateNormalMap.bind()
 );
 DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.addEventListener(
    "change",
-   calculateNormalMap
+   calculateNormalMap.bind()
 );
-DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.addEventListener("input", calculateNormalMap);
-DOM_ELEMENT.MASK_THRESHOLD_INPUT.addEventListener("change", calculateNormalMap);
-DOM_ELEMENT.MASK_THRESHOLD_INPUT.addEventListener("input", calculateNormalMap);
+DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.addEventListener(
+   "input",
+   calculateNormalMap.bind()
+);
+DOM_ELEMENT.MASK_THRESHOLD_INPUT.addEventListener(
+   "change",
+   calculateNormalMap.bind()
+);
+DOM_ELEMENT.MASK_THRESHOLD_INPUT.addEventListener(
+   "input",
+   calculateNormalMap.bind()
+);
 
 DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.addEventListener(
    "change",
-   calculateDepthMap
+   calculateDepthMap.bind()
 );
 DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.addEventListener(
    "input",
-   calculateDepthMap
+   calculateDepthMap.bind()
 );
 
 DOM_ELEMENT.POINT_CLOUD_DEPTH_FACTOR_INPUT.addEventListener(
@@ -430,5 +453,71 @@ DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.addEventListener("click", async () => {
       DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "1";
    }, 1000);
 });
+
+Array.from(document.getElementsByClassName("chartButton")).forEach(
+   (chartButton) => {
+      chartButton.addEventListener("click", () => {
+         DOM_ELEMENT.CHART_AREA.style.display = "inherit";
+
+         const rangeInput = /** @type {HTMLInputElement} */ (
+            chartButton.previousElementSibling
+         );
+
+         BulkChartHelper.bulkChartRangeInput(
+            DOM_ELEMENT.CHART_CANVAS,
+            rangeInput,
+            async () => {
+               DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value =
+                  DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value;
+
+               await virtualInputRenderer.setCameraDistance(
+                  Number(DOM_ELEMENT.RENDER_CAMERA_DISTANCE_INPUT.value)
+               );
+               await virtualInputRenderer.setLightDistance(
+                  Number(DOM_ELEMENT.RENDER_LIGHT_DISTANCE_INPUT.value)
+               );
+               await virtualInputRenderer.setLightPolarAngleDeg(
+                  Number(DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value)
+               );
+               DOM.setPhotometricStereoInputImages(
+                  await virtualInputRenderer.render()
+               );
+
+               await loadInputImages();
+            },
+
+            async () => {
+               const normalMapGroundTruthImage =
+                  await virtualInputRenderer.renderNormalMapGroundTruth();
+
+               /*DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.src =
+                  normalMapGroundTruthImage.src;*/
+
+               return NormalMapHelper.getDifferenceValue(
+                  await calculateNormalMap(false),
+                  normalMapGroundTruthImage
+               );
+            },
+            async () => {
+               const depthMapGroundTruthImage =
+                  await virtualInputRenderer.renderDepthMapGroundTruth();
+
+               /*DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.src =
+                  depthMapGroundTruthImage.src;*/
+
+               return DepthMapHelper.getDifferenceValue(
+                  await calculateDepthMap(false),
+                  depthMapGroundTruthImage
+               );
+            }
+         );
+
+         DOM_ELEMENT.CHART_AREA.scrollIntoView({
+            block: "end",
+            behavior: "smooth",
+         });
+      });
+   }
+);
 
 inputOrCalculationTypeChange();

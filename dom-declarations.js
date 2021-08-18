@@ -339,6 +339,13 @@ const DOM_ELEMENT = {
    DEPTH_MAP_PROGRESS: /** @type {HTMLProgressElement} */ (
       document.getElementById("depthMapProgress")
    ),
+
+   PIPELINE_AREA: document.getElementById("pipelineArea"),
+
+   CHART_AREA: document.getElementById("chartArea"),
+   CHART_CANVAS: /** @type {HTMLCanvasElement} */ (
+      document.getElementById("chartCanvas")
+   ),
 };
 
 /** @typedef {string} INPUT_TYPE */

@@ -55,22 +55,27 @@ class PointCloudHelper {
             const vertexColors = [];
 
             const maxDimension = Math.max(dataCanvas.width, dataCanvas.height);
-            /*const aspectWidth = dataCanvas.width / dataCanvas.height;
-        const aspectHeight = dataCanvas.height / dataCanvas.width;*/
+            /*
+            const aspectWidth = dataCanvas.width / dataCanvas.height;
+            const aspectHeight = dataCanvas.height / dataCanvas.width;
+            */
 
             for (let x = 0; x < dataCanvas.width; x++) {
                for (let y = 0; y < dataCanvas.height; y++) {
                   const index = (y * dataCanvas.width + x) * 4;
-                  vertices.push(
-                     (x / maxDimension - 0.5) * 100,
-                     (1 - y / maxDimension - 0.75) * 100,
-                     (imageData[index] / 255) * 100 * depthFactor
-                  );
-                  vertexColors.push(
-                     textureData[index + 0] / 255,
-                     textureData[index + 1] / 255,
-                     textureData[index + 2] / 255
-                  );
+
+                  const r = textureData[index + 0];
+                  const g = textureData[index + 1];
+                  const b = textureData[index + 2];
+
+                  if (r !== 0 || g !== 0 || b !== 0) {
+                     const xC = (x / maxDimension - 0.5) * 100;
+                     const yC = (1 - y / maxDimension - 0.75) * 100;
+                     const zC = (imageData[index] / 255) * 100 * depthFactor;
+
+                     vertices.push(xC, yC, zC);
+                     vertexColors.push(r / 255, g / 255, b / 255);
+                  }
                }
                if (pointCloudHelper.isRenderObsolete()) return;
             }
