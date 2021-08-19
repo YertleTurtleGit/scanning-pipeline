@@ -346,6 +346,7 @@ const DOM_ELEMENT = {
    CHART_CANVAS: /** @type {HTMLCanvasElement} */ (
       document.getElementById("chartCanvas")
    ),
+   CHART_ABORT_BUTTON: DOM.declareInput("chartAbortButton"),
 };
 
 /** @typedef {string} INPUT_TYPE */

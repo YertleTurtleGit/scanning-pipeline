@@ -30,6 +30,11 @@ class BulkChartHelper {
          if (fractionStep < step * 2) fractionStep = step;
 
          for (let i = min - step; i < max; i += fractionStep) {
+            if (BulkChartHelper.abortFlag) {
+               bulkChartHelper.abort();
+               return;
+            }
+
             if (!bulkChartHelper.isDataPoint(0, Math.round(i))) {
                rangeInput.value = String(Math.round(i));
 
@@ -136,4 +141,27 @@ class BulkChartHelper {
       this.chart.data.datasets[dataset].data[index] = value;
       this.chart.update();
    }
+
+   /**
+    * @public
+    */
+   abort() {
+      this.chart.destroy();
+   }
+
+   /**
+    * @public
+    */
+   static abortAll() {
+      BulkChartHelper.abortFlag = true;
+   }
+
+   /**
+    * @public
+    */
+   static resetAll() {
+      BulkChartHelper.abortFlag = false;
+   }
 }
+
+BulkChartHelper.abortFlag = false;

@@ -25,7 +25,6 @@
                   <option value="render" title="render" class="icon" selected
                      >🖥️</option
                   >
-
                   <option value="test" title="test dataset" class="icon"
                      >🧪</option
                   >
@@ -150,7 +149,7 @@
                         onchange="renderLightPolarAngleOutput.value=value + '° '"
                         oninput="renderLightPolarAngleOutput.value=value + '° '"
                      />
-                
+                     <button class="chartButton" title="chart">📈</button>
                      <output id="renderLightPolarAngleOutput"></output>
                      <label for="renderLightPolarAngle"
                         >light polar angle</label
@@ -320,6 +319,7 @@
             </div>
          </div>
          <div id="chartArea">
+            <button id="chartAbortButton">abort charting</button>
             <canvas id="chartCanvas"></canvas>
          </div>
       </div>

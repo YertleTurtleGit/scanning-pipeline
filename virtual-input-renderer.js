@@ -101,6 +101,22 @@ class VirtualInputRenderer {
 
    /**
     * @public
+    */
+   handleResize() {
+      const width = this.uiCanvas.clientWidth;
+      const height = this.uiCanvas.clientHeight;
+
+      if (this.uiCanvas.width !== width || this.uiCanvas.height !== height) {
+         this.uiRenderer.setSize(width, height);
+
+         this.camera.aspect = this.uiCanvas.width / this.uiCanvas.height;
+         this.camera.updateProjectionMatrix();
+         this.uiRenderer.render(this.scene, this.uiCamera);
+      }
+   }
+
+   /**
+    * @public
     * @returns {Promise<HTMLImageElement>}
     */
    async renderNormalMapGroundTruth() {
@@ -347,7 +363,13 @@ class VirtualInputRenderer {
          this.cameraHelper.visible = true;
          this.uiRenderer.render(this.scene, this.uiCamera);
       });
+
       this.uiControls.update();
+
+      window.addEventListener("resize", () => {
+         this.handleResize();
+      });
+      this.handleResize();
 
       this.initialized = true;
    }

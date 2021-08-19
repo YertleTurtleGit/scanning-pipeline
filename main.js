@@ -454,16 +454,31 @@ DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.addEventListener("click", async () => {
    }, 1000);
 });
 
+DOM_ELEMENT.CHART_ABORT_BUTTON.addEventListener("click", () => {
+   DOM_ELEMENT.CHART_ABORT_BUTTON.innerText = "aborting...";
+   BulkChartHelper.abortAll();
+});
+
 Array.from(document.getElementsByClassName("chartButton")).forEach(
    (chartButton) => {
-      chartButton.addEventListener("click", () => {
-         DOM_ELEMENT.CHART_AREA.style.display = "inherit";
+      chartButton.addEventListener("click", async () => {
+         DOM_ELEMENT.CHART_AREA.style.display = "initial";
 
          const rangeInput = /** @type {HTMLInputElement} */ (
             chartButton.previousElementSibling
          );
 
-         BulkChartHelper.bulkChartRangeInput(
+         const initialValue = rangeInput.value;
+
+         DOM_ELEMENT.PIPELINE_AREA.style.pointerEvents = "none";
+         DOM_ELEMENT.PIPELINE_AREA.style.filter = "grayscale()";
+
+         DOM_ELEMENT.CHART_AREA.scrollIntoView({
+            block: "end",
+            behavior: "smooth",
+         });
+
+         await BulkChartHelper.bulkChartRangeInput(
             DOM_ELEMENT.CHART_CANVAS,
             rangeInput,
             async () => {
@@ -490,9 +505,6 @@ Array.from(document.getElementsByClassName("chartButton")).forEach(
                const normalMapGroundTruthImage =
                   await virtualInputRenderer.renderNormalMapGroundTruth();
 
-               /*DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.src =
-                  normalMapGroundTruthImage.src;*/
-
                return NormalMapHelper.getDifferenceValue(
                   await calculateNormalMap(false),
                   normalMapGroundTruthImage
@@ -502,9 +514,6 @@ Array.from(document.getElementsByClassName("chartButton")).forEach(
                const depthMapGroundTruthImage =
                   await virtualInputRenderer.renderDepthMapGroundTruth();
 
-               /*DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.src =
-                  depthMapGroundTruthImage.src;*/
-
                return DepthMapHelper.getDifferenceValue(
                   await calculateDepthMap(false),
                   depthMapGroundTruthImage
@@ -512,10 +521,20 @@ Array.from(document.getElementsByClassName("chartButton")).forEach(
             }
          );
 
-         DOM_ELEMENT.CHART_AREA.scrollIntoView({
-            block: "end",
+         BulkChartHelper.resetAll();
+
+         DOM_ELEMENT.PIPELINE_AREA.scrollIntoView({
+            block: "start",
             behavior: "smooth",
          });
+
+         rangeInput.value = initialValue;
+         rangeInput.dispatchEvent(new Event("change"));
+
+         DOM_ELEMENT.PIPELINE_AREA.style.pointerEvents = "auto";
+         DOM_ELEMENT.CHART_AREA.style.display = "none";
+         DOM_ELEMENT.PIPELINE_AREA.style.filter = "";
+         DOM_ELEMENT.CHART_ABORT_BUTTON.innerText = "abort charting";
       });
    }
 );
