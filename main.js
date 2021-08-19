@@ -546,6 +546,7 @@ Array.from(document.getElementsByClassName("chartButton")).forEach(
 
          DOM_ELEMENT.CHART_AREA.style.display = "none";
          DOM_ELEMENT.CHART_ABORT_BUTTON.innerText = "abort charting";
+         DOM_ELEMENT.CHART_PAUSE_BUTTON.innerText = "pause charting";
 
          Array.from(
             DOM_ELEMENT.PIPELINE_AREA.getElementsByTagName("input")
