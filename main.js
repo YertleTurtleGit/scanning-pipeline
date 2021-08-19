@@ -470,8 +470,11 @@ Array.from(document.getElementsByClassName("chartButton")).forEach(
 
          const initialValue = rangeInput.value;
 
-         DOM_ELEMENT.PIPELINE_AREA.style.pointerEvents = "none";
-         DOM_ELEMENT.PIPELINE_AREA.style.filter = "grayscale()";
+         Array.from(
+            DOM_ELEMENT.PIPELINE_AREA.getElementsByTagName("input")
+         ).forEach((element) => {
+            element.disabled = true;
+         });
 
          DOM_ELEMENT.CHART_AREA.scrollIntoView({
             block: "end",
@@ -531,10 +534,14 @@ Array.from(document.getElementsByClassName("chartButton")).forEach(
          rangeInput.value = initialValue;
          rangeInput.dispatchEvent(new Event("change"));
 
-         DOM_ELEMENT.PIPELINE_AREA.style.pointerEvents = "auto";
          DOM_ELEMENT.CHART_AREA.style.display = "none";
-         DOM_ELEMENT.PIPELINE_AREA.style.filter = "";
          DOM_ELEMENT.CHART_ABORT_BUTTON.innerText = "abort charting";
+
+         Array.from(
+            DOM_ELEMENT.PIPELINE_AREA.getElementsByTagName("input")
+         ).forEach((element) => {
+            element.disabled = false;
+         });
       });
    }
 );
