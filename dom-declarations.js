@@ -347,6 +347,7 @@ const DOM_ELEMENT = {
       document.getElementById("chartCanvas")
    ),
    CHART_ABORT_BUTTON: DOM.declareInput("chartAbortButton"),
+   CHART_PAUSE_BUTTON: DOM.declareInput("chartPauseButton"),
 };
 
 /** @typedef {string} INPUT_TYPE */

@@ -34,6 +34,15 @@ class BulkChartHelper {
                bulkChartHelper.abort();
                return;
             }
+            while (BulkChartHelper.pauseFlag) {
+               if (BulkChartHelper.abortFlag) {
+                  bulkChartHelper.abort();
+                  return;
+               }
+               await new Promise((resolve) => {
+                  setTimeout(resolve, 1000);
+               });
+            }
 
             if (!bulkChartHelper.isDataPoint(0, Math.round(i))) {
                rangeInput.value = String(Math.round(i));
@@ -152,6 +161,13 @@ class BulkChartHelper {
    /**
     * @public
     */
+   static pauseAll() {
+      BulkChartHelper.pauseFlag = true;
+   }
+
+   /**
+    * @public
+    */
    static abortAll() {
       BulkChartHelper.abortFlag = true;
    }
@@ -161,7 +177,9 @@ class BulkChartHelper {
     */
    static resetAll() {
       BulkChartHelper.abortFlag = false;
+      BulkChartHelper.pauseFlag = false;
    }
 }
 
+BulkChartHelper.pauseFlag = false;
 BulkChartHelper.abortFlag = false;

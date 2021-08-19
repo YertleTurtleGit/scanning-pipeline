@@ -459,6 +459,16 @@ DOM_ELEMENT.CHART_ABORT_BUTTON.addEventListener("click", () => {
    BulkChartHelper.abortAll();
 });
 
+DOM_ELEMENT.CHART_PAUSE_BUTTON.addEventListener("click", () => {
+   if (DOM_ELEMENT.CHART_PAUSE_BUTTON.innerText === "pause charting") {
+      BulkChartHelper.pauseAll();
+      DOM_ELEMENT.CHART_PAUSE_BUTTON.innerText = "continue charting";
+   } else {
+      BulkChartHelper.resetAll();
+      DOM_ELEMENT.CHART_PAUSE_BUTTON.innerText = "pause charting";
+   }
+});
+
 Array.from(document.getElementsByClassName("chartButton")).forEach(
    (chartButton) => {
       chartButton.addEventListener("click", async () => {

@@ -32,6 +32,7 @@ input {
    flex-wrap: wrap;
    justify-content: space-between;
    gap: 1rem;
+   margin: 1rem;
 }
 
 #chartArea {
@@ -46,19 +47,22 @@ input {
    margin-top: 5rem;
 }
 
-#chartAbortButton {
+#chartButtonArea {
    position: fixed;
+   right: 2rem;
+   top: 2rem;
+}
+
+#chartButtonArea button {
    background-color: var(--backgroundColor0);
    color: var(--fontColor);
    border: 0.1rem solid var(--fontColor);
-   right: 2rem;
-   top: 2rem;
    font-size: larger;
    padding: 0.5rem;
    border-radius: 0.5rem;
 }
 
-#chartAbortButton:hover {
+#chartButtonArea button:hover {
    color: var(--backgroundColor0);
    background-color: var(--fontColor);
 }
