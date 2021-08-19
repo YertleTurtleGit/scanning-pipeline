@@ -274,7 +274,7 @@ class VirtualInputRenderer {
       this.camera = new THREE.PerspectiveCamera(
          25,
          this.renderDimensions.width / this.renderDimensions.height,
-         6,
+         1,
          9
       );
 

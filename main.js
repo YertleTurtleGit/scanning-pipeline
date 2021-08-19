@@ -513,7 +513,6 @@ Array.from(document.getElementsByClassName("chartButton")).forEach(
 
                await loadInputImages();
             },
-
             async () => {
                const normalMapGroundTruthImage =
                   await virtualInputRenderer.renderNormalMapGroundTruth();
@@ -558,3 +557,9 @@ Array.from(document.getElementsByClassName("chartButton")).forEach(
 );
 
 inputOrCalculationTypeChange();
+
+Array.from(
+   DOM_ELEMENT.PIPELINE_AREA.getElementsByClassName("userInput")
+).forEach((element) => {
+   element.dispatchEvent(new Event("change"));
+});
