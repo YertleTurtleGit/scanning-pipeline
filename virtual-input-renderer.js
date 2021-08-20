@@ -11,7 +11,7 @@ class VirtualInputRenderer {
     */
    constructor(
       uiCanvas,
-      modelUrl = "./test-datasets/models/plane.glb",
+      modelUrl = "./test-datasets/models/monkey.glb",
       renderDimensions = { width: 300, height: 300 }
    ) {
       this.uiCanvas = uiCanvas;
