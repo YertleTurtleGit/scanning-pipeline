@@ -34,6 +34,7 @@ const GLSL_VARIABLE = {
  */
 const GLSL_VARIABLE_TYPE = {
    FLOAT: "float",
+   VECTOR2: "vec2",
    VECTOR3: "vec3",
    VECTOR4: "vec4",
    MATRIX3: "mat3",
@@ -71,6 +72,7 @@ const GLSL_OPERATOR = {
    RADIANS: { GLSL_NAME: "radians", TYPE: OPERATOR_TYPE.METHOD },
    SIGN: { GLSL_NAME: "sign", TYPE: OPERATOR_TYPE.METHOD },
    STEP: { GLSL_NAME: "step", TYPE: OPERATOR_TYPE.METHOD },
+   DISTANCE: { GLSL_NAME: "distance", TYPE: OPERATOR_TYPE.METHOD },
 
    LUMINANCE: { GLSL_NAME: "luminance", TYPE: OPERATOR_TYPE.CUSTOM },
    CHANNEL: { GLSL_NAME: "channel", TYPE: OPERATOR_TYPE.CUSTOM },
@@ -115,6 +117,12 @@ class Shader {
          this.glslShader.reset();
          this.unbind();
       }
+   }
+   /**
+    * @returns {GlslVector2}
+    */
+   getUV() {
+      return new GlslVector2(undefined, GLSL_VARIABLE.UV);
    }
 }
 
@@ -1141,6 +1149,45 @@ class GlslFloat extends GlslVariable {
    }
 }
 
+class GlslVector2 extends GlslVector {
+   /**
+    * @param  {GlslFloat[]} vector2
+    * @param {string} customDeclaration
+    */
+   constructor(vector2 = undefined, customDeclaration = undefined) {
+      if (!customDeclaration) {
+         customDeclaration = "";
+         if (vector2) {
+            let vector2GlslNames = [];
+
+            vector2GlslNames.push(vector2[0].getGlslName());
+            vector2GlslNames.push(vector2[1].getGlslName());
+
+            customDeclaration =
+               GLSL_VARIABLE_TYPE.VECTOR2 +
+               "(" +
+               vector2GlslNames.join(", ") +
+               ")";
+         }
+      }
+      super(customDeclaration);
+   }
+   /**
+    * @returns {GLSL_VARIABLE_TYPE}
+    */
+   getGlslVarType() {
+      return GLSL_VARIABLE_TYPE.VECTOR2;
+   }
+
+   /**
+    * @param {GlslVector2} point
+    * @returns {GlslFloat}
+    */
+   distance(point) {
+      return this.getGlslFloatResult([this, point], GLSL_OPERATOR.DISTANCE);
+   }
+}
+
 class GlslVector3 extends GlslVector {
    /**
     * @param  {GlslFloat[]} vector3
@@ -1616,6 +1663,7 @@ class GlslMatrix3 extends GlslMatrix {
  * @typedef {GlslRendering.render} GLSL.render
  * @typedef {GlslFloat} GLSL.Float
  * @typedef {GlslImage} GLSL.image
+ * @typedef {GlslVector2} GLSL.Vector2
  * @typedef {GlslVector3} GLSL.Vector3
  * @typedef {GlslVector4} GLSL.Vector4
  * @typedef {GlslMatrix3} GLSL.Matrix3
@@ -1626,6 +1674,7 @@ const GLSL = {
    Image: GlslImage,
    Integer: GlslInteger,
    Float: GlslFloat,
+   Vector2: GlslVector2,
    Vector3: GlslVector3,
    Vector4: GlslVector4,
    Matrix3: GlslMatrix3,

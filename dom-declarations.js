@@ -310,6 +310,9 @@ const DOM_ELEMENT = {
    POLAR_ANGLE_DEG_INPUT: DOM.declareInput("polarAngleDeg"),
    MASK_THRESHOLD_INPUT: DOM.declareInput("maskThreshold"),
    DEPTH_MAP_QUALITY_INPUT: DOM.declareInput("depthMapQuality"),
+   DEPTH_MAP_PERSPECTIVE_CORRECTION_INPUT: DOM.declareInput(
+      "depthMapPerspectiveCorrection"
+   ),
    POINT_CLOUD_DEPTH_FACTOR_INPUT: DOM.declareInput("depthFactor"),
 
    FILE_BROWSE_INPUT: DOM.declareInput("fileBrowse"),

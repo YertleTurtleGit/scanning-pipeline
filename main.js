@@ -74,6 +74,7 @@ async function calculateDepthMap(pipeline = true) {
    const depthMap = await DepthMapHelper.getDepthMap(
       DOM_ELEMENT.NORMAL_MAP_IMAGE,
       Number(DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.value),
+      Number(DOM_ELEMENT.DEPTH_MAP_PERSPECTIVE_CORRECTION_INPUT.value),
       DOM_ELEMENT.DEPTH_MAP_IMAGE,
       DOM_ELEMENT.DEPTH_MAP_PROGRESS
    );
@@ -395,6 +396,15 @@ DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.addEventListener(
    calculateDepthMap.bind()
 );
 DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.addEventListener(
+   "input",
+   calculateDepthMap.bind()
+);
+
+DOM_ELEMENT.DEPTH_MAP_PERSPECTIVE_CORRECTION_INPUT.addEventListener(
+   "change",
+   calculateDepthMap.bind()
+);
+DOM_ELEMENT.DEPTH_MAP_PERSPECTIVE_CORRECTION_INPUT.addEventListener(
    "input",
    calculateDepthMap.bind()
 );

@@ -6,6 +6,7 @@ class DepthMapHelper {
     * @public
     * @param {HTMLImageElement} normalMap
     * @param {number} qualityPercent
+    * @param {number} perspectiveCorrectingFactor
     * @param {HTMLImageElement} imageElement
     * @param {HTMLProgressElement} progressElement
     * @returns {Promise<HTMLImageElement>}
@@ -13,6 +14,7 @@ class DepthMapHelper {
    static async getDepthMap(
       normalMap,
       qualityPercent = 0.001,
+      perspectiveCorrectingFactor = 0,
       imageElement = undefined,
       progressElement = undefined
    ) {
@@ -67,7 +69,10 @@ class DepthMapHelper {
 
             if (depthMapHelper.isRenderObsolete()) return;
 
-            const depthMap = await depthMapHelper.getDepthMapImage(integral);
+            const depthMap = await DepthMapHelper.getPerspectiveCorrected(
+               await depthMapHelper.getDepthMapImage(integral),
+               perspectiveCorrectingFactor
+            );
 
             const maskedDepthMap = await depthMapHelper.applyMask(depthMap);
 
@@ -112,15 +117,12 @@ class DepthMapHelper {
       const angleCount = Math.round(maximumAngleCount * this.qualityPercent);
       const angleDistance = 360 / angleCount;
 
-      this.azimuthalAngles = new Array(angleCount).fill(null);
+      this.azimuthalAngles = [];
 
       let angleOffset = 0;
-      for (
-         let i = 0, anglesCount = this.azimuthalAngles.length;
-         i < anglesCount;
-         i++
-      ) {
-         this.azimuthalAngles[i] = angleOffset;
+      for (let i = 0; i < angleCount; i += 2) {
+         this.azimuthalAngles.push(angleOffset);
+         this.azimuthalAngles.push(180 + angleOffset);
          angleOffset += angleDistance;
       }
    }
@@ -481,6 +483,49 @@ class DepthMapHelper {
       const topSlope =
          gradientPixelArray[index + 1] + DepthMapHelper.SLOPE_SHIFT;
       return stepVector.x * rightSlope + stepVector.y * topSlope;
+   }
+
+   /**
+    * @public
+    * @param {HTMLImageElement} image
+    * @param {number} factor
+    * @returns {Promise<HTMLImageElement>}
+    */
+   static async getPerspectiveCorrected(image, factor) {
+      factor *= 5;
+
+      const shader = new GLSL.Shader({
+         width: image.width,
+         height: image.height,
+      });
+
+      shader.bind();
+      const depth = GLSL.Image.load(image).channel(0);
+
+      let vignette = shader
+         .getUV()
+         .distance(
+            new GLSL.Vector2([new GLSL.Float(0.5), new GLSL.Float(0.5)])
+         );
+
+      vignette = vignette
+         .multiplyFloat(vignette)
+         .multiplyFloat(new GLSL.Float(factor));
+
+      const appliedVignette = depth.addFloat(vignette);
+
+      const output = new GLSL.Vector4([
+         appliedVignette,
+         appliedVignette,
+         appliedVignette,
+         new GLSL.Float(1),
+      ]);
+
+      const perspectiveCorrectedImage = GLSL.render(output).getJsImage();
+
+      shader.purge();
+
+      return perspectiveCorrectedImage;
    }
 
    /**

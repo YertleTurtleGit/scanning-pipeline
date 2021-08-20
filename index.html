@@ -292,6 +292,25 @@
                />
                <output id="depthMapQualityOutput"></output>
                <label for="depthMapQuality">quality</label>
+
+               <br />
+
+               <input
+                  id="depthMapPerspectiveCorrection"
+                  class="userInput"
+                  type="range"
+                  name="depthMapPerspectiveCorrection"
+                  min="-1"
+                  step="0.01"
+                  max="1"
+                  value="0"
+                  onchange="depthMapPerspectiveCorrectionOutput.value=value + ' '"
+                  oninput="depthMapPerspectiveCorrectionOutput.value=value + ' '"
+               />
+               <output id="depthMapPerspectiveCorrectionOutput"></output>
+               <label for="depthMapPerspectiveCorrection"
+                  >perspective correction factor</label
+               >
             </div>
 
             <div class="mainArea" id="pointCloudArea">
