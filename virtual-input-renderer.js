@@ -1,4 +1,4 @@
-/* global THREE */
+/* global THREE, GLSL */
 /* exported VirtualInputRenderer */
 
 // TODO: make abstract and implement spherical gradient
@@ -190,15 +190,57 @@ class VirtualInputRenderer {
 
       const renderImageDataUrl = this.renderer.domElement.toDataURL();
 
-      return new Promise((resolve) => {
-         setTimeout(() => {
-            const image = new Image();
-            image.addEventListener("load", () => {
-               resolve(image);
-            });
-            image.src = renderImageDataUrl;
+      const renderImage = await new Promise((resolve) => {
+         const image = new Image();
+         image.addEventListener("load", () => {
+            resolve(image);
          });
+         image.src = renderImageDataUrl;
       });
+
+      const width = renderImage.width;
+      const height = renderImage.height;
+
+      const imageCanvas = document.createElement("canvas");
+      imageCanvas.width = width;
+      imageCanvas.height = height;
+      const imageContext = imageCanvas.getContext("2d");
+      imageContext.drawImage(renderImage, 0, 0, width, height);
+      const imageData = imageContext.getImageData(0, 0, width, height).data;
+
+      let min = 255;
+      let max = 0;
+
+      for (let x = 0; x < width - 1; x++) {
+         for (let y = 0; y < height - 1; y++) {
+            const index = (x + y * width) * 4;
+            const localDepth = imageData[index] / 255;
+            min = Math.min(min, localDepth);
+            max = Math.max(max, localDepth);
+         }
+      }
+
+      const normalizeShader = new GLSL.Shader({ width: width, height: height });
+      normalizeShader.bind();
+
+      const depthValue = GLSL.Image.load(renderImage).channel(0);
+
+      const normalizedDepthValue = depthValue
+         .subtractFloat(new GLSL.Float(min))
+         .multiplyFloat(new GLSL.Float(255 / (max - min)));
+
+      const normalizedDepthImage = GLSL.render(
+         new GLSL.Vector4([
+            normalizedDepthValue,
+            normalizedDepthValue,
+            normalizedDepthValue,
+            new GLSL.Float(1),
+         ])
+      ).getJsImage();
+
+      normalizeShader.purge();
+
+      return normalizedDepthImage;
    }
 
    /**
