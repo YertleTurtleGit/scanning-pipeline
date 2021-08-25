@@ -42,6 +42,17 @@ class NormalMapHelper {
 
       return new Promise((resolve) => {
          setTimeout(async () => {
+            if (
+               lightImage_000.naturalWidth < 1 ||
+               lightImage_045.naturalWidth < 1 ||
+               lightImage_090.naturalWidth < 1 ||
+               lightImage_180.naturalWidth < 1 ||
+               lightImage_225.naturalWidth < 1 ||
+               lightImage_270.naturalWidth < 1 ||
+               lightImage_315.naturalWidth < 1
+            )
+               return;
+
             if (normalMapHelper.isRenderObsolete()) return;
 
             const normalMapShader = new GLSL.Shader({

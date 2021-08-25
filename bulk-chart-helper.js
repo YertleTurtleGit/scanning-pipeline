@@ -47,6 +47,8 @@ class BulkChartHelper {
             if (!bulkChartHelper.isDataPoint(0, Math.round(i))) {
                rangeInput.value = String(Math.round(i));
 
+               console.log(Math.round(i));
+
                await preHook();
 
                const normalMapDifferenceValue =
@@ -71,6 +73,8 @@ class BulkChartHelper {
          fraction *= 2;
          fractionStep = max / fraction;
       } while (fractionStep >= step);
+
+      console.log("finished");
    }
 
    /**

@@ -11,7 +11,7 @@ class VirtualInputRenderer {
     */
    constructor(
       uiCanvas,
-      modelUrl = "./test-datasets/models/monkey.glb",
+      modelUrl = "./test-datasets/models/plane.glb",
       renderDimensions = { width: 300, height: 300 }
    ) {
       this.uiCanvas = uiCanvas;
@@ -55,7 +55,9 @@ class VirtualInputRenderer {
       this.camera.updateProjectionMatrix();
       this.uiCamera.lookAt(new THREE.Vector3(0, 0, this.cameraDistance / 3));
       this.uiCamera.updateProjectionMatrix();
-      this.uiControls.update();
+      if (this.uiControls) {
+         this.uiControls.update();
+      }
    }
 
    /**

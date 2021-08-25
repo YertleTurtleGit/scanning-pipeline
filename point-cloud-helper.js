@@ -20,6 +20,8 @@ class PointCloudHelper {
 
       return new Promise((resolve) => {
          setTimeout(async () => {
+            if (depthMapImage.naturalWidth === 0) return;
+
             if (pointCloudHelper.isRenderObsolete()) return;
             await pointCloudHelper.renderingContext.initialize();
             if (pointCloudHelper.isRenderObsolete()) return;
@@ -245,6 +247,7 @@ class PointCloudHelperRenderingContext {
          1000
       );
 
+      // @ts-ignore
       this.controls = new THREE.OrbitControls(this.camera, this.renderCanvas);
       this.scene = new THREE.Scene();
       this.geometry = new THREE.BufferGeometry();

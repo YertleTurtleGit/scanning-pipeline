@@ -656,7 +656,7 @@ class GlslImage {
     * @param  {WebGL2RenderingContext} glContext
     * @returns {WebGLTexture}
     */
-   createTexture(glContext) {
+   createBaseTexture(glContext) {
       let texture = glContext.createTexture();
       glContext.bindTexture(glContext.TEXTURE_2D, texture);
       glContext.texParameteri(
@@ -699,7 +699,7 @@ class GlslImage {
       glContext.activeTexture(glContext.TEXTURE0 + textureUnit);
       glContext.bindTexture(
          glContext.TEXTURE_2D,
-         this.createTexture(glContext)
+         this.createBaseTexture(glContext)
       );
       glContext.uniform1i(
          glContext.getUniformLocation(shaderProgram, this.uniformGlslName),
