@@ -11,13 +11,14 @@ class VirtualInputRenderer {
     */
    constructor(
       uiCanvas,
-      modelUrl = "./test-datasets/models/plane.glb",
+      modelUrl = "./test-datasets/models/monkey.glb",
       renderDimensions = { width: 300, height: 300 }
    ) {
       this.uiCanvas = uiCanvas;
       this.modelUrl = modelUrl;
       this.renderDimensions = renderDimensions;
       this.initialized = false;
+      this.initializing = false;
       this.renderId = 0;
    }
 
@@ -306,10 +307,10 @@ class VirtualInputRenderer {
     * @private
     */
    async initialize() {
-      if (this.initialized) {
+      if (this.initialized || (!this.initialized && this.initializing)) {
          return;
       }
-      this.initialized = true;
+      this.initializing = true;
 
       const initLightDistance = 8; // TODO: remove hard coding
 
@@ -378,6 +379,12 @@ class VirtualInputRenderer {
          loader.load(this.modelUrl, (data) => resolve(data), null, reject);
       });
 
+
+      if (!data) {
+         this.initializing = false;
+         return;
+      }
+
       this.object = data.scene;
 
       this.object.position.set(0, 0, 0);
@@ -416,6 +423,7 @@ class VirtualInputRenderer {
       this.handleResize();
 
       this.initialized = true;
+      this.initializing = false;
    }
 }
 /** @type {VirtualInputRenderer[]} */
