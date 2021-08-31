@@ -52,9 +52,15 @@ async function calculateNormalMap(pipeline = true) {
    }
 
    if (DOM.getInputType() === INPUT_TYPE.RENDER) {
-      DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.src = (
-         await virtualInputRenderer.renderNormalMapGroundTruth()
-      ).src;
+      const groundTruth =
+         await virtualInputRenderer.renderNormalMapGroundTruth();
+
+      DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.src = groundTruth.src;
+
+      DOM_ELEMENT.NORMAL_MAP_ACCURACY.innerText = String(
+         (await NormalMapHelper.getDifferenceValue(normalMap, groundTruth)) *
+            100
+      );
    }
 
    DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.transform =
@@ -86,9 +92,14 @@ async function calculateDepthMap(pipeline = true) {
    );
 
    if (DOM.getInputType() === INPUT_TYPE.RENDER) {
-      DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.src = (
-         await virtualInputRenderer.renderDepthMapGroundTruth()
-      ).src;
+      const groundTruth =
+         await virtualInputRenderer.renderDepthMapGroundTruth();
+
+      DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.src = groundTruth.src;
+
+      DOM_ELEMENT.DEPTH_MAP_ACCURACY.innerText = String(
+         (await DepthMapHelper.getDifferenceValue(depthMap, groundTruth)) * 100
+      );
    }
 
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.remove("mainAreaLoading");

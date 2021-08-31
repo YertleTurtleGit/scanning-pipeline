@@ -265,6 +265,9 @@ const DOM_ELEMENT = {
    NORMAL_MAP_GROUND_TRUTH_IMAGE: DOM.declareImage("normalMapGroundTruthImage"),
    DEPTH_MAP_GROUND_TRUTH_IMAGE: DOM.declareImage("depthMapGroundTruthImage"),
 
+   NORMAL_MAP_ACCURACY: document.getElementById("normalMapAccuracy"),
+   DEPTH_MAP_ACCURACY: document.getElementById("depthMapAccuracy"),
+
    INPUT_TYPE_SELECT: /** @type {HTMLSelectElement} */ (
       document.getElementById("inputType")
    ),

@@ -228,9 +228,15 @@ class VirtualInputRenderer {
 
       const depthValue = GLSL.Image.load(renderImage).channel(0);
 
-      const normalizedDepthValue = depthValue
-         .subtractFloat(new GLSL.Float(min))
-         .multiplyFloat(new GLSL.Float(1 / max));
+      let normalizedDepthValue;
+
+      if (min === max) {
+         normalizedDepthValue = depthValue;
+      } else {
+         normalizedDepthValue = depthValue
+            .subtractFloat(new GLSL.Float(min))
+            .multiplyFloat(new GLSL.Float(1 / max));
+      }
 
       const normalizedDepthImage = GLSL.render(
          new GLSL.Vector4([
