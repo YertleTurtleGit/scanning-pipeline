@@ -230,7 +230,7 @@ class VirtualInputRenderer {
 
       const normalizedDepthValue = depthValue
          .subtractFloat(new GLSL.Float(min))
-         .multiplyFloat(new GLSL.Float(255 / (max - min)));
+         .multiplyFloat(new GLSL.Float(1 / max));
 
       const normalizedDepthImage = GLSL.render(
          new GLSL.Vector4([
@@ -378,7 +378,6 @@ class VirtualInputRenderer {
       const data = await new Promise((resolve, reject) => {
          loader.load(this.modelUrl, (data) => resolve(data), null, reject);
       });
-
 
       if (!data) {
          this.initializing = false;

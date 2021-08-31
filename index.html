@@ -11,7 +11,7 @@
       <div id="loadingAll"></div>
       <div id="all">
          <div id="pipelineArea">
-            <div class="mainArea mainAreaArrow" id="inputArea">
+            <div class="mainArea" id="inputArea">
                <h2>Input</h2>
 
                <select id="calculationType" size="2">
@@ -195,7 +195,7 @@
                <input id="fileBrowse" type="file" accept="image/*" multiple />
             </div>
 
-            <div class="mainArea mainAreaArrow" id="normalMapArea">
+            <div class="mainArea" id="normalMapArea">
                <h2>Normal Mapping</h2>
 
                <div class="mainAreaButtonArea">
@@ -266,9 +266,17 @@
                />
                <output id="maskThresholdOutput"></output>
                <label for="maskThreshold">mask threshold</label>
+
+               <br />
+               <br />
+
+               <img
+                  id="normalMapGroundTruthImage"
+                  title="normal mapping ground truth"
+               />
             </div>
 
-            <div class="mainArea mainAreaArrow" id="depthMapArea">
+            <div class="mainArea" id="depthMapArea">
                <h2>Depth Mapping</h2>
 
                <progress max="100" id="depthMapProgress"></progress>
@@ -311,6 +319,14 @@
                <label for="depthMapPerspectiveCorrection"
                   >perspective correction factor</label
                >
+
+               <br />
+               <br />
+
+               <img
+                  id="depthMapGroundTruthImage"
+                  title="depth mapping ground truth"
+               />
             </div>
 
             <div class="mainArea" id="pointCloudArea">

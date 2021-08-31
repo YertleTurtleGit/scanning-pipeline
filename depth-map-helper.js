@@ -530,14 +530,14 @@ class DepthMapHelper {
 
    /**
     * @public
-    * @param {HTMLImageElement} depthMapA
-    * @param {HTMLImageElement} depthMapB
+    * @param {HTMLImageElement} depthMap
+    * @param {HTMLImageElement} groundTruthImage
     * @returns {Promise<number>}
     */
-   static async getDifferenceValue(depthMapA, depthMapB) {
+   static async getDifferenceValue(depthMap, groundTruthImage) {
       const differenceImage = await DepthMapHelper.getDifferenceMap(
-         depthMapA,
-         depthMapB
+         depthMap,
+         groundTruthImage
       );
 
       const width = differenceImage.width;

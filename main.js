@@ -51,6 +51,12 @@ async function calculateNormalMap(pipeline = true) {
       );
    }
 
+   if (DOM.getInputType() === INPUT_TYPE.RENDER) {
+      DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.src = (
+         await virtualInputRenderer.renderNormalMapGroundTruth()
+      ).src;
+   }
+
    DOM_ELEMENT.NORMAL_MAP_UPLOAD_BUTTON.style.transform =
       "translate(0%, -150%) rotate(180deg)";
    DOM_ELEMENT.NORMAL_MAP_AREA.classList.remove("mainAreaLoading");
@@ -78,6 +84,13 @@ async function calculateDepthMap(pipeline = true) {
       DOM_ELEMENT.DEPTH_MAP_IMAGE,
       DOM_ELEMENT.DEPTH_MAP_PROGRESS
    );
+
+   if (DOM.getInputType() === INPUT_TYPE.RENDER) {
+      DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.src = (
+         await virtualInputRenderer.renderDepthMapGroundTruth()
+      ).src;
+   }
+
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.remove("mainAreaLoading");
    if (pipeline) {
       await calculatePointCloud();
@@ -219,6 +232,8 @@ async function inputOrCalculationTypeChange() {
    DOM_ELEMENT.WEBCAM_AREA.style.display = "none";
    DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "none";
    DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "none";
+   DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.style.display = "none";
+   DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.style.display = "none";
    DOM_ELEMENT.CALCULATION_TYPE_SELECT.style.display = "inherit";
 
    DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.disabled = false;
@@ -259,6 +274,8 @@ async function inputOrCalculationTypeChange() {
       DOM_ELEMENT.CALCULATION_TYPE_SELECT.selectedIndex = 0; // photometric stereo
       DOM_ELEMENT.CALCULATION_TYPE_SELECT.style.display = "none";
       DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "inherit";
+      DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.style.display = "inherit";
+      DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.style.display = "inherit";
 
       DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value =
          DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value;
@@ -524,21 +541,15 @@ Array.from(document.getElementsByClassName("chartButton")).forEach(
                await loadInputImages();
             },
             async () => {
-               const normalMapGroundTruthImage =
-                  await virtualInputRenderer.renderNormalMapGroundTruth();
-
                return NormalMapHelper.getDifferenceValue(
                   await calculateNormalMap(false),
-                  normalMapGroundTruthImage
+                  DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE
                );
             },
             async () => {
-               const depthMapGroundTruthImage =
-                  await virtualInputRenderer.renderDepthMapGroundTruth();
-
                return DepthMapHelper.getDifferenceValue(
                   await calculateDepthMap(false),
-                  depthMapGroundTruthImage
+                  DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE
                );
             }
          );

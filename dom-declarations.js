@@ -262,6 +262,9 @@ const DOM_ELEMENT = {
    NORMAL_MAP_IMAGE: DOM.declareImage("normalMapImage"),
    DEPTH_MAP_IMAGE: DOM.declareImage("depthMapImage"),
 
+   NORMAL_MAP_GROUND_TRUTH_IMAGE: DOM.declareImage("normalMapGroundTruthImage"),
+   DEPTH_MAP_GROUND_TRUTH_IMAGE: DOM.declareImage("depthMapGroundTruthImage"),
+
    INPUT_TYPE_SELECT: /** @type {HTMLSelectElement} */ (
       document.getElementById("inputType")
    ),
