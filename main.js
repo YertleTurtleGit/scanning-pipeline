@@ -245,6 +245,8 @@ async function inputOrCalculationTypeChange() {
    DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "none";
    DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.style.display = "none";
    DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.style.display = "none";
+   DOM_ELEMENT.NORMAL_MAP_ACCURACY_AREA.style.display = "none";
+   DOM_ELEMENT.DEPTH_MAP_ACCURACY_AREA.style.display = "none";
    DOM_ELEMENT.CALCULATION_TYPE_SELECT.style.display = "inherit";
 
    DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.disabled = false;
@@ -287,6 +289,8 @@ async function inputOrCalculationTypeChange() {
       DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "inherit";
       DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.style.display = "inherit";
       DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.style.display = "inherit";
+      DOM_ELEMENT.NORMAL_MAP_ACCURACY_AREA.style.display = "inherit";
+      DOM_ELEMENT.DEPTH_MAP_ACCURACY_AREA.style.display = "inherit";
 
       DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value =
          DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value;

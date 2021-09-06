@@ -8,6 +8,15 @@
          "file": "${workspaceFolder}/index.html",
          "runtimeExecutable": "/snap/bin/chromium",
          "runtimeArgs": ["--allow-file-access-from-files"]
+      },
+      {
+         "name": "Launch Firefox index.html",
+         "request": "launch",
+         "type": "firefox",
+         "file": "${workspaceFolder}/index.html",
+         "runtimeExecutable": "/snap/bin/firefox",
+         "tmpDir": "/home/${env:USERNAME}/tmp",
+         "runtimeArgs": ["--allow-file-access-from-files"]
       }
    ]
 }
