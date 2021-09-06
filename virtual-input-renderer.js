@@ -1,7 +1,7 @@
 /* global THREE, GLSL */
 /* exported VirtualInputRenderer */
 
-// TODO: make abstract and implement spherical gradient
+// TODO: Make abstract and implement spherical gradient.
 class VirtualInputRenderer {
    /**
     * @public
@@ -130,23 +130,9 @@ class VirtualInputRenderer {
       }
       this.cameraHelper.visible = false;
 
-      this.scene.traverse((node) => {
-         if (node instanceof THREE.Mesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-            node.material = new THREE.MeshNormalMaterial();
-         }
-      });
-
+      this.mesh.material = new THREE.MeshNormalMaterial();
       this.renderer.render(this.scene, this.camera);
-
-      this.scene.traverse((node) => {
-         if (node instanceof THREE.Mesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-            node.material = this.material;
-         }
-      });
+      this.mesh.material = this.material;
 
       const renderImageDataUrl = this.renderer.domElement.toDataURL();
 
@@ -173,23 +159,9 @@ class VirtualInputRenderer {
       }
       this.cameraHelper.visible = false;
 
-      this.scene.traverse((node) => {
-         if (node instanceof THREE.Mesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-            node.material = new THREE.MeshDepthMaterial();
-         }
-      });
-
+      this.mesh.material = new THREE.MeshDepthMaterial();
       this.renderer.render(this.scene, this.camera);
-
-      this.scene.traverse((node) => {
-         if (node instanceof THREE.Mesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-            node.material = this.material;
-         }
-      });
+      this.mesh.material = this.material;
 
       const renderImageDataUrl = this.renderer.domElement.toDataURL();
 
@@ -391,6 +363,7 @@ class VirtualInputRenderer {
       }
 
       this.object = data.scene;
+      this.mesh = this.object.children[0];
 
       this.object.position.set(0, 0, 0);
       this.object.rotation.x = 90 * (Math.PI / 180);
@@ -402,13 +375,9 @@ class VirtualInputRenderer {
 
       this.material = new THREE.MeshPhysicalMaterial({});
 
-      this.object.traverse((node) => {
-         if (node instanceof THREE.Mesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-            node.material = this.material;
-         }
-      });
+      this.mesh.castShadow = true;
+      this.mesh.receiveShadow = true;
+      this.mesh.material = this.material;
 
       this.scene.add(this.object);
 

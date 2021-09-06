@@ -217,16 +217,6 @@ async function loadInputImages() {
    return allRequiredInputImagesDefined;
 }
 
-/*function calculateNormalMapResolution() {
-   const sizeFactor = Math.round(
-      (NORMAL_MAP_IMAGE.width / PHOTOMETRIC_STEREO_IMAGE_000.naturalWidth) *
-         100 +
-         0.5
-   );
-   NORMAL_MAP_RESOLUTION_INPUT.value = String(sizeFactor);
-   NORMAL_MAP_RESOLUTION_INPUT.min = String(sizeFactor);
-}*/
-
 /** */
 async function inputOrCalculationTypeChange() {
    NormalMapHelper.cancelRenderJobs();
