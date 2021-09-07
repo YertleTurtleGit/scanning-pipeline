@@ -357,6 +357,7 @@ const DOM_ELEMENT = {
    CHART_CANVAS: /** @type {HTMLCanvasElement} */ (
       document.getElementById("chartCanvas")
    ),
+   CHART_DOWNLOAD_BUTTON: DOM.declareInput("chartDownloadButton"),
    CHART_ABORT_BUTTON: DOM.declareInput("chartAbortButton"),
    CHART_PAUSE_BUTTON: DOM.declareInput("chartPauseButton"),
 };

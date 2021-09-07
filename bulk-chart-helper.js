@@ -21,7 +21,13 @@ class BulkChartHelper {
       const max = Number(rangeInput.max);
       const step = Number(rangeInput.step);
 
-      const bulkChartHelper = new BulkChartHelper(chartCanvas, min, max, step);
+      const bulkChartHelper = new BulkChartHelper(
+         chartCanvas,
+         min,
+         max,
+         step,
+         rangeInput.title
+      );
 
       let fraction = 1;
       let fractionStep = max / fraction - step - min;
@@ -74,7 +80,13 @@ class BulkChartHelper {
          fractionStep = max / fraction;
       } while (fractionStep >= step);
 
-      console.log("finished");
+      while (!BulkChartHelper.abortFlag) {
+         await new Promise((resolve) => {
+            setTimeout(resolve, 1000);
+         });
+      }
+
+      bulkChartHelper.abort();
    }
 
    /**
@@ -83,9 +95,14 @@ class BulkChartHelper {
     * @param {number} minimum
     * @param {number} maximum
     * @param {number} step
+    * @param {string} title
     */
-   constructor(canvas, minimum, maximum, step) {
+   constructor(canvas, minimum, maximum, step, title = "untitled") {
+      BulkChartHelper.currentInstance = this;
+
       this.context = canvas.getContext("2d");
+
+      this.title = title;
 
       this.dataA = [];
       this.dataB = [];
@@ -132,6 +149,66 @@ class BulkChartHelper {
 
       // @ts-ignore
       this.chart = new Chart(this.context, this.config);
+   }
+
+   /**
+    * @public
+    */
+   static downloadCurrentDataFile() {
+      BulkChartHelper.currentInstance.downloadDataFile();
+   }
+
+   /**
+    * @public
+    * @param {string} filename
+    */
+   downloadDataFile(filename = "accuracy") {
+      const element = document.createElement("a");
+      element.style.display = "none";
+
+      const blob = new Blob([this.getDataFileSring()], {
+         type: "text/plain; charset = utf-8",
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      element.setAttribute("href", window.URL.createObjectURL(blob));
+      element.setAttribute("download", filename);
+
+      document.body.appendChild(element);
+
+      element.click();
+
+      window.URL.revokeObjectURL(url);
+      element.remove();
+   }
+
+   /**
+    * @private
+    * @returns {string}
+    */
+   getDataFileSring() {
+      this.dataFileString =
+         this.title.replace(" ", "_") +
+         " normal_mapping_accuracy depth_mapping_accuracy";
+
+      const length = this.data.datasets[0].data.length;
+
+      for (let i = 0; i < length; i++) {
+         const normalAccuracy = this.data.datasets[0].data[i];
+         const depthAccuracy = this.data.datasets[1].data[i];
+
+         if (normalAccuracy && depthAccuracy) {
+            this.dataFileString +=
+               "\n" +
+               String(i) +
+               " " +
+               String(normalAccuracy) +
+               " " +
+               String(depthAccuracy);
+         }
+      }
+
+      return this.dataFileString;
    }
 
    /**
@@ -185,5 +262,6 @@ class BulkChartHelper {
    }
 }
 
+BulkChartHelper.currentInstance = undefined;
 BulkChartHelper.pauseFlag = false;
 BulkChartHelper.abortFlag = false;

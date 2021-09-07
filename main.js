@@ -58,7 +58,11 @@ async function calculateNormalMap(pipeline = true) {
       DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.src = groundTruth.src;
 
       DOM_ELEMENT.NORMAL_MAP_ACCURACY.innerText = String(
-         (await NormalMapHelper.getDifferenceValue(normalMap, groundTruth)) *
+         (1 -
+            (await NormalMapHelper.getDifferenceValue(
+               normalMap,
+               groundTruth
+            ))) *
             100
       );
    }
@@ -98,7 +102,9 @@ async function calculateDepthMap(pipeline = true) {
       DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.src = groundTruth.src;
 
       DOM_ELEMENT.DEPTH_MAP_ACCURACY.innerText = String(
-         (await DepthMapHelper.getDifferenceValue(depthMap, groundTruth)) * 100
+         (1 -
+            (await DepthMapHelper.getDifferenceValue(depthMap, groundTruth))) *
+            100
       );
    }
 
@@ -499,6 +505,10 @@ DOM_ELEMENT.CHART_PAUSE_BUTTON.addEventListener("click", () => {
       BulkChartHelper.resetAll();
       DOM_ELEMENT.CHART_PAUSE_BUTTON.innerText = "pause charting";
    }
+});
+
+DOM_ELEMENT.CHART_DOWNLOAD_BUTTON.addEventListener("click", () => {
+   BulkChartHelper.downloadCurrentDataFile();
 });
 
 Array.from(document.getElementsByClassName("chartButton")).forEach(

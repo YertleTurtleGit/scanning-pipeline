@@ -11,7 +11,7 @@ class VirtualInputRenderer {
     */
    constructor(
       uiCanvas,
-      modelUrl = "./test-datasets/models/monkey.glb",
+      modelUrl = "./test-datasets/models/sphere.glb",
       renderDimensions = { width: 300, height: 300 }
    ) {
       this.uiCanvas = uiCanvas;
@@ -297,8 +297,8 @@ class VirtualInputRenderer {
       this.camera = new THREE.PerspectiveCamera(
          25,
          this.renderDimensions.width / this.renderDimensions.height,
-         1,
-         9
+         5,
+         6
       );
 
       this.uiCamera = new THREE.PerspectiveCamera(
