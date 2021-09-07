@@ -11,7 +11,7 @@ class VirtualInputRenderer {
     */
    constructor(
       uiCanvas,
-      modelUrl = "./test-datasets/models/sphere.glb",
+      modelUrl = "./test-datasets/models/monkey.glb",
       renderDimensions = { width: 300, height: 300 }
    ) {
       this.uiCanvas = uiCanvas;
@@ -203,7 +203,7 @@ class VirtualInputRenderer {
       let normalizedDepthValue;
 
       if (min === max) {
-         normalizedDepthValue = depthValue;
+         normalizedDepthValue = new GLSL.Float(0.5);
       } else {
          normalizedDepthValue = depthValue
             .subtractFloat(new GLSL.Float(min))
@@ -297,8 +297,8 @@ class VirtualInputRenderer {
       this.camera = new THREE.PerspectiveCamera(
          25,
          this.renderDimensions.width / this.renderDimensions.height,
-         5,
-         6
+         4,
+         8
       );
 
       this.uiCamera = new THREE.PerspectiveCamera(

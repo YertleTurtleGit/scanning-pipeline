@@ -432,16 +432,21 @@ class DepthMapHelper {
     */
    getPixelLine(startPixel, stepVector, gradientPixelArray) {
       const pixelLine = [];
+
       const stepOffset = {
          x: startPixel.x,
          y: startPixel.y,
       };
+
       const pixel = {
          x: startPixel.x,
          y: startPixel.y,
       };
+
       const nextPixel = { x: pixel.x, y: pixel.y };
+
       let inDimensions;
+
       do {
          do {
             stepOffset.x += stepVector.x;
@@ -449,18 +454,22 @@ class DepthMapHelper {
             nextPixel.x = Math.round(stepOffset.x);
             nextPixel.y = Math.round(stepOffset.y);
          } while (nextPixel.x === pixel.x && nextPixel.y === pixel.y);
+
          pixel.x = nextPixel.x;
          pixel.y = nextPixel.y;
          inDimensions = this.isInDimensions(pixel);
+
          if (inDimensions) {
             const pixelSlope = this.getPixelSlope(
                pixel,
                stepVector,
                gradientPixelArray
             );
+
             pixelLine.push({ x: pixel.x, y: pixel.y, slope: pixelSlope });
          }
       } while (inDimensions);
+
       return pixelLine;
    }
 
@@ -482,6 +491,7 @@ class DepthMapHelper {
          gradientPixelArray[index + 0] + DepthMapHelper.SLOPE_SHIFT;
       const topSlope =
          gradientPixelArray[index + 1] + DepthMapHelper.SLOPE_SHIFT;
+
       return stepVector.x * rightSlope + stepVector.y * topSlope;
    }
 
