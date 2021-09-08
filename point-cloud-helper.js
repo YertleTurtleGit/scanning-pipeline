@@ -257,6 +257,9 @@ class PointCloudHelperRenderingContext {
       });
       this.pointCloud = new THREE.Points(this.geometry, this.material);
 
+      this.pointCloud.rotateX(35 * (Math.PI / 180));
+      this.pointCloud.translateY(15);
+
       PointCloudHelperRenderingContext_instances.push(this);
 
       if (
@@ -325,6 +328,7 @@ class PointCloudHelperRenderingContext {
    }
 }
 
+/** @type {number[]} */
 PointCloudHelper.vertices = [];
 
 /** @constant */
