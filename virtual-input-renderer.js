@@ -278,7 +278,7 @@ class VirtualInputRenderer {
             this.lights[i].visible = false;
          }
          this.lights[i].visible = true;
-         this.lights[i].intensity = 25;
+         this.lights[i].intensity = 25 * (this.cameraDistance / 8);
 
          if (this.isRenderObsolete(renderId)) return;
 

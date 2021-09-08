@@ -31,7 +31,7 @@
 
    Now you can run the application by using the configuration in [launch.json](.vscode/launch.json).
    
-   _In Visual Studio Code: "Run > Start Debugging (F5)_
+   _In Visual Studio Code: 'Run > Start Debugging (F5)'_
 
 2. Use [jsdoc](https://www.npmjs.com/package/jsdoc).
 
