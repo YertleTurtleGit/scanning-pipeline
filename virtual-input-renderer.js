@@ -225,6 +225,35 @@ class VirtualInputRenderer {
    }
 
    /**
+    * @private
+    */
+   async updateCameraPlanes() {
+      if (this.object) {
+         let boundingBox = new THREE.Box3();
+
+         boundingBox.setFromObject(this.object);
+
+         let min = boundingBox.min.z;
+         let max = boundingBox.max.z;
+
+         const minPlaneDistance = 0.5;
+
+         if (min + minPlaneDistance >= max) {
+            min = -minPlaneDistance;
+            max = minPlaneDistance;
+         }
+
+         this.camera.near = min + this.cameraDistance;
+         this.camera.far = max + this.cameraDistance;
+
+         this.camera.updateProjectionMatrix();
+
+         this.cameraHelper.update();
+         this.uiRenderer.render(this.scene, this.uiCamera);
+      }
+   }
+
+   /**
     * @public
     * @returns {Promise<HTMLImageElement[]>}
     */
@@ -276,6 +305,7 @@ class VirtualInputRenderer {
       }
       this.cameraHelper.visible = true;
 
+      this.updateCameraPlanes();
       this.uiRenderer.render(this.scene, this.uiCamera);
 
       return Promise.all(renderPromises);
@@ -296,9 +326,7 @@ class VirtualInputRenderer {
 
       this.camera = new THREE.PerspectiveCamera(
          25,
-         this.renderDimensions.width / this.renderDimensions.height,
-         4,
-         8
+         this.renderDimensions.width / this.renderDimensions.height
       );
 
       this.uiCamera = new THREE.PerspectiveCamera(
@@ -373,7 +401,9 @@ class VirtualInputRenderer {
 
       this.scene.background = null;
 
-      this.material = new THREE.MeshPhysicalMaterial({});
+      this.material = new THREE.MeshPhysicalMaterial({
+         precision: "highp",
+      });
 
       this.mesh.castShadow = true;
       this.mesh.receiveShadow = true;
@@ -386,15 +416,20 @@ class VirtualInputRenderer {
       this.uiControls.target = new THREE.Vector3(0, 0, 0);
       this.uiControls.addEventListener("change", () => {
          this.cameraHelper.visible = true;
+
+         this.lightHelpers.forEach((lightHelper) => {
+            lightHelper.visible = true;
+         });
+
          this.uiRenderer.render(this.scene, this.uiCamera);
       });
-
-      this.uiControls.update();
 
       window.addEventListener("resize", () => {
          this.handleResize();
       });
+
       this.handleResize();
+      this.updateCameraPlanes();
 
       this.initialized = true;
       this.initializing = false;
