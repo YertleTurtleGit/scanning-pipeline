@@ -12,12 +12,6 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v2.3.4
-      
-    - name: TODO to Issue
-      uses: alstr/todo-to-issue-action@v4.2
-      with:
-        CLOSE_ISSUES: true
-        AUTO_P: true
           
     - name: Remove File
       uses: JesseTG/rm@v1.0.0
