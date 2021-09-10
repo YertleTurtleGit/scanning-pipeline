@@ -261,7 +261,6 @@ class DepthMapHelper {
    getLocalGradientFactor() {
       return new Promise((resolve) => {
          setTimeout(() => {
-            // TODO: Check if reject does not break like return.
             if (this.isRenderObsolete()) return;
 
             const depthMapShader = new GLSL.Shader({
