@@ -1,6 +1,7 @@
 /* global THREE, GLSL */
 /* exported VirtualInputRenderer */
 
+// TODO: Make abstract and implement spherical gradient.
 class VirtualInputRenderer {
    /**
     * @public
@@ -319,7 +320,7 @@ class VirtualInputRenderer {
       }
       this.initializing = true;
 
-      const initLightDistance = 8;
+      const initLightDistance = 8; // TODO: remove hard coding
 
       this.scene = new THREE.Scene();
 
@@ -339,6 +340,7 @@ class VirtualInputRenderer {
       this.cameraHelper = new THREE.CameraHelper(this.camera);
       this.scene.add(this.cameraHelper);
 
+      // TODO: remove preserve to enable swapping for better performance
       this.renderer = new THREE.WebGLRenderer({
          preserveDrawingBuffer: true,
       });
