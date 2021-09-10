@@ -242,7 +242,6 @@ class NormalMapHelper {
             if (normalMapHelper.isRenderObsolete()) return;
 
             if (cameraVerticalShift) {
-               // TODO: use cameraVerticalShift
                /*const cameraAngle = Math.atan(
                   1 / Math.tan(lightPolarAngleDeg * (Math.PI / 180))
                );
@@ -261,7 +260,6 @@ class NormalMapHelper {
                normalVector = rotationMatrix.multiplyVector3(normalVector);*/
             }
 
-            // TODO: fix alpha
             const alpha = normalVector
                .channel(0)
                .minimum(normalVector.channel(1), normalVector.channel(2))
