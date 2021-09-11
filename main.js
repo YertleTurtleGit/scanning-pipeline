@@ -1,5 +1,14 @@
 /* global DOM, DOM_ELEMENT, INPUT_TYPE, CALCULATION_TYPE 
-NormalMapHelper, DepthMapHelper, PointCloudHelper, WebcamDatasetHelper, VirtualInputRenderer, BulkChartHelper */
+NormalMapHelper, DepthMapHelper, PointCloudHelper, WebcamDatasetHelper, PhotometricStereoRenderer, SphericalGradientRenderer, BulkChartHelper */
+
+let virtualInputRenderer;
+
+const photometricStereoRenderer = new PhotometricStereoRenderer(
+   DOM_ELEMENT.INPUT_RENDER_CANVAS
+);
+const sphericalGradientRenderer = new SphericalGradientRenderer(
+   DOM_ELEMENT.INPUT_RENDER_CANVAS
+);
 
 /**
  * @param {boolean} pipeline
@@ -292,6 +301,8 @@ async function inputOrCalculationTypeChange() {
          DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value;
 
       if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
+         virtualInputRenderer = photometricStereoRenderer;
+
          await virtualInputRenderer.setCameraDistance(
             Number(DOM_ELEMENT.RENDER_CAMERA_DISTANCE_INPUT.value)
          );
@@ -305,6 +316,10 @@ async function inputOrCalculationTypeChange() {
          DOM.setPhotometricStereoInputImages(
             await virtualInputRenderer.render()
          );
+      } else if (
+         DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
+      ) {
+         virtualInputRenderer = sphericalGradientRenderer;
       }
    }
 
@@ -330,10 +345,6 @@ async function inputOrCalculationTypeChange() {
 
    calculateEverything();
 }
-
-const virtualInputRenderer = new VirtualInputRenderer(
-   DOM_ELEMENT.INPUT_RENDER_CANVAS
-);
 
 DOM_ELEMENT.RENDER_CAMERA_DISTANCE_INPUT.addEventListener("input", async () => {
    virtualInputRenderer.setCameraDistance(
