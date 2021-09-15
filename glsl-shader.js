@@ -836,7 +836,6 @@ class GlslVariable {
     * @param  {...GlslFloat[]} addends
     * @returns {GlslVariable}
     */
-
    /**
     * @name addVector3
     * @abstract
@@ -855,7 +854,6 @@ class GlslVariable {
     * @param  {...GlslMatrix3[]} addends
     * @returns {GlslVariable}
     */
-
    /**
     * @name subtractFloat
     * @abstract
