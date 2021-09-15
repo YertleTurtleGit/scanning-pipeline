@@ -16,4 +16,5 @@ jobs:
         uses: andstor/jsdoc-action@v1.2.0
         with:
           source_dir: ./
+          output_dir: ./docs
           front_page: DOCS.md
