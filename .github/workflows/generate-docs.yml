@@ -18,3 +18,6 @@ jobs:
           source_dir: ./
           output_dir: ./docs
           front_page: DOCS.md
+          
+      - name: Add & Commit
+        uses: EndBug/add-and-commit@v7.3.0
