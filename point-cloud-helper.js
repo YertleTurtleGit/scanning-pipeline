@@ -95,6 +95,7 @@ class PointCloudHelper {
             }
 
             PointCloudHelper.vertices = vertices;
+            // TODO Better design
             resolve(vertices);
 
             pointCloudHelper.renderingContext.geometry.setAttribute(
@@ -119,6 +120,7 @@ class PointCloudHelper {
    }
 
    static async downloadOBJ() {
+      // TODO Better design.
       const vertices = PointCloudHelper.vertices;
 
       if (vertices.length > 3) {
