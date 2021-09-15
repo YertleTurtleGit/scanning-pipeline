@@ -708,7 +708,10 @@ class GlslImage {
    }
 }
 
-/** @abstract */ class GlslVariable {
+/**
+ * @abstract
+ */
+class GlslVariable {
    /**
     * @abstract
     * @param {string} [customDeclaration=""]
@@ -826,12 +829,14 @@ class GlslImage {
    getGlslVarType() {
       throw new Error("Cannot call an abstract method.");
    }
+
    /**
     * @name addFloat
     * @abstract
     * @param  {...GlslFloat[]} addends
     * @returns {GlslVariable}
     */
+
    /**
     * @name addVector3
     * @abstract
@@ -925,6 +930,12 @@ class GlslVector extends GlslVariable {
    /**
     * @abstract
     * @name abs
+    * @returns {GlslVector}
+    */
+
+   /**
+    * @abstract
+    * @name normalize
     * @returns {GlslVector}
     */
 }
