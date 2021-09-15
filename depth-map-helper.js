@@ -29,7 +29,7 @@ class DepthMapHelper {
     * @returns {Promise<HTMLImageElement>} A depth mapping
     * according to the input normal mapping.
     */
-   static async getDepthMap(
+   static async calculateDepthMap(
       normalMap,
       qualityPercent = 0.001,
       perspectiveCorrectingFactor = 0,

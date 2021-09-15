@@ -23,7 +23,7 @@ class NormalMapHelper {
     * @param {number} maskThresholdPercent
     * @returns {Promise<HTMLImageElement>}
     */
-   static async getPhotometricStereoNormalMap(
+   static async calculatePhotometricStereoNormalMap(
       lightPolarAngleDeg,
       lightImage_000,
       lightImage_045,
@@ -303,7 +303,7 @@ class NormalMapHelper {
     * @param {number} resolutionPercent
     * @returns {Promise<HTMLImageElement>}
     */
-   static async getSphericalGradientNormalMap(
+   static async calculateSphericalGradientNormalMap(
       lightImage_000,
       lightImage_090,
       lightImage_180,

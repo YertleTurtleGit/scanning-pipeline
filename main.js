@@ -28,7 +28,7 @@ async function calculateNormalMap(pipeline = true) {
       "translate(-100%, -150%) rotate(180deg)";
 
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
-      normalMap = await NormalMapHelper.getPhotometricStereoNormalMap(
+      normalMap = await NormalMapHelper.calculatePhotometricStereoNormalMap(
          Number(DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value),
          DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_000,
          DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_045,
@@ -47,7 +47,7 @@ async function calculateNormalMap(pipeline = true) {
    } else if (
       DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
    ) {
-      normalMap = await NormalMapHelper.getSphericalGradientNormalMap(
+      normalMap = await NormalMapHelper.calculateSphericalGradientNormalMap(
          DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_000,
          DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_090,
          DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_180,
@@ -96,7 +96,7 @@ async function calculateDepthMap(pipeline = true) {
    DOM_ELEMENT.DEPTH_MAP_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.add("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "0";
-   const depthMap = await DepthMapHelper.getDepthMap(
+   const depthMap = await DepthMapHelper.calculateDepthMap(
       DOM_ELEMENT.NORMAL_MAP_IMAGE,
       Number(DOM_ELEMENT.DEPTH_MAP_QUALITY_INPUT.value),
       Number(DOM_ELEMENT.DEPTH_MAP_PERSPECTIVE_CORRECTION_INPUT.value),
