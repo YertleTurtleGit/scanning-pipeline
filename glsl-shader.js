@@ -930,7 +930,6 @@ class GlslVector extends GlslVariable {
     * @name abs
     * @returns {GlslVector}
     */
-
    /**
     * @abstract
     * @name normalize
