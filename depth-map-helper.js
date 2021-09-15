@@ -1,6 +1,11 @@
 /* global GLSL */
 /* exported DepthMapHelper */
 
+/**
+ * @typedef {{x: number, y: number}} Pixel
+ * @typedef {{x: number, y: number, slope: number}} LinePixel
+ * @typedef {LinePixel[]} PixelLine
+ */
 class DepthMapHelper {
    /**
     * This functions calculates a depth mapping by a given
@@ -110,8 +115,6 @@ class DepthMapHelper {
    }
 
    /**
-    * @typedef {{x: number, y: number, slope: number}} PixelLine
-    *
     * @private
     * @param {HTMLImageElement} normalMap
     * @param {number} qualityPercent
@@ -352,7 +355,7 @@ class DepthMapHelper {
     * @private
     * @param {number} azimuthalAngle
     * @param {Uint8Array} gradientPixelArray
-    * @returns {PixelLine[][]}
+    * @returns {PixelLine[]}
     */
    getPixelLinesFromAzimuthalAngle(azimuthalAngle, gradientPixelArray) {
       const pixelLines = [];
@@ -441,7 +444,7 @@ class DepthMapHelper {
     * @param {{x:number, y:number}} startPixel
     * @param {{x:number, y:number}} stepVector
     * @param {Uint8Array} gradientPixelArray
-    * @returns {PixelLine[]}
+    * @returns {PixelLine}
     */
    getPixelLine(startPixel, stepVector, gradientPixelArray) {
       const pixelLine = [];
