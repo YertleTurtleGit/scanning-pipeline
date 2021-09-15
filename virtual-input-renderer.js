@@ -1,48 +1,46 @@
 /* global THREE, GLSL */
-/* exported VirtualInputRenderer */
+/* exported VirtualInputRenderer, PhotometricStereoRenderer, SphericalGradientRenderer */
 
-// TODO: Make abstract and implement spherical gradient.
+/**
+ * @abstract
+ */
 class VirtualInputRenderer {
    /**
-    * @public
+    * @protected
     * @param {HTMLCanvasElement} uiCanvas
     * @param {string} modelUrl
     * @param {{width: number, height: number}} renderDimensions
     */
-   constructor(
-      uiCanvas,
-      modelUrl = "./test-datasets/models/monkey.glb",
-      renderDimensions = { width: 300, height: 300 }
-   ) {
+   constructor(uiCanvas, modelUrl, renderDimensions) {
       this.uiCanvas = uiCanvas;
       this.modelUrl = modelUrl;
       this.renderDimensions = renderDimensions;
       this.initialized = false;
       this.initializing = false;
       this.renderId = 0;
+
+      this.lights = undefined;
+      this.lightHelpers = undefined;
    }
 
    /**
-    * @public
-    * @param {number} lightPolarAngleDeg
-    */
-   async setLightPolarAngleDeg(lightPolarAngleDeg) {
-      await this.initialize();
-      this.lightPolarAngleDeg = lightPolarAngleDeg;
-      this.updateLightPositions();
-   }
-
-   /**
-    * @public
+    * @abstract
+    * @throws {Error} Cannot call an abstract method.
     * @param {number} lightDistance
     */
+   // eslint-disable-next-line no-unused-vars
    async setLightDistance(lightDistance) {
-      await this.initialize();
-      this.lightDistance = lightDistance;
-      for (let i = 0; i < this.lights.length; i++) {
-         this.lights[i].distance = this.lightDistance * 2;
-      }
-      this.updateLightPositions();
+      throw new Error("Cannot call an abstract method.");
+   }
+
+   /**
+    * @abstract
+    * @public
+    * @throws {Error} Cannot call an abstract method.
+    * @returns {Promise<HTMLImageElement[]>}
+    */
+   async render() {
+      throw new Error("Cannot call an abstract method.");
    }
 
    /**
@@ -62,39 +60,15 @@ class VirtualInputRenderer {
    }
 
    /**
-    * @private
+    * @abstract
+    * @throws {Error} Cannot call an abstract method.
     */
    async updateLightPositions() {
-      const correctedLightPolarDegree = 360 - this.lightPolarAngleDeg;
-
-      /**
-       * @param {THREE.Light} light
-       * @param {number} lightAzimuthalDegree
-       */
-      const setSingleLightAzimuthalAngle = (light, lightAzimuthalDegree) => {
-         let lightVector = new THREE.Vector3(this.lightDistance, 0, 0);
-
-         let lightPolarRotationAxis = new THREE.Vector3(0, 1, 0).normalize();
-         lightVector.applyAxisAngle(
-            lightPolarRotationAxis,
-            correctedLightPolarDegree * (Math.PI / 180)
-         );
-
-         const lightRotation = lightAzimuthalDegree * (Math.PI / 180);
-         const lightRotationAxis = new THREE.Vector3(0, 0, 1).normalize();
-         lightVector.applyAxisAngle(lightRotationAxis, lightRotation);
-
-         light.position.set(lightVector.x, lightVector.y, lightVector.z);
-      };
-
-      const lightCount = this.lights.length;
-      for (let i = 0; i < lightCount; i++) {
-         setSingleLightAzimuthalAngle(this.lights[i], i * (360 / lightCount));
-      }
+      throw new Error("Cannot call an abstract method.");
    }
 
    /**
-    * @private
+    * @protected
     * @param {number} renderId
     * @returns {boolean}
     */
@@ -225,7 +199,7 @@ class VirtualInputRenderer {
    }
 
    /**
-    * @private
+    * @protected
     */
    async updateCameraPlanes() {
       if (this.object) {
@@ -236,11 +210,9 @@ class VirtualInputRenderer {
          let min = boundingBox.min.z;
          let max = boundingBox.max.z;
 
-         const minPlaneDistance = 0.5;
-
-         if (min + minPlaneDistance >= max) {
-            min = -minPlaneDistance;
-            max = minPlaneDistance;
+         if (min + VirtualInputRenderer.MIN_CAMERA_PLANES_DISTANCE >= max) {
+            min = -VirtualInputRenderer.MIN_CAMERA_PLANES_DISTANCE;
+            max = VirtualInputRenderer.MIN_CAMERA_PLANES_DISTANCE;
          }
 
          this.camera.near = min + this.cameraDistance;
@@ -254,74 +226,9 @@ class VirtualInputRenderer {
    }
 
    /**
-    * @public
-    * @returns {Promise<HTMLImageElement[]>}
-    */
-   async render() {
-      this.renderId++;
-      const renderId = this.renderId;
-
-      await this.initialize();
-
-      if (this.isRenderObsolete(renderId)) return;
-
-      const lightCount = this.lights.length;
-      const renderPromises = [];
-
-      for (let i = 0; i < lightCount; i++) {
-         this.lightHelpers[i].visible = false;
-      }
-      this.cameraHelper.visible = false;
-
-      for (let i = 0; i < lightCount; i++) {
-         for (let i = 0; i < lightCount; i++) {
-            this.lights[i].visible = false;
-         }
-         this.lights[i].visible = true;
-         this.lights[i].intensity = 25 * (this.cameraDistance / 8);
-
-         if (this.isRenderObsolete(renderId)) return;
-
-         this.renderer.render(this.scene, this.camera);
-         const renderImageDataUrl = this.renderer.domElement.toDataURL();
-
-         renderPromises.push(
-            new Promise((resolve) => {
-               setTimeout(() => {
-                  const image = new Image();
-                  image.addEventListener("load", () => {
-                     resolve(image);
-                  });
-                  image.src = renderImageDataUrl;
-               });
-            })
-         );
-      }
-
-      for (let i = 0; i < lightCount; i++) {
-         this.lights[i].visible = true;
-         this.lightHelpers[i].visible = true;
-         this.lights[i].intensity = 0.25;
-      }
-      this.cameraHelper.visible = true;
-
-      this.updateCameraPlanes();
-      this.uiRenderer.render(this.scene, this.uiCamera);
-
-      return Promise.all(renderPromises);
-   }
-
-   /**
-    * @private
+    * @protected
     */
    async initialize() {
-      if (this.initialized || (!this.initialized && this.initializing)) {
-         return;
-      }
-      this.initializing = true;
-
-      const initLightDistance = 8; // TODO: remove hard coding
-
       this.scene = new THREE.Scene();
 
       this.camera = new THREE.PerspectiveCamera(
@@ -333,6 +240,7 @@ class VirtualInputRenderer {
          75,
          this.uiCanvas.clientWidth / this.uiCanvas.clientHeight
       );
+      // TODO Remove hard code.
       this.uiCamera.position.set(10, 2, 10 / 2);
       this.uiCamera.lookAt(new THREE.Vector3(0, 0, this.cameraDistance / 3));
       this.uiCamera.rotateZ(180 * (Math.PI / 180));
@@ -340,7 +248,7 @@ class VirtualInputRenderer {
       this.cameraHelper = new THREE.CameraHelper(this.camera);
       this.scene.add(this.cameraHelper);
 
-      // TODO: remove preserve to enable swapping for better performance
+      // TODO Disable preserved drawing buffers to enable swapping for better performance.
       this.renderer = new THREE.WebGLRenderer({
          preserveDrawingBuffer: true,
       });
@@ -362,21 +270,6 @@ class VirtualInputRenderer {
          this.uiCanvas.clientWidth,
          this.uiCanvas.clientHeight
       );
-
-      this.lights = new Array(8);
-      this.lightHelpers = new Array(8);
-
-      for (let i = 0; i < 8; i++) {
-         this.lights[i] = new THREE.PointLight("white", 0.25);
-         this.lights[i].position.set(0, 0, initLightDistance);
-         this.lights[i].castShadow = true;
-         this.lights[i].distance = initLightDistance * 2;
-         this.lights[i].shadow.mapSize.width = 512 * 2;
-         this.lights[i].shadow.mapSize.height = 512 * 2;
-         this.lightHelpers[i] = new THREE.PointLightHelper(this.lights[i], 0.2);
-         this.scene.add(this.lights[i]);
-         this.scene.add(this.lightHelpers[i]);
-      }
 
       // @ts-ignore
       const loader = new THREE.GLTFLoader();
@@ -430,10 +323,191 @@ class VirtualInputRenderer {
 
       this.handleResize();
       this.updateCameraPlanes();
+   }
+}
+/** @constant */
+VirtualInputRenderer.MIN_CAMERA_PLANES_DISTANCE = 0.5;
+/** @type {VirtualInputRenderer[]} */
+VirtualInputRenderer.instances = [];
+
+class PhotometricStereoRenderer extends VirtualInputRenderer {
+   /**
+    * @public
+    * @param {HTMLCanvasElement} uiCanvas
+    * @param {string} modelUrl
+    * @param {{width: number, height: number}} renderDimensions
+    */
+   constructor(
+      uiCanvas,
+      modelUrl = "./test-datasets/models/monkey.glb",
+      renderDimensions = { width: 300, height: 300 }
+   ) {
+      super(uiCanvas, modelUrl, renderDimensions);
+   }
+
+   /**
+    * @override
+    * @protected
+    */
+   async initialize() {
+      if (this.initialized || (!this.initialized && this.initializing)) {
+         return;
+      }
+      this.initializing = true;
+
+      super.initialize();
+
+      this.lights = new Array(8);
+      this.lightHelpers = new Array(8);
+
+      for (let i = 0; i < 8; i++) {
+         // TODO Remove hard code.
+         this.lights[i] = new THREE.PointLight("white", 0.25);
+         this.lights[i].castShadow = true;
+         // TODO Remove hard code.
+         this.lights[i].shadow.mapSize.width = 512 * 2;
+         // TODO Remove hard code.
+         this.lights[i].shadow.mapSize.height = 512 * 2;
+         // TODO Remove hard code.
+         this.lightHelpers[i] = new THREE.PointLightHelper(this.lights[i], 0.2);
+         this.scene.add(this.lights[i]);
+         this.scene.add(this.lightHelpers[i]);
+      }
 
       this.initialized = true;
       this.initializing = false;
    }
+
+   /**
+    * @override
+    * @public
+    * @returns {Promise<HTMLImageElement[]>}
+    */
+   async render() {
+      this.renderId++;
+      const renderId = this.renderId;
+
+      await this.initialize();
+
+      if (this.isRenderObsolete(renderId)) return;
+
+      const lightCount = this.lights.length;
+      const renderPromises = [];
+
+      for (let i = 0; i < lightCount; i++) {
+         this.lightHelpers[i].visible = false;
+      }
+      this.cameraHelper.visible = false;
+
+      for (let i = 0; i < lightCount; i++) {
+         for (let i = 0; i < lightCount; i++) {
+            this.lights[i].visible = false;
+         }
+         this.lights[i].visible = true;
+         // TODO Remove hard code.
+         this.lights[i].intensity = 25 * (this.cameraDistance / 8);
+
+         if (this.isRenderObsolete(renderId)) return;
+
+         this.renderer.render(this.scene, this.camera);
+         const renderImageDataUrl = this.renderer.domElement.toDataURL();
+
+         renderPromises.push(
+            new Promise((resolve) => {
+               setTimeout(() => {
+                  const image = new Image();
+                  image.addEventListener("load", () => {
+                     resolve(image);
+                  });
+                  image.src = renderImageDataUrl;
+               });
+            })
+         );
+      }
+
+      for (let i = 0; i < lightCount; i++) {
+         this.lights[i].visible = true;
+         this.lightHelpers[i].visible = true;
+         // TODO Remove hard code.
+         this.lights[i].intensity = 0.25;
+      }
+      this.cameraHelper.visible = true;
+
+      this.updateCameraPlanes();
+      this.uiRenderer.render(this.scene, this.uiCamera);
+
+      return Promise.all(renderPromises);
+   }
+
+   /**
+    * @public
+    * @param {number} lightPolarAngleDeg
+    */
+   async setLightPolarAngleDeg(lightPolarAngleDeg) {
+      await this.initialize();
+      this.lightPolarAngleDeg = lightPolarAngleDeg;
+      this.updateLightPositions();
+   }
+
+   /**
+    * @override
+    * @public
+    * @param {number} lightDistance
+    */
+   async setLightDistance(lightDistance) {
+      await this.initialize();
+
+      this.lightDistance = lightDistance;
+      for (let i = 0; i < this.lights.length; i++) {
+         this.lights[i].distance = this.lightDistance * 2;
+      }
+      this.updateLightPositions();
+   }
+
+   async updateLightPositions() {
+      await this.initialize();
+
+      const correctedLightPolarDegree = 360 - this.lightPolarAngleDeg;
+
+      /**
+       * @param {THREE.Light} light
+       * @param {number} lightAzimuthalDegree
+       */
+      const setSingleLightAzimuthalAngle = (light, lightAzimuthalDegree) => {
+         let lightVector = new THREE.Vector3(this.lightDistance, 0, 0);
+
+         let lightPolarRotationAxis = new THREE.Vector3(0, 1, 0).normalize();
+         lightVector.applyAxisAngle(
+            lightPolarRotationAxis,
+            correctedLightPolarDegree * (Math.PI / 180)
+         );
+
+         const lightRotation = lightAzimuthalDegree * (Math.PI / 180);
+         const lightRotationAxis = new THREE.Vector3(0, 0, 1).normalize();
+         lightVector.applyAxisAngle(lightRotationAxis, lightRotation);
+
+         light.position.set(lightVector.x, lightVector.y, lightVector.z);
+      };
+
+      const lightCount = this.lights.length;
+      for (let i = 0; i < lightCount; i++) {
+         setSingleLightAzimuthalAngle(this.lights[i], i * (360 / lightCount));
+      }
+   }
 }
-/** @type {VirtualInputRenderer[]} */
-VirtualInputRenderer.instances = [];
+
+class SphericalGradientRenderer extends VirtualInputRenderer {
+   /**
+    * @public
+    * @param {HTMLCanvasElement} uiCanvas
+    * @param {string} modelUrl
+    * @param {{width: number, height: number}} renderDimensions
+    */
+   constructor(
+      uiCanvas,
+      modelUrl = "./test-datasets/models/monkey.glb",
+      renderDimensions = { width: 300, height: 300 }
+   ) {
+      super(uiCanvas, modelUrl, renderDimensions);
+   }
+}

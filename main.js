@@ -1,5 +1,14 @@
 /* global DOM, DOM_ELEMENT, INPUT_TYPE, CALCULATION_TYPE 
-NormalMapHelper, DepthMapHelper, PointCloudHelper, WebcamDatasetHelper, VirtualInputRenderer, BulkChartHelper */
+NormalMapHelper, DepthMapHelper, PointCloudHelper, WebcamDatasetHelper, PhotometricStereoRenderer, SphericalGradientRenderer, BulkChartHelper */
+
+let virtualInputRenderer;
+
+const photometricStereoRenderer = new PhotometricStereoRenderer(
+   DOM_ELEMENT.INPUT_RENDER_CANVAS
+);
+const sphericalGradientRenderer = new SphericalGradientRenderer(
+   DOM_ELEMENT.INPUT_RENDER_CANVAS
+);
 
 /**
  * @param {boolean} pipeline
@@ -166,7 +175,7 @@ async function loadInputImages() {
    if (inputImageId > thisInputImageId) return;
 
    if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
-      DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_AREA.style.display = "inherit";
+      DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_AREA.style.display = "initial";
       DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_AREA.style.display = "none";
 
       imagePromises = [
@@ -185,7 +194,7 @@ async function loadInputImages() {
       DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
    ) {
       DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_AREA.style.display = "none";
-      DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_AREA.style.display = "inherit";
+      DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_AREA.style.display = "initial";
 
       imagePromises = [
          DOM.loadHTMLImage(DOM_ELEMENT.SPHERICAL_GRADIENT_IMAGE_000),
@@ -243,7 +252,7 @@ async function inputOrCalculationTypeChange() {
    DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.style.display = "none";
    DOM_ELEMENT.NORMAL_MAP_ACCURACY_AREA.style.display = "none";
    DOM_ELEMENT.DEPTH_MAP_ACCURACY_AREA.style.display = "none";
-   DOM_ELEMENT.CALCULATION_TYPE_SELECT.style.display = "inherit";
+   DOM_ELEMENT.CALCULATION_TYPE_SELECT.style.display = "initial";
 
    DOM_ELEMENT.NORMAL_MAP_RESOLUTION_INPUT.disabled = false;
    DOM_ELEMENT.CALCULATION_TYPE_SELECT.disabled = false;
@@ -257,9 +266,9 @@ async function inputOrCalculationTypeChange() {
          DOM.setImagesToRapidGradientTest();
       }
    } else if (DOM.getInputType() === INPUT_TYPE.FILE) {
-      DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "inherit";
+      DOM_ELEMENT.FILE_BROWSE_INPUT.style.display = "initial";
    } else if (DOM.getInputType() === INPUT_TYPE.WEBCAM) {
-      DOM_ELEMENT.WEBCAM_AREA.style.display = "inherit";
+      DOM_ELEMENT.WEBCAM_AREA.style.display = "initial";
 
       if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
          DOM.setPhotometricStereoInputImages(
@@ -282,16 +291,18 @@ async function inputOrCalculationTypeChange() {
    } else if (DOM.getInputType() === INPUT_TYPE.RENDER) {
       DOM_ELEMENT.CALCULATION_TYPE_SELECT.selectedIndex = 0; // photometric stereo
       DOM_ELEMENT.CALCULATION_TYPE_SELECT.style.display = "none";
-      DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "inherit";
-      DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.style.display = "inherit";
-      DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.style.display = "inherit";
-      DOM_ELEMENT.NORMAL_MAP_ACCURACY_AREA.style.display = "inherit";
-      DOM_ELEMENT.DEPTH_MAP_ACCURACY_AREA.style.display = "inherit";
+      DOM_ELEMENT.INPUT_RENDER_AREA.style.display = "initial";
+      DOM_ELEMENT.NORMAL_MAP_GROUND_TRUTH_IMAGE.style.display = "initial";
+      DOM_ELEMENT.DEPTH_MAP_GROUND_TRUTH_IMAGE.style.display = "initial";
+      DOM_ELEMENT.NORMAL_MAP_ACCURACY_AREA.style.display = "initial";
+      DOM_ELEMENT.DEPTH_MAP_ACCURACY_AREA.style.display = "initial";
 
       DOM_ELEMENT.RENDER_LIGHT_POLAR_DEG_INPUT.value =
          DOM_ELEMENT.POLAR_ANGLE_DEG_INPUT.value;
 
       if (DOM.getCalculationType() === CALCULATION_TYPE.PHOTOMETRIC_STEREO) {
+         virtualInputRenderer = photometricStereoRenderer;
+
          await virtualInputRenderer.setCameraDistance(
             Number(DOM_ELEMENT.RENDER_CAMERA_DISTANCE_INPUT.value)
          );
@@ -305,6 +316,10 @@ async function inputOrCalculationTypeChange() {
          DOM.setPhotometricStereoInputImages(
             await virtualInputRenderer.render()
          );
+      } else if (
+         DOM.getCalculationType() === CALCULATION_TYPE.SPHERICAL_GRADIENT
+      ) {
+         virtualInputRenderer = sphericalGradientRenderer;
       }
    }
 
@@ -330,10 +345,6 @@ async function inputOrCalculationTypeChange() {
 
    calculateEverything();
 }
-
-const virtualInputRenderer = new VirtualInputRenderer(
-   DOM_ELEMENT.INPUT_RENDER_CANVAS
-);
 
 DOM_ELEMENT.RENDER_CAMERA_DISTANCE_INPUT.addEventListener("input", async () => {
    virtualInputRenderer.setCameraDistance(
@@ -593,6 +604,8 @@ Array.from(document.getElementsByClassName("chartButton")).forEach(
 );
 
 inputOrCalculationTypeChange();
+// TODO Fix initial update and thus, remove second call.
+setTimeout(inputOrCalculationTypeChange, 1000);
 
 Array.from(
    DOM_ELEMENT.PIPELINE_AREA.getElementsByClassName("userInput")
