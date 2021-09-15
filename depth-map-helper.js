@@ -401,7 +401,7 @@ class DepthMapHelper {
 
    /**
     * @private
-    * @returns {{x:number, y:number}[]}
+    * @returns {Pixel[]}
     */
    getEdgeFramePixels() {
       if (this.edgeFramePixels === undefined) {
@@ -427,7 +427,7 @@ class DepthMapHelper {
 
    /**
     * @private
-    * @param {{x:number, y:number}} pixel
+    * @param {Pixel} pixel
     * @returns {boolean}
     */
    isInDimensions(pixel) {
@@ -441,8 +441,8 @@ class DepthMapHelper {
 
    /**
     * @private
-    * @param {{x:number, y:number}} startPixel
-    * @param {{x:number, y:number}} stepVector
+    * @param {Pixel} startPixel
+    * @param {Pixel} stepVector
     * @param {Uint8Array} gradientPixelArray
     * @returns {PixelLine}
     */
@@ -491,8 +491,8 @@ class DepthMapHelper {
 
    /**
     * @private
-    * @param {{x:number, y:number}} pixel
-    * @param {{x:number, y:number}} stepVector
+    * @param {Pixel} pixel
+    * @param {Pixel} stepVector
     * @param {Uint8Array} gradientPixelArray
     * @returns {number}
     */
