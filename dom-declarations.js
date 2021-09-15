@@ -1,6 +1,9 @@
 /* global PointCloudHelper */
 /* exported DOM, DOM_ELEMENTS, INPUT_TYPE, CALCULATION_TYPE */
 
+/**
+ * @global
+ */
 class DOM {
    /**
     * @public
@@ -258,6 +261,9 @@ class DOM {
    constructor() {}
 }
 
+/**
+ * @global
+ */
 const DOM_ELEMENT = {
    NORMAL_MAP_IMAGE: DOM.declareImage("normalMapImage"),
    DEPTH_MAP_IMAGE: DOM.declareImage("depthMapImage"),

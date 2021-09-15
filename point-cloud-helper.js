@@ -1,6 +1,9 @@
 /* global THREE */
 /* exported PointCloudHelper */
 
+/**
+ * @global
+ */
 class PointCloudHelper {
    /**
     * @public

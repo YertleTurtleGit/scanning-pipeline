@@ -1,6 +1,9 @@
 /* global Chart */
 /* exported BulkChartHelper */
 
+/**
+ * @global
+ */
 class BulkChartHelper {
    /**
     * @public

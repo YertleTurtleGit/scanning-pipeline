@@ -1,6 +1,9 @@
 /* global DOM_ELEMENT */
 /* exported WebcamDatasetHelper */
 
+/**
+ * @global
+ */
 class WebcamDatasetHelper {
    /**
     * @public

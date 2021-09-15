@@ -2,6 +2,7 @@
 /* exported VirtualInputRenderer, PhotometricStereoRenderer, SphericalGradientRenderer */
 
 /**
+ * @global
  * @abstract
  */
 class VirtualInputRenderer {
