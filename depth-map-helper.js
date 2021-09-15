@@ -405,7 +405,7 @@ class DepthMapHelper {
     */
    getEdgeFramePixels() {
       if (this.edgeFramePixels === undefined) {
-         /** @type {{ x: number, y: number }[]} */
+         /** @type {Pixel[]} */
          this.edgeFramePixels = [];
 
          const topY = -1;
