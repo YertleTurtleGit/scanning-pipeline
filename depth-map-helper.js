@@ -2,6 +2,7 @@
 /* exported DepthMapHelper */
 
 /**
+ * @global
  * @typedef {{x: number, y: number}} Pixel
  * @typedef {{x: number, y: number, slope: number}} LinePixel
  * @typedef {LinePixel[]} PixelLine

@@ -1,6 +1,9 @@
 /* global GLSL */
 /* exported NormalMapHelper */
 
+/**
+ * @global
+ */
 class NormalMapHelper {
    /**
     * @public
