@@ -3,13 +3,25 @@
 
 class DepthMapHelper {
    /**
+    * This functions calculates a depth mapping by a given
+    * normal mapping.
+    *
     * @public
-    * @param {HTMLImageElement} normalMap
-    * @param {number} qualityPercent
-    * @param {number} perspectiveCorrectingFactor
-    * @param {HTMLImageElement} imageElement
-    * @param {HTMLProgressElement} progressElement
-    * @returns {Promise<HTMLImageElement>}
+    * @param {HTMLImageElement} normalMap - The normal
+    * mapping that is used to calculate the depth mapping.
+    * @param {number} qualityPercent - The quality in
+    * percent defines how many anisotropic integrals are
+    * taken into account to archive a higher quality depth
+    * mapping.
+    * @param {number} perspectiveCorrectingFactor -
+    * Defines the factor of a radial-exponential depth
+    * correction. Zero corresponds to no correction.
+    * @param {HTMLImageElement} imageElement - The
+    * UI-element to display the resulting depth mapping.
+    * @param {HTMLProgressElement} progressElement - The
+    * UI-element to display the progress.
+    * @returns {Promise<HTMLImageElement>} A depth mapping
+    * according to the input normal mapping.
     */
    static async getDepthMap(
       normalMap,
@@ -98,6 +110,8 @@ class DepthMapHelper {
    }
 
    /**
+    * @typedef {{x: number, y: number, slope: number}} PixelLine
+    *
     * @private
     * @param {HTMLImageElement} normalMap
     * @param {number} qualityPercent
@@ -338,7 +352,7 @@ class DepthMapHelper {
     * @private
     * @param {number} azimuthalAngle
     * @param {Uint8Array} gradientPixelArray
-    * @returns {{x: number, y: number, slope: number}[][]}
+    * @returns {PixelLine[][]}
     */
    getPixelLinesFromAzimuthalAngle(azimuthalAngle, gradientPixelArray) {
       const pixelLines = [];
@@ -427,7 +441,7 @@ class DepthMapHelper {
     * @param {{x:number, y:number}} startPixel
     * @param {{x:number, y:number}} stepVector
     * @param {Uint8Array} gradientPixelArray
-    * @returns {{x: number, y: number, slope: number}[]}
+    * @returns {PixelLine[]}
     */
    getPixelLine(startPixel, stepVector, gradientPixelArray) {
       const pixelLine = [];
@@ -501,6 +515,10 @@ class DepthMapHelper {
     * @returns {Promise<HTMLImageElement>}
     */
    static async getPerspectiveCorrected(image, factor) {
+      if (factor === 0) {
+         return image;
+      }
+
       factor *= 5;
 
       const shader = new GLSL.Shader({
