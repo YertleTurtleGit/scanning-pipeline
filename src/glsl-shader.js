@@ -24,6 +24,8 @@ const FLOAT_PRECISION = GPU_GL_FLOAT_PRECISION.HIGH;
  */
 const GLSL_VARIABLE = {
    UV: "uv",
+   UV_U: "uv.u",
+   UV_V: "uv.v",
    TEX: "tex",
    POS: "pos",
    OUT: "fragColor",
@@ -689,6 +691,7 @@ class GlslImage {
       );
       return texture;
    }
+
    /**
     * @param  {WebGL2RenderingContext} glContext
     * @param  {WebGLProgram} shaderProgram
@@ -704,6 +707,34 @@ class GlslImage {
       glContext.uniform1i(
          glContext.getUniformLocation(shaderProgram, this.uniformGlslName),
          textureUnit
+      );
+   }
+
+   /**
+    * @public
+    * @param {number} offsetX
+    * @param {number} offsetY
+    * @returns {GlslVector4}
+    */
+   getNeighborPixel(offsetX, offsetY) {
+      const glslOffset = {
+         u: new GlslFloat((1 / this.jsImage.width) * offsetX).getGlslName(),
+         v: new GlslFloat((1 / this.jsImage.height) * offsetY).getGlslName(),
+      };
+
+      return new GlslVector4(
+         null,
+         "texture(" +
+            this.uniformGlslName +
+            ", vec2(" +
+            GLSL_VARIABLE.UV_U +
+            " + " +
+            glslOffset.u +
+            ", " +
+            GLSL_VARIABLE.UV_V +
+            " + " +
+            glslOffset.v +
+            "))"
       );
    }
 }
