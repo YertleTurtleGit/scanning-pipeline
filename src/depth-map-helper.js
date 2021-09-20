@@ -566,19 +566,28 @@ class DepthMapHelper {
     * @returns {Promise<number>}
     */
    static async getDifferenceValue(depthMap, groundTruthImage) {
-      const differenceImage = await DepthMapHelper.getDifferenceMap(
+      const differenceMap = await DepthMapHelper.getDifferenceMap(
          depthMap,
          groundTruthImage
       );
 
-      const width = differenceImage.width;
-      const height = differenceImage.height;
+      return DepthMapHelper.getDifferenceValueFromMap(differenceMap);
+   }
+
+   /**
+    * @public
+    * @param {HTMLImageElement} differenceMap
+    * @returns {Promise<number>}
+    */
+   static async getDifferenceValueFromMap(differenceMap) {
+      const width = differenceMap.width;
+      const height = differenceMap.height;
 
       const imageCanvas = document.createElement("canvas");
       imageCanvas.width = width;
       imageCanvas.height = height;
       const imageContext = imageCanvas.getContext("2d");
-      imageContext.drawImage(differenceImage, 0, 0, width, height);
+      imageContext.drawImage(differenceMap, 0, 0, width, height);
       const imageData = imageContext.getImageData(0, 0, width, height).data;
 
       let differenceValue = 0;
