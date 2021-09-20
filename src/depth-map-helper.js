@@ -577,9 +577,9 @@ class DepthMapHelper {
    /**
     * @public
     * @param {HTMLImageElement} differenceMap
-    * @returns {Promise<number>}
+    * @returns {number}
     */
-   static async getDifferenceValueFromMap(differenceMap) {
+   static getDifferenceValueFromMap(differenceMap) {
       const width = differenceMap.width;
       const height = differenceMap.height;
 
