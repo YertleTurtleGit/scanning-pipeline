@@ -711,6 +711,46 @@ class GlslImage {
    }
 
    /**
+    * @param {number[][]} kernel - Convolution matrix (NxN).
+    * @param {boolean} normalize
+    * @returns {GlslVector4}
+    */
+   applyFilter(kernel, normalize = false) {
+      let filterDeclaration = "";
+
+      if (normalize) {
+         let kernelSum = 0;
+
+         kernel.forEach((row) => {
+            row.forEach((value) => {
+               kernelSum += value;
+            });
+         });
+
+         kernel.forEach((row, rowIndex) => {
+            row.forEach((value, columnIndex) => {
+               if (kernelSum !== 0) {
+                  kernel[rowIndex][columnIndex] = value / kernelSum;
+               }
+            });
+         });
+      }
+
+      kernel.forEach((row, rowIndex) => {
+         row.forEach((value, columnIndex) => {
+            filterDeclaration +=
+               " + (" +
+               GlslFloat.getJsNumberAsString(value) +
+               " * " +
+               this.getNeighborPixel(columnIndex, rowIndex).getGlslName() +
+               ")";
+         });
+      });
+
+      return new GlslVector4(null, filterDeclaration);
+   }
+
+   /**
     * @public
     * @param {number} offsetX
     * @param {number} offsetY
