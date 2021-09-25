@@ -24,8 +24,8 @@ const FLOAT_PRECISION = GPU_GL_FLOAT_PRECISION.HIGH;
  */
 const GLSL_VARIABLE = {
    UV: "uv",
-   UV_U: "uv.u",
-   UV_V: "uv.v",
+   UV_U: "uv[0]",
+   UV_V: "uv[1]",
    TEX: "tex",
    POS: "pos",
    OUT: "fragColor",
@@ -323,7 +323,8 @@ class GlslContext {
       const vertexShaderSource = this.glslShader.getVertexShaderSource();
       const fragmentShaderSource =
          this.glslShader.getFragmentShaderSource(outVariable);
-
+      //console.log(vertexShaderSource);
+      //console.log(fragmentShaderSource);
       this.glContext.shaderSource(vertexShader, vertexShaderSource);
       this.glContext.shaderSource(fragmentShader, fragmentShaderSource);
       //console.log("Compiling shader program.");
@@ -626,7 +627,7 @@ class GlslOperation {
 
 class GlslImage {
    /**
-    * @private
+    * @public
     * @param  {HTMLImageElement} jsImage
     */
    constructor(jsImage) {
@@ -716,7 +717,14 @@ class GlslImage {
     * @returns {GlslVector4}
     */
    applyFilter(kernel, normalize = false) {
-      let filterDeclaration = "";
+      // TODO Check if kernel is quadratic.
+
+      let filtered = new GlslVector4([
+         new GlslFloat(0),
+         new GlslFloat(0),
+         new GlslFloat(0),
+         new GlslFloat(0),
+      ]);
 
       if (normalize) {
          let kernelSum = 0;
@@ -727,27 +735,36 @@ class GlslImage {
             });
          });
 
-         kernel.forEach((row, rowIndex) => {
-            row.forEach((value, columnIndex) => {
-               if (kernelSum !== 0) {
+         if (kernelSum !== 0) {
+            kernel.forEach((row, rowIndex) => {
+               row.forEach((value, columnIndex) => {
                   kernel[rowIndex][columnIndex] = value / kernelSum;
-               }
+               });
             });
-         });
+         }
       }
+
+      const kernelMiddle = (kernel.length - 1) / 2;
 
       kernel.forEach((row, rowIndex) => {
          row.forEach((value, columnIndex) => {
-            filterDeclaration +=
-               " + (" +
-               GlslFloat.getJsNumberAsString(value) +
-               " * " +
-               this.getNeighborPixel(columnIndex, rowIndex).getGlslName() +
-               ")";
+            filtered = filtered.addVector4(
+               new GlslFloat(value).multiplyVector4(
+                  this.getNeighborPixel(
+                     columnIndex - kernelMiddle,
+                     rowIndex - kernelMiddle
+                  )
+               )
+            );
          });
       });
 
-      return new GlslVector4(null, filterDeclaration);
+      return new GlslVector4([
+         filtered.channel(0),
+         filtered.channel(1),
+         filtered.channel(2),
+         new GlslFloat(1),
+      ]);
    }
 
    /**
@@ -757,9 +774,12 @@ class GlslImage {
     * @returns {GlslVector4}
     */
    getNeighborPixel(offsetX, offsetY) {
+      const u = (1 / this.jsImage.width) * offsetX;
+      const v = (1 / this.jsImage.height) * offsetY;
+
       const glslOffset = {
-         u: new GlslFloat((1 / this.jsImage.width) * offsetX).getGlslName(),
-         v: new GlslFloat((1 / this.jsImage.height) * offsetY).getGlslName(),
+         u: GlslFloat.getJsNumberAsString(u),
+         v: GlslFloat.getJsNumberAsString(v),
       };
 
       return new GlslVector4(
@@ -1045,13 +1065,13 @@ class GlslFloat extends GlslVariable {
     */
    static getJsNumberAsString(number) {
       if (Math.trunc(number) === number) {
-         return number.toString() + ".0";
+         return "(" + number.toString() + ".0)";
       }
       if (number.toString().includes("e-")) {
          //console.warn(number.toString() + " is converted to zero.");
          return "0.0";
       }
-      return number.toString();
+      return "(" + number.toString() + ")";
    }
    /**
     * @param  {number} [jsNumber=null]
