@@ -16,7 +16,7 @@
 2. Open your preferred web browser and open the
    ['index.html'](index.html) file.
 
-   _Chromium based browser work best. File access from files needs to be enabled:_
+   _Chromium based browsers work best. File access from files needs to be enabled:_
 
    ```bash
    chromium --allow-file-access-from-files index.html
