@@ -748,14 +748,16 @@ class GlslImage {
 
       kernel.forEach((row, rowIndex) => {
          row.forEach((value, columnIndex) => {
-            filtered = filtered.addVector4(
-               new GlslFloat(value).multiplyVector4(
-                  this.getNeighborPixel(
-                     columnIndex - kernelMiddle,
-                     rowIndex - kernelMiddle
+            if (value !== 0) {
+               filtered = filtered.addVector4(
+                  new GlslFloat(value).multiplyVector4(
+                     this.getNeighborPixel(
+                        columnIndex - kernelMiddle,
+                        rowIndex - kernelMiddle
+                     )
                   )
-               )
-            );
+               );
+            }
          });
       });
 
