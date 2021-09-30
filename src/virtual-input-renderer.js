@@ -242,7 +242,7 @@ class VirtualInputRenderer {
          this.uiCanvas.clientWidth / this.uiCanvas.clientHeight
       );
       // TODO Remove hard code.
-      this.uiCamera.position.set(5, 5, 10 );
+      this.uiCamera.position.set(5, 5, 10);
       this.uiCamera.lookAt(new THREE.Vector3(0, 0, this.cameraDistance / 3));
 
       this.cameraHelper = new THREE.CameraHelper(this.camera);
@@ -350,12 +350,13 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
     * @protected
     */
    async initialize() {
-      if (this.initialized || (!this.initialized && this.initializing)) {
+      if (this.initialized || this.initializing) {
          return;
       }
+
       this.initializing = true;
 
-      super.initialize();
+      await super.initialize();
 
       this.lights = new Array(8);
       this.lightHelpers = new Array(8);

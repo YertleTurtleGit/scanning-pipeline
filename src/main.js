@@ -604,8 +604,6 @@ Array.from(document.getElementsByClassName("chartButton")).forEach(
 );
 
 inputOrCalculationTypeChange();
-// TODO Fix initial update and thus, remove second call.
-setTimeout(inputOrCalculationTypeChange, 3000);
 
 Array.from(
    DOM_ELEMENT.PIPELINE_AREA.getElementsByClassName("userInput")
