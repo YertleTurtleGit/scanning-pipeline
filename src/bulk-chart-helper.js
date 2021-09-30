@@ -169,7 +169,7 @@ class BulkChartHelper {
       const element = document.createElement("a");
       element.style.display = "none";
 
-      const blob = new Blob([this.getDataFileSring()], {
+      const blob = new Blob([this.getDataFileString()], {
          type: "text/plain; charset = utf-8",
       });
 
@@ -189,7 +189,7 @@ class BulkChartHelper {
     * @private
     * @returns {string}
     */
-   getDataFileSring() {
+   getDataFileString() {
       this.dataFileString =
          this.title.replace(" ", "_") +
          " normal_mapping_accuracy depth_mapping_accuracy";
