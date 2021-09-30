@@ -242,9 +242,8 @@ class VirtualInputRenderer {
          this.uiCanvas.clientWidth / this.uiCanvas.clientHeight
       );
       // TODO Remove hard code.
-      this.uiCamera.position.set(10, 2, 10 / 2);
+      this.uiCamera.position.set(5, 5, 10 );
       this.uiCamera.lookAt(new THREE.Vector3(0, 0, this.cameraDistance / 3));
-      this.uiCamera.rotateZ(180 * (Math.PI / 180));
 
       this.cameraHelper = new THREE.CameraHelper(this.camera);
       this.scene.add(this.cameraHelper);
