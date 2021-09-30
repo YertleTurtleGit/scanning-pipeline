@@ -151,7 +151,6 @@ class DOM {
     * @param {File} sourceFile
     */
    static async setNormalMapSourceFile(sourceFile) {
-      console.log(sourceFile);
       if (sourceFile) {
          DOM.reset();
 
