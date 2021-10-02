@@ -159,9 +159,7 @@ class DOM {
 
             fileReader.addEventListener("load", async () => {
                const dataURL = String(fileReader.result);
-               DOM_ELEMENT.NORMAL_MAP_IMAGE.src = (
-                  await DOM.loadImage(dataURL)
-               ).src;
+               DOM_ELEMENT.NORMAL_MAP_IMAGE.src = dataURL;
                resolve();
             });
             fileReader.addEventListener("error", async () => {
