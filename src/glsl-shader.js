@@ -93,25 +93,19 @@ class Shader {
       this.glslShader = null;
       this.dimensions = dimensions;
    }
-   /**
-    * @returns {void}
-    */
+
    bind() {
       if (this.glslShader !== null) {
          console.warn("Shader is already bound!");
       }
       this.glslShader = new GlslShader(this.dimensions);
    }
-   /**
-    * @returns {void}
-    */
+
    unbind() {
       GlslShader.currentShader = null;
       this.glslShader = null;
    }
-   /**
-    * @returns {void}
-    */
+
    purge() {
       if (this.glslShader === null) {
          console.warn("No shader bound to purge!");
@@ -130,6 +124,7 @@ class Shader {
 
 class GlslShader {
    /**
+    * @public
     * @param  {{ width: number, height: number }} dimensions
     */
    constructor(dimensions) {
@@ -152,6 +147,7 @@ class GlslShader {
       this.glslContext = new GlslContext(dimensions);
    }
    /**
+    * @public
     * @static
     * @returns {GlslShader}
     */
@@ -159,13 +155,14 @@ class GlslShader {
       return GlslShader.currentShader;
    }
    /**
-    * @returns {void}
+    * @public
     */
    reset() {
       this.glslContext.reset();
       GlslShader.currentShader = null;
    }
    /**
+    * @public
     * @static
     * @param  {string} glslCommand
     * @returns {void}
@@ -280,9 +277,7 @@ class GlslContext {
       this.glCanvas.height = dimensions.height;
       this.glContext = this.glCanvas.getContext("webgl2");
    }
-   /**
-    * @returns {void}
-    */
+
    reset() {
       this.glContext.flush();
       this.glContext.finish();
