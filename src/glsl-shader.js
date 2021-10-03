@@ -620,6 +620,76 @@ class GlslOperation {
    }
 }
 
+class GlslUniform {
+   constructor() {
+      this.glslName = GlslVariable.getUniqueName("uniform");
+      this.context = GlslShader.getGlslContext().getGlContext();
+      this.shader = GlslShader.getCurrentShader();
+   }
+
+   /**
+    * @protected
+    * @returns {string}
+    */
+   getGlslName() {
+      return this.glslName;
+   }
+
+   /**
+    * @protected
+    * @returns {WebGL2RenderingContext}
+    */
+   getContext() {
+      return this.context;
+   }
+
+   /**
+    * @protected
+    * @returns {WebGLProgram}
+    */
+   getShader() {
+      return this.getShader;
+   }
+
+   /**
+    * @abstract
+    * @name setValue
+    * @param {undefined} value
+    */
+
+   /**
+    * @abstract
+    * @name getValue
+    * @returns {undefined}
+    */
+}
+
+class GlslUniformImage extends GlslUniform {
+   /**
+    * @param {HTMLImageElement} initialValue
+    */
+   constructor(initialValue) {
+      super();
+      this.glslImage = new GlslImage(initialValue);
+   }
+
+   /**
+    * @public
+    * @param {HTMLImageElement} jsImage
+    */
+   setValue(jsImage) {
+      this.glslImage.setImage(jsImage);
+   }
+
+   /**
+    * @public
+    * @returns {GlslImage}
+    */
+   getValue() {
+      return this.glslImage;
+   }
+}
+
 class GlslImage {
    /**
     * @public
@@ -643,6 +713,15 @@ class GlslImage {
    static load(jsImage) {
       let glslImage = new GlslImage(jsImage);
       return glslImage.glslVector4;
+   }
+   /**
+    * @public
+    * @param {HTMLImageElement} jsImage
+    */
+   setImage(jsImage) {
+      this.jsImage = jsImage;
+      const context = GlslShader.getGlslContext().getGlContext();
+      this.createBaseTexture(context);
    }
    /**
     * @returns {string}
@@ -793,30 +872,6 @@ class GlslImage {
             glslOffset.v +
             "))"
       );
-   }
-}
-
-class GlslUniform {
-   /**
-    * @param {GlslVariable} initialValue
-    */
-   constructor() {}
-
-   /**
-    * @abstract
-    * @param {undefined} value
-    */
-   setValue(value) {}
-
-   /**
-    * @abstract
-    */
-   getValue() {}
-}
-
-class GlslUniformImage extends GlslUniform {
-   constructor() {
-      super();
    }
 }
 
@@ -1787,6 +1842,7 @@ class GlslMatrix3 extends GlslMatrix {
  * @typedef {GlslVector3} GLSL.Vector3
  * @typedef {GlslVector4} GLSL.Vector4
  * @typedef {GlslMatrix3} GLSL.Matrix3
+ * @typedef {GlslUniformImage} GLSL.Uniform.Image
  */
 const GLSL = {
    Shader: Shader,
@@ -1798,4 +1854,5 @@ const GLSL = {
    Vector3: GlslVector3,
    Vector4: GlslVector4,
    Matrix3: GlslMatrix3,
+   Uniform: { Image: GlslUniformImage },
 };
