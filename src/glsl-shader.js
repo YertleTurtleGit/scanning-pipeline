@@ -796,6 +796,30 @@ class GlslImage {
    }
 }
 
+class GlslUniform {
+   /**
+    * @param {GlslVariable} initialValue
+    */
+   constructor() {}
+
+   /**
+    * @abstract
+    * @param {undefined} value
+    */
+   setValue(value) {}
+
+   /**
+    * @abstract
+    */
+   getValue() {}
+}
+
+class GlslUniformImage extends GlslUniform {
+   constructor() {
+      super();
+   }
+}
+
 /**
  * @abstract
  */
