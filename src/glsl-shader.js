@@ -712,7 +712,7 @@ class GlslImage {
    }
 
    /**
-    * @param {number[][]} kernel - Convolution matrix (NxN).
+    * @param {number[][]} kernel Convolution matrix (NxN).
     * @param {boolean} normalize
     * @returns {GlslVector4}
     */

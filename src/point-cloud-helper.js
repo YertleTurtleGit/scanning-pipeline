@@ -10,13 +10,13 @@ class PointCloudHelper {
     * depth mapping.
     *
     * @public
-    * @param {HTMLImageElement} depthMapImage - The depth
+    * @param {HTMLImageElement} depthMapImage The depth
     * mapping that is used to calculate the point cloud.
-    * @param {HTMLCanvasElement} renderCanvas - The
+    * @param {HTMLCanvasElement} renderCanvas The
     * UI-canvas to display the point cloud.
-    * @param {number} depthFactor - The factor that is
+    * @param {number} depthFactor The factor that is
     * multiplied with the z-coordinate (depth-coordinate).
-    * @param {HTMLImageElement} textureImage - The texture
+    * @param {HTMLImageElement} textureImage The texture
     * that is used for the point cloud vertex color.
     * @returns {Promise<number[]>} The vertices of the
     * calculated point cloud in an array. [x1, y1, z1, x2,

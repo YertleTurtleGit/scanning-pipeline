@@ -13,18 +13,17 @@ class DepthMapHelper {
     * normal mapping.
     *
     * @public
-    * @param {HTMLImageElement} normalMap - The normal
-    * mapping that is used to calculate the depth mapping.
-    * @param {number} qualityPercent - The quality in
-    * percent defines how many anisotropic integrals are
-    * taken into account to archive a higher quality depth
-    * mapping.
-    * @param {number} perspectiveCorrectingFactor -
-    * Defines the factor of a radial-exponential depth
-    * correction. Zero corresponds to no correction.
-    * @param {HTMLImageElement} imageElement - The
-    * UI-element to display the resulting depth mapping.
-    * @param {HTMLProgressElement} progressElement - The
+    * @param {HTMLImageElement} normalMap The normal mapping
+    * that is used to calculate the depth mapping.
+    * @param {number} qualityPercent The quality in percent
+    * defines how many anisotropic integrals are taken into
+    * account to archive a higher quality depth mapping.
+    * @param {number} perspectiveCorrectingFactor Defines
+    * the factor of a radial-exponential depth correction.
+    * Zero corresponds to no correction.
+    * @param {HTMLImageElement} imageElement The UI-element
+    * to display the resulting depth mapping.
+    * @param {HTMLProgressElement} progressElement The
     * UI-element to display the progress.
     * @returns {Promise<HTMLImageElement>} A depth mapping
     * according to the input normal mapping.
