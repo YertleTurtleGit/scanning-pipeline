@@ -623,12 +623,7 @@ class GlslOperation {
 class GlslUniform {
    constructor() {
       this.glslName = GlslVariable.getUniqueName("uniform");
-      this.context = GlslShader.getGlslContext().getGlContext();
       this.shader = GlslShader.getCurrentShader();
-      this.pointer = this.context.getUniformLocation(
-         this.shader,
-         this.glslName
-      );
    }
 
    /**
@@ -636,6 +631,10 @@ class GlslUniform {
     * @returns {WebGLUniformLocation}
     */
    getPointer() {
+      this.pointer = this.getContext().getUniformLocation(
+         this.shader,
+         this.glslName
+      );
       return this.pointer;
    }
 
@@ -652,6 +651,8 @@ class GlslUniform {
     * @returns {WebGL2RenderingContext}
     */
    getContext() {
+      // TODO Write glslContext getter in GlslShader.
+      this.context = this.shader.glslContext.getGlContext();
       return this.context;
    }
 
@@ -816,6 +817,14 @@ class GlslImage {
          ),
          textureUnit
       );
+   }
+
+   /**
+    * @public
+    * @returns {GlslVector4}
+    */
+   getPixelColor() {
+      return this.glslVector4;
    }
 
    /**

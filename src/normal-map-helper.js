@@ -67,16 +67,25 @@ class NormalMapHelper {
 
             normalMapShader.bind();
 
-            const lightLuminances = [
-               GLSL.Image.load(lightImage_000).getLuminance(),
-               GLSL.Image.load(lightImage_045).getLuminance(),
-               GLSL.Image.load(lightImage_090).getLuminance(),
-               GLSL.Image.load(lightImage_135).getLuminance(),
-               GLSL.Image.load(lightImage_180).getLuminance(),
-               GLSL.Image.load(lightImage_225).getLuminance(),
-               GLSL.Image.load(lightImage_270).getLuminance(),
-               GLSL.Image.load(lightImage_315).getLuminance(),
+            const lightImageUniforms = [
+               new GLSL.Uniform.Image(lightImage_000),
+               new GLSL.Uniform.Image(lightImage_045),
+               new GLSL.Uniform.Image(lightImage_090),
+               new GLSL.Uniform.Image(lightImage_135),
+               new GLSL.Uniform.Image(lightImage_180),
+               new GLSL.Uniform.Image(lightImage_225),
+               new GLSL.Uniform.Image(lightImage_270),
+               new GLSL.Uniform.Image(lightImage_315),
             ];
+
+            const lightLuminances = [];
+            lightImageUniforms.forEach((uniform) => {
+               lightLuminances.push(
+                  uniform.getValue().getPixelColor().getLuminance()
+               );
+            });
+
+            console.log(lightLuminances);
 
             const all = new GLSL.Float(0).maximum(...lightLuminances);
 
