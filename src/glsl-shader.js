@@ -625,10 +625,22 @@ class GlslUniform {
       this.glslName = GlslVariable.getUniqueName("uniform");
       this.context = GlslShader.getGlslContext().getGlContext();
       this.shader = GlslShader.getCurrentShader();
+      this.pointer = this.context.getUniformLocation(
+         this.shader,
+         this.glslName
+      );
    }
 
    /**
-    * @protected
+    * @public
+    * @returns {WebGLUniformLocation}
+    */
+   getPointer() {
+      return this.pointer;
+   }
+
+   /**
+    * @public
     * @returns {string}
     */
    getGlslName() {
@@ -664,6 +676,24 @@ class GlslUniform {
     */
 }
 
+class GlslUniformFloat extends GlslUniform {
+   /**
+    * @public
+    * @param {number} value
+    */
+   setValue(value) {
+      this.getContext().uniform1f(this.getPointer(), value);
+   }
+
+   /**
+    * @public
+    * @returns {GlslFloat}
+    */
+   getValue() {
+      return new GlslFloat(null, this.getGlslName());
+   }
+}
+
 class GlslUniformImage extends GlslUniform {
    /**
     * @param {HTMLImageElement} initialValue
@@ -697,10 +727,10 @@ class GlslImage {
     */
    constructor(jsImage) {
       this.jsImage = jsImage;
-      this.uniformGlslName = GlslVariable.getUniqueName("uniform");
+      this.uniform = new GlslUniformImage(jsImage);
       this.glslVector4 = new GlslVector4(
          null,
-         "texture(" + this.uniformGlslName + ", " + GLSL_VARIABLE.UV + ")"
+         "texture(" + this.uniform.getGlslName() + ", " + GLSL_VARIABLE.UV + ")"
       );
       GlslShader.addGlslImageToCurrentShader(this);
    }
@@ -727,7 +757,7 @@ class GlslImage {
     * @returns {string}
     */
    getGlslDefinition() {
-      return "uniform sampler2D " + this.uniformGlslName + ";";
+      return "uniform sampler2D " + this.uniform.getGlslName() + ";";
    }
    /**
     * @param  {WebGL2RenderingContext} glContext
@@ -780,7 +810,10 @@ class GlslImage {
          this.createBaseTexture(glContext)
       );
       glContext.uniform1i(
-         glContext.getUniformLocation(shaderProgram, this.uniformGlslName),
+         glContext.getUniformLocation(
+            shaderProgram,
+            this.uniform.getGlslName()
+         ),
          textureUnit
       );
    }
@@ -861,7 +894,7 @@ class GlslImage {
       return new GlslVector4(
          null,
          "texture(" +
-            this.uniformGlslName +
+            this.uniform.getGlslName() +
             ", vec2(" +
             GLSL_VARIABLE.UV_U +
             " + " +
@@ -1150,14 +1183,19 @@ class GlslFloat extends GlslVariable {
       return "(" + number.toString() + ")";
    }
    /**
-    * @param  {number} [jsNumber=null]
+    * @param  {number} jsNumber
+    * @param {string} customDeclaration
     */
-   constructor(jsNumber = null) {
-      if (jsNumber !== null) {
-         super(null);
-         this.glslName = GlslFloat.getJsNumberAsString(jsNumber);
+   constructor(jsNumber = null, customDeclaration = undefined) {
+      if (customDeclaration) {
+         super(customDeclaration);
       } else {
-         super();
+         if (jsNumber !== null) {
+            super(null);
+            this.glslName = GlslFloat.getJsNumberAsString(jsNumber);
+         } else {
+            super();
+         }
       }
    }
    /**
@@ -1843,6 +1881,7 @@ class GlslMatrix3 extends GlslMatrix {
  * @typedef {GlslVector4} GLSL.Vector4
  * @typedef {GlslMatrix3} GLSL.Matrix3
  * @typedef {GlslUniformImage} GLSL.Uniform.Image
+ * @typedef {GlslUniformFloat} GLSL.Uniform.Float
  */
 const GLSL = {
    Shader: Shader,
@@ -1854,5 +1893,5 @@ const GLSL = {
    Vector3: GlslVector3,
    Vector4: GlslVector4,
    Matrix3: GlslMatrix3,
-   Uniform: { Image: GlslUniformImage },
+   Uniform: { Image: GlslUniformImage, Float: GlslUniformFloat },
 };
