@@ -136,9 +136,9 @@ class GlslShader {
       this.floatPrecision = FLOAT_PRECISION;
       /**
        * @private
-       * @type {GlslImage[]}
+       * @type {GlslUniform[]}
        */
-      this.glslImages = [];
+      this.glslUniforms = [];
       /**
        * @private
        * @type {string[]}
@@ -172,11 +172,11 @@ class GlslShader {
    }
    /**
     * @static
-    * @param  {GlslImage} glslImage
+    * @param  {GlslUniform} glslUniform
     * @returns {void}
     */
-   static addGlslImageToCurrentShader(glslImage) {
-      GlslShader.getCurrentShader().addGlslImage(glslImage);
+   static addGlslUniformToCurrentShader(glslUniform) {
+      GlslShader.getCurrentShader().addGlslUniform(glslUniform);
    }
    /**
     * @static
@@ -186,10 +186,10 @@ class GlslShader {
       return GlslShader.getCurrentShader().glslContext;
    }
    /**
-    * @returns {GlslImage[]}
+    * @returns {GlslUniform[]}
     */
-   getGlslImages() {
-      return this.glslImages;
+   getGlslUniforms() {
+      return this.glslUniforms;
    }
    /**
     * @returns {string}
@@ -214,9 +214,9 @@ class GlslShader {
     * @returns {string}
     */
    getFragmentShaderSource(outVariable) {
-      let imageDefinitions = [];
-      for (let i = 0; i < this.glslImages.length; i++) {
-         imageDefinitions.push(this.glslImages[i].getGlslDefinition());
+      const uniformDeclarations = [];
+      for (let i = 0; i < this.glslUniforms.length; i++) {
+         uniformDeclarations.push(this.glslUniforms[i].getGlslDeclaration());
       }
       return [
          "#version 300 es",
@@ -225,7 +225,7 @@ class GlslShader {
          "in vec2 " + GLSL_VARIABLE.UV + ";",
          "out vec4 " + GLSL_VARIABLE.OUT + ";",
          "",
-         ...imageDefinitions,
+         ...uniformDeclarations,
          "",
          "float luminance(vec4 image) {",
          "return image.r * " +
@@ -253,11 +253,11 @@ class GlslShader {
    }
    /**
     * @private
-    * @param  {GlslImage} glslImage
+    * @param  {GlslUniform} glslUniform
     * @returns {void}
     */
-   addGlslImage(glslImage) {
-      this.glslImages.push(glslImage);
+   addGlslUniform(glslUniform) {
+      this.glslUniforms.push(glslUniform);
    }
 }
 /**
@@ -336,12 +336,23 @@ class GlslContext {
     * @param  {WebGLProgram} shaderProgram
     * @returns {void}
     */
-   loadGlslImages(shaderProgram) {
-      const glslImages = this.glslShader.getGlslImages();
-      //console.log("Loading " + glslImages.length + " image(s) for gpu.");
-      for (let i = 0; i < glslImages.length; i++) {
-         glslImages[i].loadIntoShaderProgram(this.glContext, shaderProgram, i);
-      }
+   loadGlslUniforms(shaderProgram) {
+      const glslUniforms = this.glslShader.getGlslUniforms();
+
+      let textureUnit = 0;
+
+      glslUniforms.forEach((uniform) => {
+         if (uniform instanceof GlslUniformImage) {
+            uniform.loadIntoShaderProgram(
+               this.glContext,
+               shaderProgram,
+               textureUnit
+            );
+            textureUnit++;
+         } else {
+            uniform.loadIntoShaderProgram(this.glContext, shaderProgram);
+         }
+      });
    }
    /**
     * @param  {WebGLProgram} shaderProgram
@@ -451,7 +462,7 @@ class GlslContext {
    drawCall(outVariable) {
       const shaderProgram = this.createShaderProgram(outVariable);
       this.glContext.useProgram(shaderProgram);
-      this.loadGlslImages(shaderProgram);
+      this.loadGlslUniforms(shaderProgram);
       //console.log("Rendering on gpu.");
       const vaoFrame = this.getFrameVAO(shaderProgram);
       this.drawArraysFromVAO(vaoFrame);
@@ -621,21 +632,25 @@ class GlslOperation {
 }
 
 class GlslUniform {
-   constructor() {
+   /**
+    * @abstract
+    * @protected
+    * @param {any} initialValue
+    */
+   constructor(initialValue) {
+      GlslShader.addGlslUniformToCurrentShader(this);
+      this.value = initialValue;
       this.glslName = GlslVariable.getUniqueName("uniform");
-      this.shader = GlslShader.getCurrentShader();
    }
 
    /**
+    * @abstract
     * @public
-    * @returns {WebGLUniformLocation}
+    * @returns {string}
     */
-   getPointer() {
-      this.pointer = this.getContext().getUniformLocation(
-         this.shader,
-         this.glslName
-      );
-      return this.pointer;
+   getGlslDeclaration() {
+      console.error("Not possible to call abstract method.");
+      return undefined;
    }
 
    /**
@@ -647,43 +662,62 @@ class GlslUniform {
    }
 
    /**
-    * @protected
-    * @returns {WebGL2RenderingContext}
-    */
-   getContext() {
-      // TODO Write glslContext getter in GlslShader.
-      this.context = this.shader.glslContext.getGlContext();
-      return this.context;
-   }
-
-   /**
-    * @protected
-    * @returns {WebGLProgram}
-    */
-   getShader() {
-      return this.getShader;
-   }
-
-   /**
+    * @public
     * @abstract
     * @name setValue
     * @param {undefined} value
     */
 
    /**
+    * @public
     * @abstract
     * @name getValue
-    * @returns {undefined}
+    * @returns {void}
     */
+
+   // TODO Hide concrete methods from outside.
+   /**
+    * Is called automatically.
+    *
+    * @public
+    * @abstract
+    * @name loadIntoShaderProgram
+    * @param {WebGL2RenderingContext} context
+    * @param {WebGLProgram} shaderProgram
+    * @param {number} textureUnit
+    */
+   loadIntoShaderProgram(context, shaderProgram, textureUnit = undefined) {
+      console.error(
+         "Not possible to call abstract method.",
+         context,
+         shaderProgram,
+         textureUnit
+      );
+   }
 }
 
 class GlslUniformFloat extends GlslUniform {
+   /**
+    * @param {number} initialValue
+    */
+   constructor(initialValue) {
+      super(initialValue);
+   }
+
+   /**
+    * @public
+    * @returns {string}
+    */
+   getGlslDeclaration() {
+      return "uniform float " + this.getGlslName() + ";";
+   }
+
    /**
     * @public
     * @param {number} value
     */
    setValue(value) {
-      this.getContext().uniform1f(this.getPointer(), value);
+      this.value = value;
    }
 
    /**
@@ -693,6 +727,18 @@ class GlslUniformFloat extends GlslUniform {
    getValue() {
       return new GlslFloat(null, this.getGlslName());
    }
+
+   /**
+    * @public
+    * @param {WebGL2RenderingContext} context
+    * @param {WebGLProgram} shaderProgram
+    */
+   loadIntoShaderProgram(context, shaderProgram) {
+      context.uniform1f(
+         context.getUniformLocation(shaderProgram, this.getGlslName()),
+         this.value
+      );
+   }
 }
 
 class GlslUniformImage extends GlslUniform {
@@ -700,24 +746,77 @@ class GlslUniformImage extends GlslUniform {
     * @param {HTMLImageElement} initialValue
     */
    constructor(initialValue) {
-      super();
-      this.glslImage = new GlslImage(initialValue);
+      super(initialValue);
    }
 
    /**
     * @public
-    * @param {HTMLImageElement} jsImage
+    * @returns {string}
     */
-   setValue(jsImage) {
-      this.glslImage.setImage(jsImage);
+   getGlslDeclaration() {
+      return "uniform sampler2D " + this.getGlslName() + ";";
+   }
+
+   /**
+    * @public
+    * @param {HTMLImageElement} value
+    */
+   setValue(value) {
+      this.value = value;
    }
 
    /**
     * @public
     * @returns {GlslImage}
     */
-   getValue() {
-      return this.glslImage;
+   getValue() {}
+
+   /**
+    * @override
+    * @public
+    * @param {WebGL2RenderingContext} context
+    * @param {WebGLProgram} shaderProgram
+    * @param {number} textureUnit
+    */
+   loadIntoShaderProgram(context, shaderProgram, textureUnit) {
+      const texture = context.createTexture();
+
+      context.bindTexture(context.TEXTURE_2D, texture);
+      context.texParameteri(
+         context.TEXTURE_2D,
+         context.TEXTURE_WRAP_S,
+         context.CLAMP_TO_EDGE
+      );
+      context.texParameteri(
+         context.TEXTURE_2D,
+         context.TEXTURE_WRAP_T,
+         context.CLAMP_TO_EDGE
+      );
+      context.texParameteri(
+         context.TEXTURE_2D,
+         context.TEXTURE_MIN_FILTER,
+         context.LINEAR
+      );
+      context.texParameteri(
+         context.TEXTURE_2D,
+         context.TEXTURE_MAG_FILTER,
+         context.LINEAR
+      );
+      context.texImage2D(
+         context.TEXTURE_2D,
+         0,
+         context.RGBA,
+         context.RGBA,
+         context.UNSIGNED_BYTE,
+         this.value
+      );
+
+      context.activeTexture(context.TEXTURE0 + textureUnit);
+      context.bindTexture(context.TEXTURE_2D, texture);
+      context.uniform1i(
+         context.getUniformLocation(shaderProgram, this.getGlslName()),
+         textureUnit
+      );
    }
 }
 
@@ -733,7 +832,6 @@ class GlslImage {
          null,
          "texture(" + this.uniform.getGlslName() + ", " + GLSL_VARIABLE.UV + ")"
       );
-      GlslShader.addGlslImageToCurrentShader(this);
    }
    /**
     * @public
@@ -744,79 +842,6 @@ class GlslImage {
    static load(jsImage) {
       let glslImage = new GlslImage(jsImage);
       return glslImage.glslVector4;
-   }
-   /**
-    * @public
-    * @param {HTMLImageElement} jsImage
-    */
-   setImage(jsImage) {
-      this.jsImage = jsImage;
-      const context = GlslShader.getGlslContext().getGlContext();
-      this.createBaseTexture(context);
-   }
-   /**
-    * @returns {string}
-    */
-   getGlslDefinition() {
-      return "uniform sampler2D " + this.uniform.getGlslName() + ";";
-   }
-   /**
-    * @param  {WebGL2RenderingContext} glContext
-    * @returns {WebGLTexture}
-    */
-   createBaseTexture(glContext) {
-      let texture = glContext.createTexture();
-      glContext.bindTexture(glContext.TEXTURE_2D, texture);
-      glContext.texParameteri(
-         glContext.TEXTURE_2D,
-         glContext.TEXTURE_WRAP_S,
-         glContext.CLAMP_TO_EDGE
-      );
-      glContext.texParameteri(
-         glContext.TEXTURE_2D,
-         glContext.TEXTURE_WRAP_T,
-         glContext.CLAMP_TO_EDGE
-      );
-      glContext.texParameteri(
-         glContext.TEXTURE_2D,
-         glContext.TEXTURE_MIN_FILTER,
-         glContext.LINEAR
-      );
-      glContext.texParameteri(
-         glContext.TEXTURE_2D,
-         glContext.TEXTURE_MAG_FILTER,
-         glContext.LINEAR
-      );
-      glContext.texImage2D(
-         glContext.TEXTURE_2D,
-         0,
-         glContext.RGBA,
-         glContext.RGBA,
-         glContext.UNSIGNED_BYTE,
-         this.jsImage
-      );
-      return texture;
-   }
-
-   /**
-    * @param  {WebGL2RenderingContext} glContext
-    * @param  {WebGLProgram} shaderProgram
-    * @param  {number} textureUnit
-    * @returns {void}
-    */
-   loadIntoShaderProgram(glContext, shaderProgram, textureUnit) {
-      glContext.activeTexture(glContext.TEXTURE0 + textureUnit);
-      glContext.bindTexture(
-         glContext.TEXTURE_2D,
-         this.createBaseTexture(glContext)
-      );
-      glContext.uniform1i(
-         glContext.getUniformLocation(
-            shaderProgram,
-            this.uniform.getGlslName()
-         ),
-         textureUnit
-      );
    }
 
    /**
@@ -839,7 +864,7 @@ class GlslImage {
          new GlslFloat(0),
          new GlslFloat(0),
          new GlslFloat(0),
-         new GlslFloat(0),
+         new GlslFloat(1),
       ]);
 
       if (normalize) {
