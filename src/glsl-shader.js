@@ -824,6 +824,23 @@ class GlslImage {
    /**
     * @public
     * @param  {HTMLImageElement} jsImage
+    * @returns {GlslVector4}
+    */
+   static load(jsImage) {
+      let glslImage = new GlslImage(jsImage);
+      return glslImage.glslVector4;
+   }
+
+   /**
+    * @public
+    * @param {GlslUniform} glslUniform
+    * @returns {GlslImage}
+    */
+   static getFromGlslUniform(glslUniform) {}
+
+   /**
+    * @public
+    * @param  {HTMLImageElement} jsImage
     */
    constructor(jsImage) {
       this.jsImage = jsImage;
@@ -833,17 +850,6 @@ class GlslImage {
          "texture(" + this.uniform.getGlslName() + ", " + GLSL_VARIABLE.UV + ")"
       );
    }
-   /**
-    * @public
-    * @static
-    * @param  {HTMLImageElement} jsImage
-    * @returns {GlslVector4}
-    */
-   static load(jsImage) {
-      let glslImage = new GlslImage(jsImage);
-      return glslImage.glslVector4;
-   }
-
    /**
     * @public
     * @returns {GlslVector4}
@@ -885,7 +891,7 @@ class GlslImage {
          }
       }
 
-      const kernelMiddle = (kernel.length - 1) / 2;
+      const kernelCenter = (kernel.length - 1) / 2;
 
       kernel.forEach((row, rowIndex) => {
          row.forEach((value, columnIndex) => {
@@ -893,8 +899,8 @@ class GlslImage {
                filtered = filtered.addVector4(
                   new GlslFloat(value).multiplyVector4(
                      this.getNeighborPixel(
-                        columnIndex - kernelMiddle,
-                        rowIndex - kernelMiddle
+                        columnIndex - kernelCenter,
+                        rowIndex - kernelCenter
                      )
                   )
                );
