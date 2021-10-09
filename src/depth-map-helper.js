@@ -55,7 +55,7 @@ class DepthMapHelper {
 
             if (depthMapHelper.isRenderObsolete()) return;
 
-            let promiseResolveCount = 0;
+            let promisesResolvedCount = 0;
 
             for (let i = 0; i < anglesCount; i++) {
                integralPromises[i] =
@@ -66,8 +66,8 @@ class DepthMapHelper {
 
                if (progressElement) {
                   integralPromises[i].then(() => {
-                     promiseResolveCount++;
-                     const percent = (promiseResolveCount / anglesCount) * 90;
+                     promisesResolvedCount++;
+                     const percent = (promisesResolvedCount / anglesCount) * 90;
                      progressElement.value = percent;
                   });
                }
@@ -249,8 +249,8 @@ class DepthMapHelper {
 
          maskShader.bind();
 
-         const input = GLSL.Image.load(inputImage);
-         const normal = GLSL.Image.load(this.normalMap);
+         const input = new GLSL.Image(inputImage).getPixelColor();
+         const normal = new GLSL.Image(this.normalMap).getPixelColor();
 
          const mask = normal.channel(0).step(new GLSL.Float(0.001));
 
@@ -286,7 +286,9 @@ class DepthMapHelper {
             });
             depthMapShader.bind();
 
-            const glslNormalMap = GLSL.Image.load(this.normalMap);
+            const glslNormalMap = new GLSL.Image(
+               this.normalMap
+            ).getPixelColor();
             const red = glslNormalMap.channel(0);
             const green = glslNormalMap.channel(1);
             const blue = glslNormalMap.channel(2);
@@ -530,7 +532,7 @@ class DepthMapHelper {
       });
 
       shader.bind();
-      const depth = GLSL.Image.load(image).channel(0);
+      const depth = new GLSL.Image(image).getPixelColor().channel(0);
 
       let vignette = shader
          .getUV()
@@ -616,8 +618,10 @@ class DepthMapHelper {
          });
          differenceShader.bind();
 
-         const depth = GLSL.Image.load(depthMap).channel(0);
-         const groundTruth = GLSL.Image.load(groundTruthImage).channel(0);
+         const depth = new GLSL.Image(depthMap).getPixelColor().channel(0);
+         const groundTruth = new GLSL.Image(groundTruthImage)
+            .getPixelColor()
+            .channel(0);
 
          const zeroAsErrorSummand = new GLSL.Float(1).subtractFloat(
             depth

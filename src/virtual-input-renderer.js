@@ -173,7 +173,7 @@ class VirtualInputRenderer {
       const normalizeShader = new GLSL.Shader({ width: width, height: height });
       normalizeShader.bind();
 
-      const depthValue = GLSL.Image.load(renderImage).channel(0);
+      const depthValue = new GLSL.Image(renderImage).getPixelColor().channel(0);
 
       let normalizedDepthValue;
 

@@ -99,10 +99,11 @@ class Shader {
          console.warn("Shader is already bound!");
       }
       this.glslShader = new GlslShader(this.dimensions);
+      GlslShader.boundShader = this.glslShader;
    }
 
    unbind() {
-      GlslShader.currentShader = null;
+      GlslShader.boundShader = null;
       this.glslShader = null;
    }
 
@@ -128,7 +129,6 @@ class GlslShader {
     * @param  {{ width: number, height: number }} dimensions
     */
    constructor(dimensions) {
-      GlslShader.currentShader = this;
       /**
        * @private
        * @type {GPU_GL_FLOAT_PRECISION}
@@ -144,22 +144,22 @@ class GlslShader {
        * @type {string[]}
        */
       this.glslCommands = [];
-      this.glslContext = new GlslContext(dimensions);
+      this.glslContext = new GlslContext(dimensions, this);
    }
    /**
     * @public
     * @static
     * @returns {GlslShader}
     */
-   static getCurrentShader() {
-      return GlslShader.currentShader;
+   static getBoundShader() {
+      return GlslShader.boundShader;
    }
    /**
     * @public
     */
    reset() {
       this.glslContext.reset();
-      GlslShader.currentShader = null;
+      GlslShader.boundShader = null;
    }
    /**
     * @public
@@ -167,23 +167,23 @@ class GlslShader {
     * @param  {string} glslCommand
     * @returns {void}
     */
-   static addGlslCommandToCurrentShader(glslCommand) {
-      GlslShader.getCurrentShader().addGlslCommand(glslCommand);
+   static addGlslCommandToBoundShader(glslCommand) {
+      GlslShader.getBoundShader().addGlslCommand(glslCommand);
    }
    /**
     * @static
     * @param  {GlslUniform} glslUniform
     * @returns {void}
     */
-   static addGlslUniformToCurrentShader(glslUniform) {
-      GlslShader.getCurrentShader().addGlslUniform(glslUniform);
+   static addGlslUniformToBoundShader(glslUniform) {
+      GlslShader.getBoundShader().addGlslUniform(glslUniform);
    }
    /**
     * @static
     * @returns {GlslContext}
     */
    static getGlslContext() {
-      return GlslShader.getCurrentShader().glslContext;
+      return GlslShader.getBoundShader().glslContext;
    }
    /**
     * @returns {GlslUniform[]}
@@ -264,14 +264,16 @@ class GlslShader {
  * @static
  * @type {GlslShader}
  */
-GlslShader.currentShader;
+GlslShader.boundShader;
 
 class GlslContext {
    /**
+    * @public
     * @param  {{ width: number, height: number }} dimensions
+    * @param {GlslShader} glslShader
     */
-   constructor(dimensions) {
-      this.glslShader = GlslShader.getCurrentShader();
+   constructor(dimensions, glslShader) {
+      this.glslShader = glslShader;
       this.glCanvas = document.createElement("canvas");
       this.glCanvas.width = dimensions.width;
       this.glCanvas.height = dimensions.height;
@@ -638,7 +640,7 @@ class GlslUniform {
     * @param {any} initialValue
     */
    constructor(initialValue) {
-      GlslShader.addGlslUniformToCurrentShader(this);
+      GlslShader.addGlslUniformToBoundShader(this);
       this.value = initialValue;
       this.glslName = GlslVariable.getUniqueName("uniform");
    }
@@ -700,7 +702,7 @@ class GlslUniformFloat extends GlslUniform {
    /**
     * @param {number} initialValue
     */
-   constructor(initialValue) {
+   constructor(initialValue = undefined) {
       super(initialValue);
    }
 
@@ -743,9 +745,10 @@ class GlslUniformFloat extends GlslUniform {
 
 class GlslUniformImage extends GlslUniform {
    /**
+    * @public
     * @param {HTMLImageElement} initialValue
     */
-   constructor(initialValue) {
+   constructor(initialValue = undefined) {
       super(initialValue);
    }
 
@@ -781,6 +784,10 @@ class GlslUniformImage extends GlslUniform {
     * @param {number} textureUnit
     */
    loadIntoShaderProgram(context, shaderProgram, textureUnit) {
+      if (!this.value) {
+         return;
+      }
+
       const texture = context.createTexture();
 
       context.bindTexture(context.TEXTURE_2D, texture);
@@ -825,22 +832,21 @@ class GlslUniformImage extends GlslUniform {
 class GlslImage {
    /**
     * @public
-    * @param  {HTMLImageElement} jsImage
-    * @returns {GlslVector4}
-    */
-   static load(jsImage) {
-      let glslImage = new GlslImage(jsImage);
-      return glslImage.glslVector4;
-   }
-
-   /**
-    * @public
     * @param {GlslUniformImage} glslUniformImage
     * @returns {GlslImage}
     */
    static getFromGlslUniform(glslUniformImage) {
       const glslImage = new GlslImage(null);
+      glslImage.jsImage = glslUniformImage.value;
       glslImage.uniform = glslUniformImage;
+      glslImage.glslVector4 = new GlslVector4(
+         null,
+         "texture(" +
+            glslUniformImage.getGlslName() +
+            ", " +
+            GLSL_VARIABLE.UV +
+            ")"
+      );
       return glslImage;
    }
 
@@ -968,7 +974,7 @@ class GlslVariable {
          if (customDeclaration !== "") {
             customDeclaration = " = " + customDeclaration;
          }
-         GlslShader.addGlslCommandToCurrentShader(
+         GlslShader.addGlslCommandToBoundShader(
             this.getGlslVarType() +
                " " +
                this.getGlslName() +
@@ -1012,7 +1018,7 @@ class GlslVariable {
     * @returns {void}
     */
    declareGlslResult(glslOperation) {
-      GlslShader.addGlslCommandToCurrentShader(glslOperation.getDeclaration());
+      GlslShader.addGlslCommandToBoundShader(glslOperation.getDeclaration());
    }
    /**
     * @protected
