@@ -769,7 +769,9 @@ class GlslUniformImage extends GlslUniform {
     * @public
     * @returns {GlslImage}
     */
-   getValue() {}
+   getValue() {
+      return GlslImage.getFromGlslUniform(this);
+   }
 
    /**
     * @override
@@ -833,10 +835,14 @@ class GlslImage {
 
    /**
     * @public
-    * @param {GlslUniform} glslUniform
+    * @param {GlslUniformImage} glslUniformImage
     * @returns {GlslImage}
     */
-   static getFromGlslUniform(glslUniform) {}
+   static getFromGlslUniform(glslUniformImage) {
+      const glslImage = new GlslImage(null);
+      glslImage.uniform = glslUniformImage;
+      return glslImage;
+   }
 
    /**
     * @public
