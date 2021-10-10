@@ -54,6 +54,7 @@ class NormalMapHelper {
                lightImage_000.naturalWidth < 1 ||
                lightImage_045.naturalWidth < 1 ||
                lightImage_090.naturalWidth < 1 ||
+               lightImage_135.naturalWidth < 1 ||
                lightImage_180.naturalWidth < 1 ||
                lightImage_225.naturalWidth < 1 ||
                lightImage_270.naturalWidth < 1 ||
@@ -312,6 +313,7 @@ class NormalMapShader {
     */
    constructor(dimensions) {
       this.dimensions = dimensions;
+      this.initialized = false;
    }
 }
 
@@ -327,36 +329,12 @@ class PhotometricStereoShader extends NormalMapShader {
 
    /**
     * @public
-    * @param {HTMLImageElement} lightImage_000
-    * @param {HTMLImageElement} lightImage_045
-    * @param {HTMLImageElement} lightImage_090
-    * @param {HTMLImageElement} lightImage_135
-    * @param {HTMLImageElement} lightImage_180
-    * @param {HTMLImageElement} lightImage_225
-    * @param {HTMLImageElement} lightImage_270
-    * @param {HTMLImageElement} lightImage_315
-    * @param {HTMLImageElement} lightImage_NONE
+    * @param {HTMLImageElement[]} lightImages
     */
-   setLightImages(
-      lightImage_000,
-      lightImage_045,
-      lightImage_090,
-      lightImage_135,
-      lightImage_180,
-      lightImage_225,
-      lightImage_270,
-      lightImage_315,
-      lightImage_NONE
-   ) {
-      this.photometricStereoLightImageUniforms[0].setValue(lightImage_000);
-      this.photometricStereoLightImageUniforms[0].setValue(lightImage_045);
-      this.photometricStereoLightImageUniforms[0].setValue(lightImage_090);
-      this.photometricStereoLightImageUniforms[0].setValue(lightImage_135);
-      this.photometricStereoLightImageUniforms[0].setValue(lightImage_180);
-      this.photometricStereoLightImageUniforms[0].setValue(lightImage_225);
-      this.photometricStereoLightImageUniforms[0].setValue(lightImage_270);
-      this.photometricStereoLightImageUniforms[0].setValue(lightImage_315);
-      this.photometricStereoLightImageUniforms[0].setValue(lightImage_NONE);
+   setLightImages(lightImages) {
+      this.photometricStereoLightImageUniforms.forEach((uniform, index) => {
+         uniform.setValue(lightImages[index]);
+      });
    }
 
    /**
@@ -364,6 +342,11 @@ class PhotometricStereoShader extends NormalMapShader {
     * @returns {Promise<HTMLImageElement>}
     */
    async render() {
+      while (!this.initialized) {
+         await new Promise((resolve) => {
+            setTimeout(resolve, 1000);
+         });
+      }
       this.shader.bind();
       const rendering = GLSL.render(this.outVariable);
       this.shader.unbind();
@@ -374,6 +357,8 @@ class PhotometricStereoShader extends NormalMapShader {
     * @private
     */
    generate() {
+      this.initialized = false;
+
       this.shader = new GLSL.Shader(this.dimensions);
       this.shader.bind();
 
@@ -556,8 +541,6 @@ class PhotometricStereoShader extends NormalMapShader {
          .normalize()
          .multiplyFloat(mask);
 
-      if (normalMapHelper.isRenderObsolete()) return;
-
       if (cameraVerticalShift) {
          // TODO: use cameraVerticalShift
          /*const cameraAngle = Math.atan(
@@ -588,5 +571,7 @@ class PhotometricStereoShader extends NormalMapShader {
       this.outVariable = normalVector.getVector4(alpha);
 
       this.shader.unbind();
+
+      this.initialized = true;
    }
 }
