@@ -651,8 +651,7 @@ class GlslUniform {
     * @returns {string}
     */
    getGlslDeclaration() {
-      console.error("Not possible to call abstract method.");
-      return undefined;
+      throw new Error("Abstract method not callable.");
    }
 
    /**
@@ -983,8 +982,8 @@ class GlslVariable {
          );
       }
    }
+
    /**
-    * @static
     * @param  {string} prefix
     * @returns {string}
     */
@@ -992,8 +991,8 @@ class GlslVariable {
       GlslVariable.uniqueNumber++;
       return prefix + "_" + GlslVariable.uniqueNumber.toString();
    }
+
    /**
-    * @static
     * @param  {GlslVariable[]} glslVariables
     * @returns {string[]}
     */
@@ -1006,12 +1005,15 @@ class GlslVariable {
       }
       return glslNames;
    }
+
    /**
+    * @public
     * @returns {string}
     */
    getGlslName() {
       return this.glslName;
    }
+
    /**
     * @private
     * @param  {GlslOperation} glslOperation
@@ -1020,6 +1022,7 @@ class GlslVariable {
    declareGlslResult(glslOperation) {
       GlslShader.addGlslCommandToBoundShader(glslOperation.getDeclaration());
    }
+
    /**
     * @protected
     * @param  {GlslVariable[]} operants
@@ -1033,6 +1036,7 @@ class GlslVariable {
       );
       return glslResult;
    }
+
    /**
     * @protected
     * @param  {GlslVariable[]} operants
@@ -1046,6 +1050,7 @@ class GlslVariable {
       );
       return glslResult;
    }
+
    /**
     * @protected
     * @param  {GlslVariable[]} operants
@@ -1059,6 +1064,7 @@ class GlslVariable {
       );
       return glslResult;
    }
+
    /**
     * @protected
     * @param  {GlslVariable[]} operants
@@ -1074,92 +1080,110 @@ class GlslVariable {
    }
 
    /**
-    * @name getGlslVarType
     * @abstract
     * @returns {GLSL_VARIABLE_TYPE}
     */
    getGlslVarType() {
-      throw new Error("Cannot call an abstract method.");
+      throw new Error("Abstract method not callable.");
    }
 
    /**
-    * @name addFloat
     * @abstract
-    * @param  {...GlslFloat[]} addends
-    * @returns {GlslVariable}
     */
+   addFloat() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name addVector3
     * @abstract
-    * @param  {...GlslVector3[]} addends
-    * @returns {GlslVariable}
     */
+   addVector3() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name addVector4
     * @abstract
-    * @param  {...GlslVector4[]} addends
-    * @returns {GlslVariable}
     */
+   addVector4() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name addMatrix3
     * @abstract
-    * @param  {...GlslMatrix3[]} addends
-    * @returns {GlslVariable}
     */
+   addMatrix3() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name subtractFloat
     * @abstract
-    * @param  {...GlslFloat[]} subtrahends
-    * @returns {GlslVariable}
     */
+   subtractFloat() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name subtractVector3
     * @abstract
-    * @param  {...GlslVector3[]} subtrahends
-    * @returns {GlslVariable}
     */
+   subtractVector3() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name subtractVector4
     * @abstract
-    * @param  {...GlslVector4[]} subtrahends
-    * @returns {GlslVariable}
     */
+   subtractVector4() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name subtractMatrix3
     * @abstract
-    * @param  {...GlslMatrix3[]} subtrahends
-    * @returns {GlslVariable}
     */
+   subtractMatrix3() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name multiplyFloat
     * @abstract
-    * @param  {...GlslFloat[]} factors
-    * @returns {GlslVariable}
     */
+   multiplyFloat() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name multiplyVector3
     * @abstract
-    * @param  {...GlslVector3[]} factors
-    * @returns {GlslVariable}
     */
+   multiplyVector3() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name multiplyVector4
     * @abstract
-    * @param  {...GlslVector4[]} factors
-    * @returns {GlslVariable}
     */
+   multiplyVector4() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name multiplyMatrix3
     * @abstract
-    * @param  {...GlslMatrix3[]} factors
-    * @returns {GlslVariable}
     */
+   multiplyMatrix3() {
+      throw new Error("Abstract method not callable.");
+   }
+
    /**
-    * @name divideFloat
     * @abstract
-    * @param  {...GlslFloat[]} divisors
-    * @returns {GlslVariable}
     */
+   divideFloat() {
+      throw new Error("Abstract method not callable.");
+   }
+
+   /**
+    * @abstract
+    */
+   abs() {
+      throw new Error("Abstract method not callable.");
+   }
 }
 
 GlslVariable.uniqueNumber = 0;
@@ -1234,6 +1258,7 @@ class GlslFloat extends GlslVariable {
       }
       return "(" + number.toString() + ")";
    }
+
    /**
     * @param  {number} jsNumber
     * @param {string} customDeclaration
@@ -1250,61 +1275,71 @@ class GlslFloat extends GlslVariable {
          }
       }
    }
+
    /**
-    * @returns {string}
-    */
-   getGlslName() {
-      return this.glslName;
-   }
-   /**
+    * @override
     * @returns {GLSL_VARIABLE_TYPE}
     */
    getGlslVarType() {
       return GLSL_VARIABLE_TYPE.FLOAT;
    }
+
    /**
+    * @override
     * @param  {...GlslFloat} addends
     * @returns {GlslFloat}
     */
    addFloat(...addends) {
       return this.getGlslFloatResult(addends, GLSL_OPERATOR.ADD);
    }
+
    /**
+    * @override
     * @param  {...GlslVector3} addends
     * @returns {GlslVector3}
     */
    addVector3(...addends) {
       return this.getGlslVector3Result(addends, GLSL_OPERATOR.ADD);
    }
+
    /**
+    * @override
     * @param  {...GlslVector4} addends
     * @returns {GlslVector4}
     */
    addVector4(...addends) {
       return this.getGlslVector4Result(addends, GLSL_OPERATOR.ADD);
    }
+
    /**
+    * @override
     * @param  {...GlslMatrix3} addends
     * @returns {GlslMatrix3}
     */
    addMatrix3(...addends) {
       return this.getGlslMatrix3Result(addends, GLSL_OPERATOR.ADD);
    }
+
    /**
+    * @override
     * @param  {...GlslFloat} subtrahends
     * @returns {GlslFloat}
     */
    subtractFloat(...subtrahends) {
       return this.getGlslFloatResult(subtrahends, GLSL_OPERATOR.SUBTRACT);
    }
+
    /**
+    * @override
     * @param  {...GlslVector3} subtrahends
     * @returns {GlslVector3}
     */
    subtractVector3(...subtrahends) {
       return this.getGlslVector3Result(subtrahends, GLSL_OPERATOR.SUBTRACT);
    }
+
    /**
+    * @override
     * @param  {...GlslVector4} subtrahends
     * @returns {GlslVector4}
     */
@@ -1312,6 +1347,7 @@ class GlslFloat extends GlslVariable {
       return this.getGlslVector4Result(subtrahends, GLSL_OPERATOR.SUBTRACT);
    }
    /**
+    * @override
     * @param  {...GlslMatrix3} subtrahends
     * @returns {GlslMatrix3}
     */
@@ -1319,6 +1355,7 @@ class GlslFloat extends GlslVariable {
       return this.getGlslMatrix3Result(subtrahends, GLSL_OPERATOR.SUBTRACT);
    }
    /**
+    * @override
     * @param  {...GlslFloat} factors
     * @returns {GlslFloat}
     */
@@ -1326,6 +1363,7 @@ class GlslFloat extends GlslVariable {
       return this.getGlslFloatResult(factors, GLSL_OPERATOR.MULTIPLY);
    }
    /**
+    * @override
     * @param  {...GlslVector3} factors
     * @returns {GlslVector3}
     */
@@ -1333,6 +1371,7 @@ class GlslFloat extends GlslVariable {
       return this.getGlslVector3Result(factors, GLSL_OPERATOR.MULTIPLY);
    }
    /**
+    * @override
     * @param  {...GlslVector4} factors
     * @returns {GlslVector4}
     */
@@ -1340,6 +1379,7 @@ class GlslFloat extends GlslVariable {
       return this.getGlslVector4Result(factors, GLSL_OPERATOR.MULTIPLY);
    }
    /**
+    * @override
     * @param  {...GlslMatrix3} factors
     * @returns {GlslMatrix3}
     */
@@ -1347,6 +1387,7 @@ class GlslFloat extends GlslVariable {
       return this.getGlslMatrix3Result(factors, GLSL_OPERATOR.MULTIPLY);
    }
    /**
+    * @override
     * @param  {...GlslFloat} divisors
     * @returns {GlslFloat}
     */
@@ -1354,6 +1395,7 @@ class GlslFloat extends GlslVariable {
       return this.getGlslFloatResult(divisors, GLSL_OPERATOR.DIVIDE);
    }
    /**
+    * @override
     * @returns {GlslFloat}
     */
    abs() {
@@ -1481,6 +1523,7 @@ class GlslVector3 extends GlslVector {
       return GLSL_VARIABLE_TYPE.VECTOR3;
    }
    /**
+    * @override
     * @param  {...GlslFloat} addends
     * @returns {GlslVector3}
     */

@@ -350,7 +350,13 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
     * @protected
     */
    async initialize() {
-      if (this.initialized || this.initializing) {
+      while (this.initializing) {
+         await new Promise((resolve) => {
+            setTimeout(resolve, 500);
+         });
+      }
+
+      if (this.initialized) {
          return;
       }
 
