@@ -665,16 +665,19 @@ class GlslUniform {
    /**
     * @public
     * @abstract
-    * @name setValue
-    * @param {undefined} value
+    * @param {any} value
     */
+   // eslint-disable-next-line no-unused-vars
+   setValue(value) {
+      throw new Error("Abstract method not callable.");
+   }
 
    /**
-    * @public
     * @abstract
-    * @name getValue
-    * @returns {void}
     */
+   getValue() {
+      throw new Error("Abstract method not callable.");
+   }
 
    // TODO Hide concrete methods from outside.
    /**
@@ -706,6 +709,7 @@ class GlslUniformFloat extends GlslUniform {
    }
 
    /**
+    * @override
     * @public
     * @returns {string}
     */
@@ -714,6 +718,7 @@ class GlslUniformFloat extends GlslUniform {
    }
 
    /**
+    * @override
     * @public
     * @param {number} value
     */
@@ -722,6 +727,7 @@ class GlslUniformFloat extends GlslUniform {
    }
 
    /**
+    * @override
     * @public
     * @returns {GlslFloat}
     */
@@ -730,6 +736,7 @@ class GlslUniformFloat extends GlslUniform {
    }
 
    /**
+    * @override
     * @public
     * @param {WebGL2RenderingContext} context
     * @param {WebGLProgram} shaderProgram
@@ -752,6 +759,7 @@ class GlslUniformImage extends GlslUniform {
    }
 
    /**
+    * @override
     * @public
     * @returns {string}
     */
@@ -761,6 +769,7 @@ class GlslUniformImage extends GlslUniform {
 
    /**
     * @public
+    * @override
     * @param {HTMLImageElement} value
     */
    setValue(value) {
@@ -783,7 +792,8 @@ class GlslUniformImage extends GlslUniform {
     * @param {number} textureUnit
     */
    loadIntoShaderProgram(context, shaderProgram, textureUnit) {
-      if (!this.value) {
+      // TODO Implement warning or something.
+      if (!(this.value.naturalWidth > 0)) {
          return;
       }
 
@@ -870,6 +880,7 @@ class GlslImage {
    }
 
    /**
+    * @public
     * @param {number[][]} kernel Convolution matrix (NxN).
     * @param {boolean} normalize
     * @returns {GlslVector4}
@@ -877,12 +888,7 @@ class GlslImage {
    applyFilter(kernel, normalize = false) {
       // TODO Check if kernel is quadratic.
 
-      let filtered = new GlslVector4([
-         new GlslFloat(0),
-         new GlslFloat(0),
-         new GlslFloat(0),
-         new GlslFloat(1),
-      ]);
+      let filtered = new GlslVector4([0, 0, 0, 1]);
 
       if (normalize) {
          let kernelSum = 0;
@@ -1662,19 +1668,34 @@ class GlslVector3 extends GlslVector {
 
 class GlslVector4 extends GlslVector {
    /**
-    * @param  {GlslFloat[]} vector4
+    * @param  {(GlslFloat | number)[]} vector4
     * @param  {string} customDeclaration
     */
    constructor(vector4 = undefined, customDeclaration = "") {
       if (customDeclaration === "") {
+         let vector4GlslNames = [];
          if (vector4) {
-            let vector4GlslNames = [];
-
-            vector4GlslNames.push(vector4[0].getGlslName());
-            vector4GlslNames.push(vector4[1].getGlslName());
-            vector4GlslNames.push(vector4[2].getGlslName());
-            vector4GlslNames.push(vector4[3].getGlslName());
-
+            if (
+               typeof vector4[0] === "number" &&
+               typeof vector4[1] === "number" &&
+               typeof vector4[2] === "number" &&
+               typeof vector4[3] === "number"
+            ) {
+               vector4GlslNames.push(new GlslFloat(vector4[0]).getGlslName());
+               vector4GlslNames.push(new GlslFloat(vector4[1]).getGlslName());
+               vector4GlslNames.push(new GlslFloat(vector4[2]).getGlslName());
+               vector4GlslNames.push(new GlslFloat(vector4[3]).getGlslName());
+            } else if (
+               vector4[0] instanceof GlslFloat &&
+               vector4[1] instanceof GlslFloat &&
+               vector4[2] instanceof GlslFloat &&
+               vector4[3] instanceof GlslFloat
+            ) {
+               vector4GlslNames.push(vector4[0].getGlslName());
+               vector4GlslNames.push(vector4[1].getGlslName());
+               vector4GlslNames.push(vector4[2].getGlslName());
+               vector4GlslNames.push(vector4[3].getGlslName());
+            }
             customDeclaration =
                GLSL_VARIABLE_TYPE.VECTOR4 +
                "(" +
