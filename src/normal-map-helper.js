@@ -511,5 +511,4 @@ class NormalMapHelper {
       });
    }
 }
-
 NormalMapHelper.renderId = 0;
