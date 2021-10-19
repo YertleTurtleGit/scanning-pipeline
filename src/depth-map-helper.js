@@ -3,8 +3,8 @@
 
 /**
  * @global
- * @typedef {{x: number, y: number}} Pixel
- * @typedef {{x: number, y: number, slope: number}} LinePixel
+ * @typedef {number[]} Pixel
+ * @typedef {number[]} LinePixel
  * @typedef {LinePixel[]} PixelLine
  */
 class DepthMapHelper {
@@ -46,7 +46,8 @@ class DepthMapHelper {
                progressElement.style.height = "1.25rem";
             }
 
-            const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
+            const gradientPixelArray =
+               await depthMapHelper.getLocalGradientFactor();
 
             const anglesCount = depthMapHelper.azimuthalAngles.length;
 
@@ -71,7 +72,6 @@ class DepthMapHelper {
                      progressElement.value = percent;
                   });
                }
-               if (depthMapHelper.isRenderObsolete()) return;
             }
 
             const integrals = await Promise.all(integralPromises);
@@ -314,18 +314,16 @@ class DepthMapHelper {
    /**
     * @private
     * @param {number} azimuthalAngle
-    * @param {Promise<Uint8Array>} gradientPixelArray
+    * @param {Uint8Array} gradientPixelArray
     * @returns {Promise<number[]>}
     */
    async calculateAnisotropicIntegral(azimuthalAngle, gradientPixelArray) {
       return new Promise((resolve) => {
          setTimeout(async () => {
-            const gradientPixelArrayResolved = await gradientPixelArray;
-
             let integral = new Array(this.width * this.height);
             let pixelLines = this.getPixelLinesFromAzimuthalAngle(
                azimuthalAngle,
-               gradientPixelArrayResolved
+               gradientPixelArray
             );
 
             if (this.isRenderObsolete()) return;
@@ -334,10 +332,10 @@ class DepthMapHelper {
                let lineOffset = 0;
                for (let k = 0; k < pixelLines[j].length; k++) {
                   const index =
-                     pixelLines[j][k].x +
-                     (this.height - 1 - pixelLines[j][k].y) * this.width;
+                     pixelLines[j][k][0] +
+                     (this.height - 1 - pixelLines[j][k][1]) * this.width;
 
-                  const slope = pixelLines[j][k].slope;
+                  const slope = pixelLines[j][k][2];
 
                   if (slope === 0) {
                      lineOffset = 0;
@@ -366,19 +364,19 @@ class DepthMapHelper {
       azimuthalAngle += 180;
       const azimuthalAngleInRadians = azimuthalAngle * (Math.PI / 180);
 
-      const stepVector = {
-         x: Math.cos(azimuthalAngleInRadians),
-         y: Math.sin(azimuthalAngleInRadians),
-      };
+      const stepVector = [
+         Math.cos(azimuthalAngleInRadians),
+         Math.sin(azimuthalAngleInRadians),
+      ];
 
       const minimumStep = 0.00000001;
 
-      if (stepVector.x < minimumStep && stepVector.x > -minimumStep) {
-         stepVector.x = 0;
+      if (stepVector[0] < minimumStep && stepVector[0] > -minimumStep) {
+         stepVector[1] = 0;
       }
 
-      if (stepVector.y < minimumStep && stepVector.y > -minimumStep) {
-         stepVector.y = 0;
+      if (stepVector[1] < minimumStep && stepVector[1] > -minimumStep) {
+         stepVector[1] = 0;
       }
 
       const edgeFramePixels = this.getEdgeFramePixels();
@@ -416,12 +414,12 @@ class DepthMapHelper {
          const rightX = this.width;
 
          for (let x = 0; x < this.width; x++) {
-            this.edgeFramePixels.push({ x: x, y: topY });
-            this.edgeFramePixels.push({ x: x, y: bottomY });
+            this.edgeFramePixels.push([x, topY]);
+            this.edgeFramePixels.push([x, bottomY]);
          }
          for (let y = 0; y < this.height; y++) {
-            this.edgeFramePixels.push({ x: leftX, y: y });
-            this.edgeFramePixels.push({ x: rightX, y: y });
+            this.edgeFramePixels.push([leftX, y]);
+            this.edgeFramePixels.push([rightX, y]);
          }
       }
       return this.edgeFramePixels;
@@ -434,10 +432,10 @@ class DepthMapHelper {
     */
    isInDimensions(pixel) {
       return (
-         pixel.x < this.width &&
-         pixel.y < this.height &&
-         pixel.x >= 0 &&
-         pixel.y >= 0
+         pixel[0] < this.width &&
+         pixel[1] < this.height &&
+         pixel[0] >= 0 &&
+         pixel[1] >= 0
       );
    }
 
@@ -452,29 +450,24 @@ class DepthMapHelper {
       const pixelLine = [];
 
       const stepOffset = {
-         x: startPixel.x,
-         y: startPixel.y,
+         x: startPixel[0],
+         y: startPixel[1],
       };
-
-      const pixel = {
-         x: startPixel.x,
-         y: startPixel.y,
-      };
-
-      const nextPixel = { x: pixel.x, y: pixel.y };
+      const pixel = [startPixel[0], startPixel[1]];
+      const nextPixel = [pixel[0], pixel[1]];
 
       let inDimensions;
 
       do {
          do {
-            stepOffset.x += stepVector.x;
-            stepOffset.y += stepVector.y;
-            nextPixel.x = Math.round(stepOffset.x);
-            nextPixel.y = Math.round(stepOffset.y);
-         } while (nextPixel.x === pixel.x && nextPixel.y === pixel.y);
+            stepOffset[0] += stepVector[0];
+            stepOffset[1] += stepVector[1];
+            nextPixel[0] = Math.round(stepOffset[0]);
+            nextPixel[1] = Math.round(stepOffset[1]);
+         } while (nextPixel[0] === pixel[0] && nextPixel[1] === pixel[1]);
 
-         pixel.x = nextPixel.x;
-         pixel.y = nextPixel.y;
+         pixel[0] = nextPixel[0];
+         pixel[1] = nextPixel[1];
          inDimensions = this.isInDimensions(pixel);
 
          if (inDimensions) {
@@ -484,7 +477,7 @@ class DepthMapHelper {
                gradientPixelArray
             );
 
-            pixelLine.push({ x: pixel.x, y: pixel.y, slope: pixelSlope });
+            pixelLine.push([pixel[0], pixel[1], pixelSlope]);
          }
       } while (inDimensions);
 
@@ -499,7 +492,7 @@ class DepthMapHelper {
     * @returns {number}
     */
    getPixelSlope(pixel, stepVector, gradientPixelArray) {
-      const index = (pixel.x + pixel.y * this.width) * 4;
+      const index = (pixel[0] + pixel[1] * this.width) * 4;
 
       if (gradientPixelArray[index + 2] === 0) {
          return 0;
@@ -510,7 +503,7 @@ class DepthMapHelper {
       const topSlope =
          gradientPixelArray[index + 1] + DepthMapHelper.SLOPE_SHIFT;
 
-      return stepVector.x * rightSlope + stepVector.y * topSlope;
+      return stepVector[0] * rightSlope + stepVector[1] * topSlope;
    }
 
    /**
