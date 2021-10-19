@@ -127,8 +127,8 @@ class DepthMapHelper {
       this.qualityPercent = qualityPercent;
 
       this.renderId = DepthMapHelper.renderId;
-      this.width = normalMap.width;
-      this.height = normalMap.height;
+      this.width = normalMap.naturalWidth;
+      this.height = normalMap.naturalHeight;
 
       const maximumAngleCount = this.width * 2 + this.height * 2;
       const angleCount = Math.round(maximumAngleCount * this.qualityPercent);
