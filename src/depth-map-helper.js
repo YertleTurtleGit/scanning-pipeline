@@ -50,37 +50,56 @@ class DepthMapHelper {
 
             const anglesCount = depthMapHelper.azimuthalAngles.length;
 
-            /** @type {Promise[]} */
-            const integralPromises = new Array(anglesCount);
-
             if (depthMapHelper.isRenderObsolete()) return;
 
             let promisesResolvedCount = 0;
+            let integralArrayLock = false;
+            const integralArray = new Array(
+               normalMap.naturalWidth * normalMap.naturalHeight
+            );
 
             for (let i = 0; i < anglesCount; i++) {
-               integralPromises[i] =
+               const integralPromise =
                   depthMapHelper.calculateAnisotropicIntegral(
                      depthMapHelper.azimuthalAngles[i],
                      gradientPixelArray
                   );
 
-               if (progressElement) {
-                  integralPromises[i].then(() => {
-                     promisesResolvedCount++;
+               integralPromise.then(async (integral) => {
+                  while (integralArrayLock) {
+                     await new Promise((resolve) => {
+                        setTimeout(resolve, Math.random() * 100);
+                     });
+                  }
+
+                  integralArrayLock = true;
+                  integral.forEach((value, index) => {
+                     integralArray[index] += value;
+                  });
+                  integralArrayLock = false;
+
+                  promisesResolvedCount++;
+                  if (progressElement) {
                      const percent = (promisesResolvedCount / anglesCount) * 90;
                      progressElement.value = percent;
-                  });
-               }
+                  }
+               });
+
                if (depthMapHelper.isRenderObsolete()) return;
             }
 
-            const integrals = await Promise.all(integralPromises);
+            while (promisesResolvedCount < anglesCount) {
+               await new Promise((resolve) => {
+                  setTimeout(resolve, 500);
+               });
+            }
 
             if (depthMapHelper.isRenderObsolete()) return;
 
-            const integral = await depthMapHelper.getAverageIntegralAsGrayscale(
-               integrals
-            );
+            const integral =
+               await depthMapHelper.getNormalizedIntegralAsGrayscale(
+                  integralArray
+               );
 
             if (progressElement) progressElement.value = 95;
 
@@ -185,32 +204,25 @@ class DepthMapHelper {
 
    /**
     * @private
-    * @param {number[][]} integrals
+    * @param {number[]} integral
     * @returns {Promise<number[]>}
     */
-   async getAverageIntegralAsGrayscale(integrals) {
+   async getNormalizedIntegralAsGrayscale(integral) {
       return new Promise((resolve) => {
          setTimeout(() => {
-            const integralsCount = integrals.length;
-            const integralCount = integrals[0].length;
+            const integralCount = integral.length;
 
-            const integral = new Array(integralCount * 4);
+            const normalizedIntegral = new Array(integralCount * 4);
 
             let min = Number.MAX_VALUE;
             let max = Number.MIN_VALUE;
 
             for (let i = 0; i < integralCount; i++) {
-               let averageIntegralValue = 0;
-               for (let j = 0; j < integralsCount; j++) {
-                  if (integrals[j][i]) {
-                     averageIntegralValue += integrals[j][i];
-                  }
-               }
-               const grayscaleValue = averageIntegralValue;
-               integral[i * 4 + 0] = grayscaleValue;
-               integral[i * 4 + 1] = grayscaleValue;
-               integral[i * 4 + 2] = grayscaleValue;
-               integral[i * 4 + 3] = null;
+               const grayscaleValue = integral[i];
+               normalizedIntegral[i * 4 + 0] = grayscaleValue;
+               normalizedIntegral[i * 4 + 1] = grayscaleValue;
+               normalizedIntegral[i * 4 + 2] = grayscaleValue;
+               normalizedIntegral[i * 4 + 3] = null;
 
                if (grayscaleValue > max) {
                   max = grayscaleValue;
@@ -225,7 +237,7 @@ class DepthMapHelper {
             const normalizeDivisor = Math.abs(min) + Math.abs(max);
 
             resolve(
-               integral.map((v) => {
+               normalizedIntegral.map((v) => {
                   if (v === null) {
                      return 255;
                   }
