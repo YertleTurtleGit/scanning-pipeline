@@ -62,33 +62,36 @@ class DepthMapHelper {
             );
 
             for (let i = 0; i < anglesCount; i++) {
-               const integralPromise =
-                  depthMapHelper.calculateAnisotropicIntegral(
-                     depthMapHelper.azimuthalAngles[i],
-                     gradientPixelArray
-                  );
+               setTimeout(() => {
+                  const integralPromise =
+                     depthMapHelper.calculateAnisotropicIntegral(
+                        depthMapHelper.azimuthalAngles[i],
+                        gradientPixelArray
+                     );
 
-               integralPromise.then(async (integral) => {
-                  while (integralArrayLock) {
-                     await new Promise((resolve) => {
-                        setTimeout(resolve, Math.random() * 100);
+                  integralPromise.then(async (integral) => {
+                     while (integralArrayLock) {
+                        await new Promise((resolve) => {
+                           setTimeout(resolve, Math.random() * 100);
+                        });
+                     }
+
+                     integralArrayLock = true;
+                     integral.forEach((value, index) => {
+                        integralArray[index] += value;
                      });
-                  }
+                     integralArrayLock = false;
 
-                  integralArrayLock = true;
-                  integral.forEach((value, index) => {
-                     integralArray[index] += value;
+                     promisesResolvedCount++;
+                     if (progressElement) {
+                        const percent =
+                           (promisesResolvedCount / anglesCount) * 90;
+                        progressElement.value = percent;
+                     }
                   });
-                  integralArrayLock = false;
 
-                  promisesResolvedCount++;
-                  if (progressElement) {
-                     const percent = (promisesResolvedCount / anglesCount) * 90;
-                     progressElement.value = percent;
-                  }
+                  if (depthMapHelper.isRenderObsolete()) return;
                });
-
-               if (depthMapHelper.isRenderObsolete()) return;
             }
 
             while (promisesResolvedCount < anglesCount) {
