@@ -35,6 +35,9 @@ class DepthMapHelper {
       imageElement = undefined,
       progressElement = undefined
    ) {
+      if (!(Math.min(normalMap.naturalWidth, normalMap.naturalHeight) > 0)) {
+         return;
+      }
       const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
       return new Promise((resolve) => {
@@ -579,6 +582,9 @@ class DepthMapHelper {
     * @returns {Promise<number>}
     */
    static async getDifferenceValue(depthMap, groundTruthImage) {
+      if (depthMap === undefined || groundTruthImage === undefined) {
+         return;
+      }
       const differenceMap = await DepthMapHelper.getDifferenceMap(
          depthMap,
          groundTruthImage
@@ -625,8 +631,8 @@ class DepthMapHelper {
    static async getDifferenceMap(depthMap, groundTruthImage) {
       return new Promise((resolve) => {
          const differenceShader = new GLSL.Shader({
-            width: depthMap.width,
-            height: depthMap.height,
+            width: depthMap.naturalWidth,
+            height: depthMap.naturalHeight,
          });
          differenceShader.bind();
 
