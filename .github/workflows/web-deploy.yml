@@ -12,6 +12,8 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v2.3.4
+      with:
+        submodules: 'recursive'
           
     - name: Remove File
       uses: JesseTG/rm@v1.0.0

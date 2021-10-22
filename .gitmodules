@@ -1,0 +1,3 @@
+[submodule "src/scan-utils"]
+	path = src/scan-utils
+	url = https://github.com/YertleTurtleGit/scan-utils
