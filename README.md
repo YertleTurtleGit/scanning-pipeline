@@ -10,7 +10,7 @@
 1. Clone the repository:
 
    ```bash
-   git clone --recursive https://github.com/YertleTurtleGit/scanning-pipeline
+   git clone https://github.com/YertleTurtleGit/scanning-pipeline
    ```
 
 2. Open your preferred web browser and open the
