@@ -120,9 +120,7 @@ class DepthMapHelper {
                         (anglesCount - promisesResolvedCount);
 
                      let ETAsec = String(Math.floor((ETA / 1000) % 60));
-                     const ETAmin = String(
-                        Math.floor((ETA / (60 * 1000)) % 60)
-                     );
+                     const ETAmin = String(Math.floor(ETA / (60 * 1000)));
 
                      if (ETAsec.length < 2) {
                         ETAsec = "0" + ETAsec;
