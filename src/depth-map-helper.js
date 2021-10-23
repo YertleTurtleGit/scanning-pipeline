@@ -54,7 +54,8 @@ class DepthMapHelper {
                progressElement.style.height = "1.25rem";
             }
 
-            const gradientPixelArray = depthMapHelper.getLocalGradientFactor();
+            const gradientPixelArray =
+               await depthMapHelper.getLocalGradientFactor();
 
             const anglesCount = depthMapHelper.azimuthalAngles.length;
 
@@ -84,7 +85,7 @@ class DepthMapHelper {
                      resolve(
                         depthMapHelper.calculateAnisotropicIntegral(
                            depthMapHelper.azimuthalAngles[i],
-                           await gradientPixelArray
+                           gradientPixelArray
                         )
                      );
                   });
