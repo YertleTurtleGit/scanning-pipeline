@@ -288,6 +288,7 @@
             <div class="mainArea" id="depthMapArea">
                <h2>Depth Mapping</h2>
 
+               <span id="depthMapProgressInfo"></span>
                <progress max="100" id="depthMapProgress"></progress>
 
                <img id="depthMapImage" title="depth mapping" />
@@ -300,9 +301,9 @@
                   class="userInput"
                   type="range"
                   name="depthMapQuality"
-                  min="0.1"
-                  step="0.1"
-                  max="10"
+                  min="0.01"
+                  step="0.01"
+                  max="5"
                   value="1"
                   onchange="depthMapQualityOutput.value=value + '% '"
                   oninput="depthMapQualityOutput.value=value + '% '"

@@ -353,6 +353,7 @@ const DOM_ELEMENT = {
    DEPTH_MAP_PROGRESS: /** @type {HTMLProgressElement} */ (
       document.getElementById("depthMapProgress")
    ),
+   DEPTH_MAP_PROGRESS_INFO: document.getElementById("depthMapProgressInfo"),
 
    PIPELINE_AREA: document.getElementById("pipelineArea"),
 

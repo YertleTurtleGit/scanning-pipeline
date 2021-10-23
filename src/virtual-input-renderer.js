@@ -5,7 +5,7 @@
  * @global
  * @abstract
  */
-class VirtualInputRenderer {
+ class VirtualInputRenderer {
    /**
     * @protected
     * @param {HTMLCanvasElement} uiCanvas
@@ -173,7 +173,7 @@ class VirtualInputRenderer {
       const normalizeShader = new GLSL.Shader({ width: width, height: height });
       normalizeShader.bind();
 
-      const depthValue = GLSL.Image.load(renderImage).channel(0);
+      const depthValue = new GLSL.Image(renderImage).getPixelColor().channel(0);
 
       let normalizedDepthValue;
 
@@ -350,7 +350,13 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
     * @protected
     */
    async initialize() {
-      if (this.initialized || this.initializing) {
+      while (this.initializing) {
+         await new Promise((resolve) => {
+            setTimeout(resolve, 500);
+         });
+      }
+
+      if (this.initialized) {
          return;
       }
 

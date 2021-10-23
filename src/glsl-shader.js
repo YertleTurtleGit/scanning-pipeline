@@ -706,6 +706,13 @@ class GlslImage {
    }
    /**
     * @public
+    * @returns {GlslVector4}
+    */
+   getPixelColor() {
+      return this.glslVector4;
+   }
+   /**
+    * @public
     * @static
     * @param  {HTMLImageElement} jsImage
     * @returns {GlslVector4}

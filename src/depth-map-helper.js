@@ -25,9 +25,8 @@ class DepthMapHelper {
     * to display the resulting depth mapping.
     * @param {HTMLProgressElement} progressElement The
     * UI-element to display the progress.
-    * @param {boolean} updateResultOnProgress Defines
-    * whether the image element should be updated on
-    * progress.
+    * @param {HTMLElement} etaElement The ui element to
+    * display the ETA.
     * @returns {Promise<HTMLImageElement>} A depth mapping
     * according to the input normal mapping.
     */
@@ -37,8 +36,13 @@ class DepthMapHelper {
       perspectiveCorrectingFactor = 0,
       imageElement = undefined,
       progressElement = undefined,
-      updateResultOnProgress = false
+      etaElement = undefined
    ) {
+      etaElement.innerText = "Initializing.";
+      if (etaElement) {
+         etaElement.style.opacity = "1";
+      }
+
       const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
       return new Promise((resolve) => {
@@ -62,14 +66,15 @@ class DepthMapHelper {
                normalMap.naturalWidth * normalMap.naturalHeight
             ).fill(0);
 
-            const maximumThreadCount = 64;
-            const updateInterval = 10000;
-            let lastUpdated = performance.now();
-            let currentlyUpdating = false;
+            const startTime = performance.now();
+
+            const maximumThreadCount = 128;
 
             for (let i = 0; i < anglesCount; i++) {
                while (i - promisesResolvedCount >= maximumThreadCount) {
+                  if (depthMapHelper.isRenderObsolete()) return;
                   await new Promise((resolve) => {
+                     if (depthMapHelper.isRenderObsolete()) return;
                      setTimeout(resolve, Math.random() * 100);
                   });
                }
@@ -86,28 +91,15 @@ class DepthMapHelper {
                });
 
                integralPromise.then(async (integral) => {
-                  while (integralArrayLock || currentlyUpdating) {
+                  promisesResolvedCount++;
+
+                  if (depthMapHelper.isRenderObsolete()) return;
+
+                  while (integralArrayLock) {
                      await new Promise((resolve) => {
+                        if (depthMapHelper.isRenderObsolete()) return;
                         setTimeout(resolve, Math.random() * 100);
                      });
-                  }
-
-                  if (
-                     updateResultOnProgress &&
-                     lastUpdated + updateInterval < performance.now()
-                  ) {
-                     currentlyUpdating = true;
-                     const previewIntegral =
-                        await depthMapHelper.getNormalizedIntegralAsGrayscale(
-                           integralArray
-                        );
-                     const depthMapSource =
-                        depthMapHelper.getDepthMapImageSource(previewIntegral);
-
-                     imageElement.src = depthMapSource;
-
-                     lastUpdated = performance.now();
-                     currentlyUpdating = false;
                   }
 
                   integralArrayLock = true;
@@ -116,11 +108,28 @@ class DepthMapHelper {
                   });
                   integralArrayLock = false;
 
-                  promisesResolvedCount++;
-
                   if (progressElement) {
                      const percent = (promisesResolvedCount / anglesCount) * 90;
                      progressElement.value = percent;
+                  }
+
+                  if (etaElement) {
+                     const ETA =
+                        ((performance.now() - startTime) /
+                           promisesResolvedCount) *
+                        (anglesCount - promisesResolvedCount);
+
+                     let ETAsec = String(Math.floor((ETA / 1000) % 60));
+                     const ETAmin = String(
+                        Math.floor((ETA / (60 * 1000)) % 60)
+                     );
+
+                     if (ETAsec.length < 2) {
+                        ETAsec = "0" + ETAsec;
+                     }
+
+                     etaElement.innerText =
+                        "ETA in " + ETAmin + ":" + ETAsec + " min";
                   }
 
                   if (depthMapHelper.isRenderObsolete()) return;
@@ -130,6 +139,7 @@ class DepthMapHelper {
             }
 
             while (promisesResolvedCount < anglesCount) {
+               if (depthMapHelper.isRenderObsolete()) return;
                await new Promise((resolve) => {
                   setTimeout(resolve, 500);
                });
@@ -137,7 +147,7 @@ class DepthMapHelper {
 
             if (depthMapHelper.isRenderObsolete()) return;
 
-            const integral =
+            const normalizedIntegral =
                await depthMapHelper.getNormalizedIntegralAsGrayscale(
                   integralArray
                );
@@ -147,7 +157,7 @@ class DepthMapHelper {
             if (depthMapHelper.isRenderObsolete()) return;
 
             const depthMap = await DepthMapHelper.getPerspectiveCorrected(
-               await depthMapHelper.getDepthMapImage(integral),
+               await depthMapHelper.getDepthMapImage(normalizedIntegral),
                perspectiveCorrectingFactor
             );
 
@@ -162,6 +172,9 @@ class DepthMapHelper {
             if (progressElement) {
                progressElement.value = 100;
                progressElement.style.height = "0";
+            }
+            if (etaElement) {
+               etaElement.style.opacity = "0";
             }
          }, 100);
       });
@@ -215,7 +228,7 @@ class DepthMapHelper {
 
    /**
     * @private
-    * @param {number[]} integral
+    * @param {Uint8ClampedArray} integral
     * @returns {Promise<HTMLImageElement>}
     */
    async getDepthMapImage(integral) {
@@ -232,23 +245,21 @@ class DepthMapHelper {
 
    /**
     * @private
-    * @param {number[]} integral
+    * @param {Uint8ClampedArray} integral
     * @returns {string}
     */
    getDepthMapImageSource(integral) {
       const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
+      const context = canvas.getContext("2d");
 
       canvas.width = this.width;
       canvas.height = this.height;
 
-      const imageData = ctx.createImageData(this.width, this.height);
+      const imageData = new ImageData(integral, this.width, this.height);
 
       if (this.isRenderObsolete()) return;
 
-      imageData.data.set(integral);
-
-      ctx.putImageData(imageData, 0, 0);
+      context.putImageData(imageData, 0, 0);
 
       return canvas.toDataURL();
    }
@@ -256,45 +267,40 @@ class DepthMapHelper {
    /**
     * @private
     * @param {number[]} integral
-    * @returns {Promise<number[]>}
+    * @returns {Promise<Uint8ClampedArray>}
     */
    async getNormalizedIntegralAsGrayscale(integral) {
       return new Promise((resolve) => {
          setTimeout(() => {
-            const integralCount = integral.length;
-
-            const normalizedIntegral = new Array(integralCount * 4);
+            const normalizedIntegral = new Uint8ClampedArray(
+               new ArrayBuffer(this.width * this.height * 4)
+            );
 
             let min = Number.MAX_VALUE;
             let max = Number.MIN_VALUE;
 
-            for (let i = 0; i < integralCount; i++) {
-               const grayscaleValue = integral[i];
-               normalizedIntegral[i * 4 + 0] = grayscaleValue;
-               normalizedIntegral[i * 4 + 1] = grayscaleValue;
-               normalizedIntegral[i * 4 + 2] = grayscaleValue;
-               normalizedIntegral[i * 4 + 3] = null;
-
-               if (grayscaleValue > max) {
-                  max = grayscaleValue;
+            integral.forEach((value) => {
+               if (value > max) {
+                  max = value;
                }
-               if (grayscaleValue < min) {
-                  min = grayscaleValue;
+               if (value < min) {
+                  min = value;
                }
-            }
+            });
 
             if (this.isRenderObsolete()) return;
 
-            const normalizeDivisor = Math.abs(min) + Math.abs(max);
+            const maxMinDelta = max - min;
 
-            resolve(
-               normalizedIntegral.map((v) => {
-                  if (v === null) {
-                     return 255;
-                  }
-                  return ((v + Math.abs(min)) / normalizeDivisor) * 255;
-               })
-            );
+            integral.forEach((value, index) => {
+               const normalizedValue = ((value - min) * 255) / maxMinDelta;
+               normalizedIntegral[index * 4 + 0] = normalizedValue;
+               normalizedIntegral[index * 4 + 1] = normalizedValue;
+               normalizedIntegral[index * 4 + 2] = normalizedValue;
+               normalizedIntegral[index * 4 + 3] = 255;
+            });
+
+            resolve(normalizedIntegral);
          });
       });
    }
