@@ -85,6 +85,11 @@
                         title="no lights (optional)"
                         crossorigin="anonymous"
                      />
+                     <img
+                        id="photometricStereoImage_MASK"
+                        title="mask (optional)"
+                        crossorigin="anonymous"
+                     />
                   </div>
 
                   <div id="sphericalGradientImages">
@@ -194,6 +199,18 @@
                </div>
 
                <input id="fileBrowse" type="file" accept="image/*" multiple />
+
+               <br />
+
+               <!--
+               <input
+                  id="atlasCheckbox"
+                  type="checkbox"
+                  title="atlas"
+                  name="atlas"
+               />
+               <label for="atlas">atlas</label>
+               -->
             </div>
 
             <div class="mainArea" id="normalMapArea">
@@ -405,6 +422,7 @@
       <script src="./src/virtual-input-renderer.js"></script>
       <script src="./src/bulk-chart-helper.js"></script>
       <script src="./src/dom-declarations.js"></script>
+
 
       <script src="./src/main.js"></script>
 

@@ -237,7 +237,10 @@ class DepthMapHelper {
             image.addEventListener("load", () => {
                resolve(image);
             });
-            image.src = this.getDepthMapImageSource(integral);
+            const imageSource = this.getDepthMapImageSource(integral);
+            if (imageSource) {
+               image.src = imageSource;
+            }
          });
       });
    }
@@ -248,19 +251,21 @@ class DepthMapHelper {
     * @returns {string}
     */
    getDepthMapImageSource(integral) {
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
+      if (Math.min(this.width, this.height) > 0) {
+         const canvas = document.createElement("canvas");
+         const context = canvas.getContext("2d");
 
-      canvas.width = this.width;
-      canvas.height = this.height;
+         canvas.width = this.width;
+         canvas.height = this.height;
 
-      const imageData = new ImageData(integral, this.width, this.height);
+         const imageData = new ImageData(integral, this.width, this.height);
 
-      if (this.isRenderObsolete()) return;
+         if (this.isRenderObsolete()) return;
 
-      context.putImageData(imageData, 0, 0);
+         context.putImageData(imageData, 0, 0);
 
-      return canvas.toDataURL();
+         return canvas.toDataURL();
+      }
    }
 
    /**
