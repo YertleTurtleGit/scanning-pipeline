@@ -36,6 +36,50 @@ class TopologyHelper {
          this.dimensions.width,
          this.dimensions.height
       ).data;
+
+      this.context.fillStyle = "black";
+      this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+      this.context.save();
+
+      this.context.translate(this.canvas.width / 2, this.canvas.height / 2);
+      this.context.rotate(this.getRotationAngle());
+      this.context.drawImage(
+         this.mask,
+         -this.canvas.width / 2,
+         -this.canvas.height / 2
+      );
+
+      this.context.restore();
+
+      this.imageData = this.context.getImageData(
+         0,
+         0,
+         this.dimensions.width,
+         this.dimensions.height
+      ).data;
+   }
+
+   /**
+    * @private
+    * @returns {number}
+    */
+   getRotationAngle() {
+      const horizontalMiddleLine = this.getHorizontalMiddleLine();
+
+      let averageSlope = 0;
+      let slopeCount = 0;
+
+      for (let i = 1, max = horizontalMiddleLine.length; i < max; i++) {
+         if (horizontalMiddleLine[i] && horizontalMiddleLine[i - 1]) {
+            const slope = horizontalMiddleLine[i] - horizontalMiddleLine[i - 1];
+            averageSlope += slope;
+            slopeCount++;
+         }
+      }
+      averageSlope /= slopeCount;
+
+      return Math.atan(averageSlope);
    }
 
    /**
@@ -62,7 +106,7 @@ class TopologyHelper {
             this.context.fillStyle = "red";
             this.context.fillRect(middleValue, y, 1, 1);
          } else {
-            middleValue = null;
+            middleValue = undefined;
          }
 
          xCoordinates.push(middleValue);
@@ -95,7 +139,7 @@ class TopologyHelper {
             this.context.fillStyle = "blue";
             this.context.fillRect(x, middleValue, 1, 1);
          } else {
-            middleValue = null;
+            middleValue = undefined;
          }
 
          yCoordinates.push(middleValue);
