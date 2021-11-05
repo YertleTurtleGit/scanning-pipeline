@@ -342,6 +342,10 @@ const DOM_ELEMENT = {
       document.getElementById("pointCloudCanvas")
    ),
 
+   TOPOLOGY_CANVAS: /**@type {HTMLCanvasElement} */ (
+      document.getElementById("topologyCanvas")
+   ),
+
    INPUT_RENDER_AREA: document.getElementById("inputRenderArea"),
    INPUT_RENDER_CANVAS: /**@type {HTMLCanvasElement} */ (
       document.getElementById("inputRenderCanvas")

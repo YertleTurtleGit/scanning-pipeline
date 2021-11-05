@@ -94,8 +94,10 @@ class PointCloudHelper {
                if (pointCloudHelper.isRenderObsolete()) return;
             }
 
-            PointCloudHelper.vertices = vertices;
             // TODO Better design
+            PointCloudHelper.vertexColors = vertexColors;
+            PointCloudHelper.vertices = vertices;
+
             resolve(vertices);
 
             pointCloudHelper.renderingContext.geometry.setAttribute(
@@ -122,6 +124,7 @@ class PointCloudHelper {
    static async downloadOBJ() {
       // TODO Better design.
       const vertices = PointCloudHelper.vertices;
+      const vertexColors = PointCloudHelper.vertexColors;
 
       if (vertices.length > 3) {
          await new Promise((resolve) => {
@@ -137,7 +140,25 @@ class PointCloudHelper {
                   const x = vertices[i];
                   const y = vertices[i + 1];
                   const z = vertices[i + 2];
-                  objString += "v " + x + " " + y + " " + z + "\n";
+
+                  const r = vertexColors[i];
+                  const g = vertexColors[i + 1];
+                  const b = vertexColors[i + 2];
+
+                  objString +=
+                     "v " +
+                     x +
+                     " " +
+                     y +
+                     " " +
+                     z +
+                     " " +
+                     r +
+                     " " +
+                     g +
+                     " " +
+                     b +
+                     "\n";
                }
 
                let element = document.createElement("a");
@@ -344,6 +365,7 @@ class PointCloudHelperRenderingContext {
 
 /** @type {number[]} */
 PointCloudHelper.vertices = [];
+PointCloudHelper.vertexColors = [];
 
 /** @constant */
 PointCloudHelperRenderingContext.MAX_INSTANCES = 8;

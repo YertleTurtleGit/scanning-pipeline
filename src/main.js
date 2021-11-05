@@ -1,5 +1,5 @@
-/* global DOM, DOM_ELEMENT, INPUT_TYPE, CALCULATION_TYPE 
-NormalMapHelper, DepthMapHelper, PointCloudHelper, WebcamDatasetHelper, PhotometricStereoRenderer, SphericalGradientRenderer, BulkChartHelper */
+/* global DOM, DOM_ELEMENT, INPUT_TYPE, CALCULATION_TYPE,
+NormalMapHelper, DepthMapHelper, PointCloudHelper, TopologyHelper, WebcamDatasetHelper, PhotometricStereoRenderer, SphericalGradientRenderer, BulkChartHelper */
 
 let virtualInputRenderer;
 
@@ -138,6 +138,15 @@ async function calculatePointCloud() {
    );
    DOM_ELEMENT.POINT_CLOUD_AREA.classList.remove("mainAreaLoading");
    DOM_ELEMENT.POINT_CLOUD_DOWNLOAD_BUTTON.style.opacity = "1";
+
+   await calculateTopology();
+}
+
+async function calculateTopology() {
+   const topologyHelper = new TopologyHelper(
+      DOM_ELEMENT.PHOTOMETRIC_STEREO_IMAGE_000,
+      DOM_ELEMENT.TOPOLOGY_CANVAS
+   );
 }
 
 /** */
