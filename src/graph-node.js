@@ -21,7 +21,10 @@ class GraphNode {
       this.displayName = displayName;
       this.thisParameter = thisParameter;
 
+      this.mouseGrab = false;
+      this.initialMouseGrabPosition = undefined;
       this.nodeDiv = undefined;
+      this.nodeGraph = undefined;
    }
 
    /**
@@ -40,6 +43,63 @@ class GraphNode {
    }
 
    /**
+    * @param {NodeGraph} nodeGraph
+    */
+   setNodeGraph(nodeGraph) {
+      this.nodeGraph = nodeGraph;
+   }
+
+   /**
+    * @private
+    * @param {MouseEvent} mouseEvent
+    */
+   mouseGrabbed(mouseEvent) {
+      mouseEvent.preventDefault();
+
+      this.initialMouseGrabPosition = {
+         x:
+            mouseEvent.clientX -
+            Number(this.nodeDiv.style.left.replace("px", "")),
+         y:
+            mouseEvent.clientY -
+            Number(this.nodeDiv.style.top.replace("px", "")),
+      };
+      this.mouseGrab = true;
+      this.nodeTitle.style.cursor = "grabbing";
+   }
+
+   /**
+    * @private
+    * @param {MouseEvent} mouseEvent
+    */
+   mouseReleased(mouseEvent) {
+      mouseEvent.preventDefault();
+      this.mouseGrab = false;
+      this.nodeTitle.style.cursor = "grab";
+   }
+
+   /**
+    * @private
+    * @param {MouseEvent} mouseEvent
+    */
+   mouseMoved(mouseEvent) {
+      mouseEvent.preventDefault();
+
+      if (this.mouseGrab) {
+         const currentMousePosition = {
+            x: mouseEvent.clientX,
+            y: mouseEvent.clientY,
+         };
+         const translation = {
+            x: currentMousePosition.x - this.initialMouseGrabPosition.x,
+            y: currentMousePosition.y - this.initialMouseGrabPosition.y,
+         };
+         this.nodeDiv.style.left = String(translation.x) + "px";
+         this.nodeDiv.style.top = String(translation.y) + "px";
+      }
+   }
+
+   /**
     * @returns {HTMLDivElement} nodeDiv
     */
    getNodeDiv() {
@@ -47,30 +107,41 @@ class GraphNode {
          return this.nodeDiv;
       }
       this.nodeDiv = document.createElement("div");
+      this.nodeDiv.classList.add("graphNode");
 
-      const nodeTitleSpan = document.createElement("span");
-      nodeTitleSpan.innerText = this.displayName;
-      this.nodeDiv.appendChild(nodeTitleSpan);
+      this.nodeTitle = document.createElement("div");
+      this.nodeTitle.classList.add("graphNodeTitle");
+      this.nodeTitle.innerText = this.displayName;
+      this.nodeTitle.addEventListener(
+         "mousedown",
+         this.mouseGrabbed.bind(this)
+      );
+      this.nodeTitle.addEventListener("mouseup", this.mouseReleased.bind(this));
+      window.addEventListener("mousemove", this.mouseMoved.bind(this));
+      this.nodeDiv.appendChild(this.nodeTitle);
+
+      this.nodeIODiv = document.createElement("div");
+      this.nodeIODiv.classList.add("graphNodeIO");
+      this.nodeDiv.appendChild(this.nodeIODiv);
 
       const nodeDivInputList = document.createElement("ul");
-      this.nodeDiv.appendChild(nodeDivInputList);
+      this.nodeIODiv.appendChild(nodeDivInputList);
       const nodeDivOutputList = document.createElement("ul");
-      this.nodeDiv.appendChild(nodeDivOutputList);
+      this.nodeIODiv.appendChild(nodeDivOutputList);
 
       this.inputs.forEach((input) => {
          const inputListItem = document.createElement("li");
          inputListItem.innerText = input.name + input.type;
+         inputListItem.title =
+            input.name + input.type + " . " + input.description;
          nodeDivInputList.appendChild(inputListItem);
       });
 
       const outputListItem = document.createElement("li");
       outputListItem.innerText = this.output.name + this.output.type;
+      outputListItem.title =
+         this.output.name + this.output.type + " . " + this.output.description;
       nodeDivOutputList.appendChild(outputListItem);
-
-      this.nodeDiv.style.width = "15rem";
-      this.nodeDiv.style.padding = "0.5rem";
-      this.nodeDiv.style.border = "solid 0.1rem black";
-      this.nodeDiv.style.borderRadius = "0.5rem";
 
       return this.nodeDiv;
    }
@@ -85,12 +156,13 @@ GraphNode.NODE_TYPE = {
    IMAGE: " ⎚",
 };
 
-class GraphArea {
+class NodeGraph {
    /**
     * @param {HTMLElement} parentElement
     */
    constructor(parentElement = document.body) {
       this.div = document.createElement("div");
+      this.div.classList.add("nodeGraphArea");
       parentElement.appendChild(this.div);
    }
 
@@ -102,24 +174,48 @@ class GraphArea {
    }
 }
 
-/**
- * @param {number} bla1
- * @param {number} bla2
- * @returns {number}
- */
-function testFunction(bla1, bla2) {
-   return bla1 + bla2;
+function add_1(bla1) {
+   return bla1 + 1;
 }
 
-const graphArea = new GraphArea();
+function add_2(bla1) {
+   return bla1 + 2;
+}
 
-const graphNode = new GraphNode(
-   testFunction,
+const graphArea = new NodeGraph();
+
+const graphNode_1 = new GraphNode(
+   add_1,
    [
-      { name: "bla1", type: GraphNode.NODE_TYPE.NUMBER },
-      { name: "bla2", type: GraphNode.NODE_TYPE.NUMBER },
+      {
+         name: "bla1",
+         type: GraphNode.NODE_TYPE.NUMBER,
+         description: "lalala.",
+      },
    ],
-   { name: "resultbla", type: GraphNode.NODE_TYPE.NUMBER }
+   {
+      name: "resultbla",
+      type: GraphNode.NODE_TYPE.NUMBER,
+      description: "blubliblub",
+   }
 );
 
-graphArea.addNode(graphNode);
+graphArea.addNode(graphNode_1);
+
+const graphNode_2 = new GraphNode(
+   add_2,
+   [
+      {
+         name: "bla1",
+         type: GraphNode.NODE_TYPE.NUMBER,
+         description: "lalala.",
+      },
+   ],
+   {
+      name: "resultbla",
+      type: GraphNode.NODE_TYPE.NUMBER,
+      description: "blubliblub",
+   }
+);
+
+graphArea.addNode(graphNode_2);
