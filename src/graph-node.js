@@ -120,7 +120,7 @@ class GraphNode {
          this.nodeDiv.style.top = String(translation.y) + "px";
       }
 
-      this.updateLines();
+      this.nodeGraph.updateLines();
    }
 
    /**
@@ -172,14 +172,18 @@ class GraphNode {
    }
 }
 
-/**
- * @constant
- * @typedef {string} NODE_TYPE
- */
-GraphNode.NODE_TYPE = {
-   NUMBER: " ∈ ℝ",
-   IMAGE: " ⎚",
-};
+class GraphNodeConnector {
+   /**
+    * @param {HTMLElement} htmlElement
+    * @param {string} name
+    * @param {boolean} isInput
+    */
+   constructor(htmlElement, name, isInput) {
+      this.htmlElement = htmlElement;
+      this.name = name;
+      this.isInput = isInput;
+   }
+}
 
 class NodeGraph {
    /**
@@ -190,9 +194,16 @@ class NodeGraph {
       this.div.classList.add("nodeGraphArea");
       parentElement.appendChild(this.div);
 
-      this.svg = document.createElement("svg");
-      this.div.appendChild(this.svg);
+      const lineCanvas = document.createElement("canvas");
+      lineCanvas.width = this.div.clientWidth;
+      lineCanvas.height = this.div.clientHeight;
+      lineCanvas.style.objectFit = "contain";
+      lineCanvas.style.position = "absolute";
 
+      this.lineContext = lineCanvas.getContext("2d");
+      this.div.appendChild(lineCanvas);
+
+      /** @type {{start: HTMLElement, end: HTMLElement}[]} */
       this.outputLines = [];
    }
 
@@ -201,46 +212,61 @@ class NodeGraph {
     */
    addNode(graphNode) {
       this.div.appendChild(graphNode.getNodeDiv(this.div));
+      graphNode.setNodeGraph(this);
    }
 
-   connect(outputElement, inputElement) {
-      const line = /** @type {HTMLElement} */ document.createElement("line");
-      this.svg.appendChild(line);
-      this.svg.style.display = "block";
-      this.svg.style.width = "100%";
-      this.svg.style.height = "100%";
+   /**
+    * @param {GraphNodeConnector} graphNodeConnectorOutput
+    * @param {GraphNodeConnector} graphNodeConnectorInput
+    */
+   connect(graphNodeConnectorOutput, graphNodeConnectorInput) {
+      this.uiConnect(
+         graphNodeConnectorOutput.htmlElement,
+         graphNodeConnectorInput.htmlElement
+      );
+   }
 
-      line.style.height = "100%";
-      line.style.width = "100%";
-
-      line.setAttribute("stroke", "rgb(255,0,0)");
-      line.setAttribute("stroke-width", "2");
-
+   /**
+    * @private
+    * @param {HTMLElement} outputElement
+    * @param {HTMLElement} inputElement
+    */
+   uiConnect(outputElement, inputElement) {
       this.outputLines.push({
-         lineObject: line,
-         a: outputElement,
-         b: inputElement,
+         start: outputElement,
+         end: inputElement,
       });
 
       this.updateLines();
    }
 
    updateLines() {
+      this.lineContext.clearRect(
+         0,
+         0,
+         this.lineContext.canvas.width,
+         this.lineContext.canvas.height
+      );
+      this.lineContext.beginPath();
+      this.lineContext.strokeStyle = "white";
+      this.lineContext.lineWidth = 2;
+
       this.outputLines.forEach((outputLine) => {
-         const line = outputLine.lineObject;
-         const a = outputLine.a;
-         const b = outputLine.b;
-
-         const x1 = a.offsetLeft + a.clientWidth / 2;
-         const y1 = a.offsetTop + a.clientHeight / 2;
-         const x2 = b.offsetLeft + b.clientWidth / 2;
-         const y2 = b.offsetTop + b.clientHeight / 2;
-
-         line.setAttribute("x1", String(x1));
-         line.setAttribute("y1", String(y1));
-         line.setAttribute("x2", String(x2));
-         line.setAttribute("y2", String(y2));
+         const startRect = outputLine.start.getBoundingClientRect();
+         const start = {
+            x: startRect.right,
+            y: (startRect.top + startRect.bottom) / 2,
+         };
+         const endRect = outputLine.end.getBoundingClientRect();
+         const end = {
+            x: endRect.left,
+            y: (endRect.top + endRect.bottom) / 2,
+         };
+         this.lineContext.moveTo(start.x, start.y);
+         this.lineContext.lineTo(end.x, end.y);
       });
+
+      this.lineContext.stroke();
    }
 }
 
@@ -253,12 +279,12 @@ function add_2(bla1) {
    return bla1 + 2;
 }
 
-const graphArea = new NodeGraph();
+const nodeGraph = new NodeGraph();
 
 const graphNode_1 = new GraphNode(add);
-graphArea.addNode(graphNode_1);
+nodeGraph.addNode(graphNode_1);
 
 const graphNode_2 = new GraphNode(add_2);
-graphArea.addNode(graphNode_2);
+nodeGraph.addNode(graphNode_2);
 
-graphNode_1.connectOutputTo(graphNode_2.nodeDiv);
+nodeGraph.connect(graphNode_1.nodeDiv, graphNode_2.nodeDiv);
