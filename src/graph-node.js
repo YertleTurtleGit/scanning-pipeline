@@ -3,22 +3,113 @@
 class GraphNode {
    /**
     * @param {Function} executer
+    * @param {NodeGraph} nodeGraph
     * @param {string} displayName
     * @param {Function} thisParameter
     */
-   constructor(executer, displayName = executer.name, thisParameter = null) {
+   constructor(
+      executer,
+      nodeGraph,
+      displayName = executer.name,
+      thisParameter = null
+   ) {
       this.executer = executer;
+      this.nodeGraph = nodeGraph;
       this.displayName = displayName;
       this.thisParameter = thisParameter;
 
-      this.inputNames = this.getInputNames();
-      this.outputName = this.getOutputName();
+      this.nodeDiv = this.createNodeDiv(nodeGraph.div);
+
+      this.position = { x: 0, y: 0 };
 
       this.mouseGrab = false;
       this.initialMouseGrabPosition = undefined;
-      this.nodeDiv = undefined;
-      this.nodeGraph = undefined;
-      this.outputListItem = undefined;
+
+      this.inputConnectors = this.createInputConnectors();
+      this.outputConnector = this.createOutputConnector();
+   }
+
+   /**
+    * @returns {GraphNodeConnector}
+    */
+   getOutputConnector() {
+      return this.outputConnector;
+   }
+
+   /**
+    * @param {string} name
+    * @returns {GraphNodeConnector}
+    */
+   getInputConnector(name) {
+      for (let i = 0; i < this.inputConnectors.length; i++) {
+         const inputConnector = this.inputConnectors[i];
+         if (inputConnector.name === name) {
+            return inputConnector;
+         }
+      }
+      return undefined;
+   }
+
+   /**
+    * @private
+    * @returns {GraphNodeConnector}
+    */
+   createOutputConnector() {
+      const nodeDivOutputList = document.createElement("ul");
+      this.nodeIODiv.appendChild(nodeDivOutputList);
+
+      const outputListItem = document.createElement("li");
+      const outputName = this.getOutputName();
+      outputListItem.innerText = outputName;
+
+      nodeDivOutputList.appendChild(outputListItem);
+
+      const outputConnector = new GraphNodeConnector(
+         this,
+         outputListItem,
+         outputName,
+         false
+      );
+
+      outputListItem.addEventListener("click", () => {
+         this.nodeGraph.connectorClicked(outputConnector);
+      });
+
+      return outputConnector;
+   }
+
+   /**
+    * @private
+    * @returns {GraphNodeConnector[]}
+    */
+   createInputConnectors() {
+      /** @type {GraphNodeConnector[]} */
+      const inputConnectors = [];
+      const inputNames = this.getInputNames();
+
+      const nodeDivInputList = document.createElement("ul");
+      this.nodeIODiv.appendChild(nodeDivInputList);
+
+      inputNames.forEach((inputName) => {
+         const inputListItem = document.createElement("li");
+         inputListItem.innerText = inputName;
+         nodeDivInputList.appendChild(inputListItem);
+
+         const inputConnector = new GraphNodeConnector(
+            this,
+            inputListItem,
+            inputName,
+            true
+         );
+
+         inputListItem.addEventListener("click", () => {
+            this.nodeGraph.connectorClicked(inputConnector);
+         });
+
+         inputConnectors.push(inputConnector);
+      });
+
+      return inputConnectors;
    }
 
    /**
@@ -65,13 +156,6 @@ class GraphNode {
    }
 
    /**
-    * @param {NodeGraph} nodeGraph
-    */
-   setNodeGraph(nodeGraph) {
-      this.nodeGraph = nodeGraph;
-   }
-
-   /**
     * @private
     * @param {MouseEvent} mouseEvent
     */
@@ -79,12 +163,8 @@ class GraphNode {
       mouseEvent.preventDefault();
 
       this.initialMouseGrabPosition = {
-         x:
-            mouseEvent.clientX -
-            Number(this.nodeDiv.style.left.replace("px", "")),
-         y:
-            mouseEvent.clientY -
-            Number(this.nodeDiv.style.top.replace("px", "")),
+         x: mouseEvent.clientX - this.position.x,
+         y: mouseEvent.clientY - this.position.y,
       };
       this.mouseGrab = true;
       this.nodeTitle.style.cursor = "grabbing";
@@ -116,23 +196,34 @@ class GraphNode {
             x: currentMousePosition.x - this.initialMouseGrabPosition.x,
             y: currentMousePosition.y - this.initialMouseGrabPosition.y,
          };
-         this.nodeDiv.style.left = String(translation.x) + "px";
-         this.nodeDiv.style.top = String(translation.y) + "px";
+         this.setPosition(translation);
       }
 
       this.nodeGraph.updateLines();
    }
 
    /**
+    * @private
+    * @param {{x:number, y:number}} position
+    */
+   setPosition(position) {
+      this.nodeDiv.style.transform =
+         "translate(" +
+         String(position.x) +
+         "px, " +
+         String(position.y) +
+         "px)";
+      this.position = position;
+   }
+
+   /**
+    * @private
     * @param {HTMLElement} moveableArea
     * @returns {HTMLDivElement} nodeDiv
     */
-   getNodeDiv(moveableArea) {
-      if (this.nodeDiv) {
-         return this.nodeDiv;
-      }
-      this.nodeDiv = document.createElement("div");
-      this.nodeDiv.classList.add("graphNode");
+   createNodeDiv(moveableArea) {
+      const nodeDiv = document.createElement("div");
+      nodeDiv.classList.add("graphNode");
 
       this.nodeTitle = document.createElement("div");
       this.nodeTitle.classList.add("graphNodeTitle");
@@ -147,38 +238,27 @@ class GraphNode {
          this.mouseReleased.bind(this)
       );
       window.addEventListener("mousemove", this.mouseMoved.bind(this));
-      this.nodeDiv.appendChild(this.nodeTitle);
+      nodeDiv.appendChild(this.nodeTitle);
 
       this.nodeIODiv = document.createElement("div");
       this.nodeIODiv.classList.add("graphNodeIO");
-      this.nodeDiv.appendChild(this.nodeIODiv);
+      nodeDiv.appendChild(this.nodeIODiv);
 
-      const nodeDivInputList = document.createElement("ul");
-      this.nodeIODiv.appendChild(nodeDivInputList);
-      const nodeDivOutputList = document.createElement("ul");
-      this.nodeIODiv.appendChild(nodeDivOutputList);
+      moveableArea.append(nodeDiv);
 
-      this.inputNames.forEach((inputName) => {
-         const inputListItem = document.createElement("li");
-         inputListItem.innerText = inputName;
-         nodeDivInputList.appendChild(inputListItem);
-      });
-
-      this.outputListItem = document.createElement("li");
-      this.outputListItem.innerText = this.outputName;
-      nodeDivOutputList.appendChild(this.outputListItem);
-
-      return this.nodeDiv;
+      return nodeDiv;
    }
 }
 
 class GraphNodeConnector {
    /**
+    * @param {GraphNode} graphNode
     * @param {HTMLElement} htmlElement
     * @param {string} name
     * @param {boolean} isInput
     */
-   constructor(htmlElement, name, isInput) {
+   constructor(graphNode, htmlElement, name, isInput) {
+      this.graphNode = graphNode;
       this.htmlElement = htmlElement;
       this.name = name;
       this.isInput = isInput;
@@ -191,6 +271,7 @@ class NodeGraph {
     */
    constructor(parentElement = document.body) {
       this.div = document.createElement("div");
+      this.div.addEventListener("mousemove", this.mouseMove.bind(this));
       this.div.classList.add("nodeGraphArea");
       parentElement.appendChild(this.div);
 
@@ -205,21 +286,44 @@ class NodeGraph {
 
       /** @type {{start: HTMLElement, end: HTMLElement}[]} */
       this.outputLines = [];
+
+      /** @type {GraphNodeConnector} */
+      this.selectedConnector = undefined;
    }
 
    /**
-    * @param {GraphNode} graphNode
+    * @param {GraphNodeConnector} connector
     */
-   addNode(graphNode) {
-      this.div.appendChild(graphNode.getNodeDiv(this.div));
-      graphNode.setNodeGraph(this);
+   connectorClicked(connector) {
+      if (this.selectedConnector) {
+         if (
+            this.selectedConnector.isInput !== connector.isInput &&
+            this.selectedConnector.graphNode !== connector.graphNode
+         ) {
+            this.connect(this.selectedConnector, connector);
+            this.selectedConnector = undefined;
+         } else {
+            this.selectedConnector = undefined;
+         }
+      } else {
+         this.selectedConnector = connector;
+      }
    }
 
    /**
-    * @param {GraphNodeConnector} graphNodeConnectorOutput
-    * @param {GraphNodeConnector} graphNodeConnectorInput
+    * @param {GraphNodeConnector} graphNodeConnectorA
+    * @param {GraphNodeConnector} graphNodeConnectorB
     */
-   connect(graphNodeConnectorOutput, graphNodeConnectorInput) {
+   connect(graphNodeConnectorA, graphNodeConnectorB) {
+      let graphNodeConnectorInput, graphNodeConnectorOutput;
+
+      if (graphNodeConnectorA.isInput) {
+         graphNodeConnectorInput = graphNodeConnectorA;
+         graphNodeConnectorOutput = graphNodeConnectorB;
+      } else {
+         graphNodeConnectorInput = graphNodeConnectorB;
+         graphNodeConnectorOutput = graphNodeConnectorA;
+      }
       this.uiConnect(
          graphNodeConnectorOutput.htmlElement,
          graphNodeConnectorInput.htmlElement
@@ -238,6 +342,13 @@ class NodeGraph {
       });
 
       this.updateLines();
+   }
+
+   /**
+    * @param {MouseEvent} mouseEvent
+    */
+   mouseMove(mouseEvent) {
+      this.mousePosition = { x: mouseEvent.clientX, y: mouseEvent.clientY };
    }
 
    updateLines() {
@@ -266,6 +377,18 @@ class NodeGraph {
          this.lineContext.lineTo(end.x, end.y);
       });
 
+      if (this.selectedConnector) {
+         const startRect =
+            this.selectedConnector.htmlElement.getBoundingClientRect();
+         const start = {
+            x: startRect.right,
+            y: (startRect.top + startRect.bottom) / 2,
+         };
+         const end = this.mousePosition;
+         this.lineContext.moveTo(start.x, start.y);
+         this.lineContext.lineTo(end.x, end.y);
+      }
+
       this.lineContext.stroke();
    }
 }
@@ -281,10 +404,5 @@ function add_2(bla1) {
 
 const nodeGraph = new NodeGraph();
 
-const graphNode_1 = new GraphNode(add);
-nodeGraph.addNode(graphNode_1);
-
-const graphNode_2 = new GraphNode(add_2);
-nodeGraph.addNode(graphNode_2);
-
-nodeGraph.connect(graphNode_1.nodeDiv, graphNode_2.nodeDiv);
+const graphNode_1 = new GraphNode(add, nodeGraph);
+const graphNode_2 = new GraphNode(add_2, nodeGraph);
