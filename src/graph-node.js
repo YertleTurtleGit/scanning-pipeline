@@ -295,22 +295,43 @@ class NodeGraph {
     * @param {GraphNodeConnector} connector
     */
    connectorClicked(connector) {
-      if (this.selectedConnector) {
-         if (
-            this.selectedConnector.isInput !== connector.isInput &&
-            this.selectedConnector.graphNode !== connector.graphNode
-         ) {
-            this.connect(this.selectedConnector, connector);
-            this.selectedConnector = undefined;
-         } else {
-            this.selectedConnector = undefined;
-         }
+      if (this.connected(this.selectedConnector, connector)) {
+         this.disconnect(this.selectedConnector, connector);
       } else {
-         this.selectedConnector = connector;
+         if (this.selectedConnector) {
+            if (
+               this.selectedConnector.isInput !== connector.isInput &&
+               this.selectedConnector.graphNode !== connector.graphNode
+            ) {
+               this.connect(this.selectedConnector, connector);
+               this.selectedConnector = undefined;
+            } else {
+               this.selectedConnector = undefined;
+            }
+         } else {
+            this.selectedConnector = connector;
+         }
       }
+      this.updateLines();
    }
 
    /**
+    * @private
+    * @param {GraphNodeConnector} graphNodeConnectorA
+    * @param {GraphNodeConnector} graphNodeConnectorB
+    * @returns {boolean}
+    */
+   connected(graphNodeConnectorA, graphNodeConnectorB) {}
+
+   /**
+    * @private
+    * @param {GraphNodeConnector} graphNodeConnectorA
+    * @param {GraphNodeConnector} graphNodeConnectorB
+    */
+   disconnect(graphNodeConnectorA, graphNodeConnectorB) {}
+
+   /**
+    * @private
     * @param {GraphNodeConnector} graphNodeConnectorA
     * @param {GraphNodeConnector} graphNodeConnectorB
     */
@@ -340,8 +361,6 @@ class NodeGraph {
          start: outputElement,
          end: inputElement,
       });
-
-      this.updateLines();
    }
 
    /**
@@ -404,5 +423,5 @@ function add_2(bla1) {
 
 const nodeGraph = new NodeGraph();
 
-const graphNode_1 = new GraphNode(add, nodeGraph);
-const graphNode_2 = new GraphNode(add_2, nodeGraph);
+new GraphNode(add, nodeGraph);
+new GraphNode(add_2, nodeGraph);

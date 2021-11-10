@@ -49,6 +49,8 @@
          }
 
          .graphNodeTitle {
+            word-wrap: break-word;
+            hyphens: auto;
             cursor: grab;
             font-size: 110%;
             text-align: center;
@@ -70,6 +72,9 @@
          }
 
          .graphNodeIO li {
+            word-break: break-all;
+            hyphens: auto;
+            max-width: 6rem;
             cursor: pointer;
             background-color: var(--nodeGraphFontColor);
             color: var(--nodeGraphBackgroundColor);
