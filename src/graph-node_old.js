@@ -1,6 +1,6 @@
 /* exported GraphNode, GraphArea */
 
-class GraphNode {
+class GraphNode_old {
    /**
     * @param {Function} executer
     * @param {NodeGraph} nodeGraph
@@ -250,7 +250,7 @@ class GraphNode {
    }
 }
 
-class GraphNodeConnector {
+class GraphNodeConnector_old {
    /**
     * @param {GraphNode} graphNode
     * @param {HTMLElement} htmlElement
@@ -265,7 +265,7 @@ class GraphNodeConnector {
    }
 }
 
-class NodeGraph {
+class NodeGraph_old {
    /**
     * @param {HTMLElement} parentElement
     */
