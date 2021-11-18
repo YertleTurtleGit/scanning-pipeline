@@ -73,22 +73,30 @@ class GraphNode {
 
    /**
     * @private
-    * @returns {string}
+    * @returns {Promise<string>}
     */
-   readFunctionSourceWithDocs() {
-      const scriptElements = Array.from(
-         document.getElementsByTagName("script")
-      );
+   async readFunctionSourceWithDocs() {
+      const scriptElements = Array.from(document.scripts);
 
-      const functionSource = this.executer.toString().replace("\n", "");
+      const functionSource = this.executer.toString();
 
       for (let i = 0, count = scriptElements.length; i < count; i++) {
-         const source = scriptElements[i].textContent.replace("\n", "");
+         const scriptSource = await new Promise((resolve) => {
+            window.fetch(scriptElements[i].src).then(async (response) => {
+               resolve(await response.text());
+            });
+         });
 
-         if (source.includes(functionSource)) {
-            const jsDocExists = source.includes("*/" + functionSource);
+         if (scriptSource.includes(functionSource)) {
+            const jsDocExists = scriptSource.includes("*/\n" + functionSource);
 
-            console.log({ jsDocExists });
+            if (jsDocExists) {
+               const jsDoc = scriptSource
+                  .split("*/\n" + functionSource)[0]
+                  .split("/**\n")
+                  .pop();
+               console.log(jsDoc);
+            }
          }
       }
    }
