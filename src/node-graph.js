@@ -48,9 +48,6 @@ class GraphNode {
        * @type {{output: GraphNodeOutput, input: GraphNodeInput}[]}
        */
       this.outputConnections = [];
-
-      console.log(this.graphNodeInputs);
-      console.log(this.graphNodeOutputs);
    }
 
    /**
@@ -150,10 +147,20 @@ class GraphNodeInput {
    }
 
    /**
+    * @public
     * @param {GraphNodeOutput} graphNodeOutput
     */
    addConnection(graphNodeOutput) {
       this.connections.push(graphNodeOutput);
+   }
+
+   /**
+    * @public
+    * @param {GraphNodeOutput} graphNodeOutput
+    */
+   removeConnection(graphNodeOutput) {
+      const connectionIndex = this.connections.indexOf(graphNodeOutput);
+      this.connections.splice(connectionIndex);
    }
 }
 
