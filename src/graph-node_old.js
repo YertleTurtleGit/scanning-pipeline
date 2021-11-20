@@ -420,8 +420,3 @@ function add(numberA, numberB) {
 function add_2(bla1) {
    return bla1 + 2;
 }
-
-const nodeGraph = new NodeGraph();
-
-new GraphNode(add, nodeGraph);
-new GraphNode(add_2, nodeGraph);

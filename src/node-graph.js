@@ -1,4 +1,4 @@
-/* exported NodeGraph, GraphNode */
+/* exported NodeGraphUI, GraphNodeUI */
 
 class NodeGraph {
    constructor() {
@@ -175,6 +175,92 @@ class GraphNodeOutput {
    }
 }
 
+class NodeGraphUI extends NodeGraph {
+   /**
+    * @param {HTMLElement} parentElement
+    */
+   constructor(parentElement) {
+      super();
+      this.parentElement = parentElement;
+
+      this.domCanvas = document.createElement("canvas");
+      this.domCanvas.style.backgroundColor = "transparent";
+      this.domCanvas.style.position = "absolute";
+      this.domCanvas.style.width = "100%";
+      this.domCanvas.style.height = "100%";
+
+      this.domCanvasContext = this.domCanvas.getContext("2d");
+      window.addEventListener("resize", this.resizeHandler.bind(this));
+      this.parentElement.appendChild(this.domCanvas);
+
+      this.currentMousePosition = { x: 0, y: 0 };
+
+      this.parentElement.addEventListener(
+         "mousemove",
+         this.mousemoveHandler.bind(this)
+      );
+      this.parentElement.addEventListener(
+         "dblclick",
+         this.doubleClickHandler.bind(this)
+      );
+   }
+
+   doubleClickHandler() {
+      this.addNode(new GraphNodeUI(add));
+   }
+
+   /**
+    * @private
+    */
+   resizeHandler() {
+      this.domCanvas.width = this.domCanvas.offsetWidth;
+      this.domCanvas.height = this.domCanvas.offsetHeight;
+   }
+
+   /**
+    * @private
+    * @param {MouseEvent} mouseEvent
+    */
+   mousemoveHandler(mouseEvent) {
+      this.currentMousePosition = {
+         x: mouseEvent.pageX - this.parentElement.offsetLeft,
+         y: mouseEvent.pageY - this.parentElement.offsetTop,
+      };
+   }
+
+   /**
+    * @override
+    * @param {GraphNodeUI} graphNodeUI
+    */
+   addNode(graphNodeUI) {
+      super.addNode(graphNodeUI);
+      graphNodeUI.setPosition(this.currentMousePosition);
+      this.parentElement.appendChild(graphNodeUI.domElement);
+   }
+}
+
+class GraphNodeUI extends GraphNode {
+   /**
+    * @param {Function} executer
+    * @param {string} cssClass
+    */
+   constructor(executer, cssClass = "graphNode") {
+      super(executer);
+      this.domElement = document.createElement("span");
+      this.domElement.classList.add(cssClass);
+      this.position = { x: 0, y: 0 };
+   }
+
+   /**
+    * @param {{x:number, y:number}} position
+    */
+   setPosition(position) {
+      this.position = position;
+      this.domElement.style.transform =
+         "translate(" + this.position.x + "px, " + this.position.y + "px)";
+   }
+}
+
 /**
  * @param {number} a description of a
  * @param {number} b description of b
@@ -185,6 +271,9 @@ function add(a, b) {
    return sum;
 }
 
-new GraphNode(add);
+const nodeGraph = new NodeGraphUI(document.getElementById("nodeGraphDiv"));
+const graphNodeAdd = new GraphNodeUI(add);
+
+nodeGraph.addNode(graphNodeAdd);
 
 console.log("finished");
