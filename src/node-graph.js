@@ -34,9 +34,6 @@ class GraphNode {
       this.executer = executer;
 
       /** @private */
-      this.name = this.readName();
-
-      /** @private */
       this.graphNodeInputs = [];
       /** @private */
       this.graphNodeOutputs = [];
@@ -51,10 +48,10 @@ class GraphNode {
    }
 
    /**
-    * @private
+    * @protected
     * @returns {string}
     */
-   readName() {
+   getName() {
       return this.executer.name;
    }
 
@@ -134,8 +131,14 @@ class GraphNodeInput {
     * @param {string} name
     * @param {string} type
     * @param {string} description
+    * @param {string} cssClass
     */
-   constructor(name, type, description = undefined) {
+   constructor(
+      name,
+      type,
+      description = undefined,
+      cssClass = "graphNodeInput"
+   ) {
       this.name = name;
       this.type = type;
       this.description = description;
@@ -144,6 +147,8 @@ class GraphNodeInput {
        * @type {GraphNodeOutput[]}
        */
       this.connections = [];
+      this.domElement = document.createElement("span");
+      this.domElement.classList.add(cssClass);
    }
 
    /**
@@ -168,10 +173,13 @@ class GraphNodeOutput {
    /**
     * @param {string} type
     * @param {string} description
+    * @param {string} cssClass
     */
-   constructor(type, description = undefined) {
+   constructor(type, description = undefined, cssClass = "graphNodeInput") {
       this.type = type;
       this.description = description;
+      this.domElement = document.createElement("span");
+      this.domElement.classList.add(cssClass);
    }
 }
 
@@ -248,6 +256,12 @@ class GraphNodeUI extends GraphNode {
       super(executer);
       this.domElement = document.createElement("span");
       this.domElement.classList.add(cssClass);
+
+      const domTitleElement = document.createElement("div");
+      domTitleElement.innerText = super.getName();
+      domTitleElement.style.backgroundColor = "transparent";
+      this.domElement.appendChild(domTitleElement);
+
       this.position = { x: 0, y: 0 };
    }
 
@@ -257,7 +271,11 @@ class GraphNodeUI extends GraphNode {
    setPosition(position) {
       this.position = position;
       this.domElement.style.transform =
-         "translate(" + this.position.x + "px, " + this.position.y + "px)";
+         "translate(calc(" +
+         this.position.x +
+         "px - 50%), calc(" +
+         this.position.y +
+         "px - 0.25rem))";
    }
 }
 
@@ -271,9 +289,6 @@ function add(a, b) {
    return sum;
 }
 
-const nodeGraph = new NodeGraphUI(document.getElementById("nodeGraphDiv"));
-const graphNodeAdd = new GraphNodeUI(add);
-
-nodeGraph.addNode(graphNodeAdd);
+new NodeGraphUI(document.getElementById("nodeGraphDiv"));
 
 console.log("finished");
