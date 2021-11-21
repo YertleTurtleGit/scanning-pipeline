@@ -6,22 +6,37 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Node Test</title>
       <style>
-         * {
-            background-color: black;
-            color: gray;
-         }
          :root {
             --nodeGraphFontColor: white;
             --nodeGraphBackgroundColor: rgb(32, 32, 32);
+            --nodeGraphBorderThickness: 0.15rem;
+         }
+
+         * {
+            transition: all 1s;
+            background-color: black;
          }
 
          .graphNode {
+            user-select: none;
+            font-family: sans-serif;
+            color: var(--nodeGraphFontColor);
             position: absolute;
             width: 12rem;
             min-height: 6rem;
-            border: 0.1rem solid white;
+            border: var(--nodeGraphBorderThickness) solid
+               var(--nodeGraphFontColor);
             border-radius: 0.5rem;
-            background-color: transparent;
+            background-color: var(--nodeGraphBackgroundColor);
+         }
+
+         .graphNode h1 {
+            text-align: center;
+            font-size: large;
+            margin: 0;
+            padding: 0.1rem;
+            border-bottom: var(--nodeGraphBorderThickness) solid
+               var(--nodeGraphFontColor);
          }
       </style>
    </head>

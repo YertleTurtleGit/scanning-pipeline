@@ -1,4 +1,4 @@
-/* exported NodeGraphUI, GraphNodeUI */
+/* exported NodeGraphUI */
 
 class NodeGraph {
    constructor() {
@@ -131,14 +131,8 @@ class GraphNodeInput {
     * @param {string} name
     * @param {string} type
     * @param {string} description
-    * @param {string} cssClass
     */
-   constructor(
-      name,
-      type,
-      description = undefined,
-      cssClass = "graphNodeInput"
-   ) {
+   constructor(name, type, description = undefined) {
       this.name = name;
       this.type = type;
       this.description = description;
@@ -147,8 +141,6 @@ class GraphNodeInput {
        * @type {GraphNodeOutput[]}
        */
       this.connections = [];
-      this.domElement = document.createElement("span");
-      this.domElement.classList.add(cssClass);
    }
 
    /**
@@ -173,12 +165,59 @@ class GraphNodeOutput {
    /**
     * @param {string} type
     * @param {string} description
+    */
+   constructor(type, description = undefined) {
+      this.type = type;
+      this.description = description;
+   }
+}
+
+class GraphNodeInputUI extends GraphNodeInput {
+   /**
+    * @param {string} name
+    * @param {string} type
+    * @param {string} description
+    * @param {string} cssClass
+    */
+   constructor(
+      name,
+      type,
+      description = undefined,
+      cssClass = "graphNodeInput"
+   ) {
+      super(name, type, description);
+      this.domElement = document.createElement("li");
+      this.domElement.classList.add(cssClass);
+   }
+
+   /**
+    * @public
+    * @override
+    * @param {GraphNodeOutputUI} graphNodeOutput
+    */
+   addConnection(graphNodeOutput) {
+      super.addConnection(graphNodeOutput);
+   }
+
+   /**
+    * @public
+    * @override
+    * @param {GraphNodeOutputUI} graphNodeOutput
+    */
+   removeConnection(graphNodeOutput) {
+      super.removeConnection(graphNodeOutput);
+   }
+}
+
+class GraphNodeOutputUI extends GraphNodeOutput {
+   /**
+    * @param {string} type
+    * @param {string} description
     * @param {string} cssClass
     */
    constructor(type, description = undefined, cssClass = "graphNodeInput") {
-      this.type = type;
-      this.description = description;
-      this.domElement = document.createElement("span");
+      super(type, description);
+      this.domElement = document.createElement("li");
       this.domElement.classList.add(cssClass);
    }
 }
@@ -257,7 +296,7 @@ class GraphNodeUI extends GraphNode {
       this.domElement = document.createElement("span");
       this.domElement.classList.add(cssClass);
 
-      const domTitleElement = document.createElement("div");
+      const domTitleElement = document.createElement("h1");
       domTitleElement.innerText = super.getName();
       domTitleElement.style.backgroundColor = "transparent";
       this.domElement.appendChild(domTitleElement);
