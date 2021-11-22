@@ -3,7 +3,7 @@
 class NodeGraph {
    constructor() {
       /**
-       * @private
+       * @protected
        * @type {GraphNode[]}
        */
       this.graphNodes = [];
@@ -30,7 +30,7 @@ class GraphNode {
     * @param {Function} executer
     */
    constructor(executer) {
-      /** @private */
+      /** @protected */
       this.executer = executer;
 
       /**
@@ -189,7 +189,7 @@ class GraphNodeInput {
       this.type = type;
       this.description = description;
       /**
-       * @private
+       * @protected
        * @type {GraphNodeOutput[]}
        */
       this.connections = [];
@@ -215,6 +215,28 @@ class GraphNodeInput {
 
 class GraphNodeOutput {
    /**
+    * @param {GraphNodeOutput[]} graphNodeOutput
+    * @param {NodeGraphUI} nodeGraph
+    * @returns {GraphNodeOutputUI[]}
+    */
+   static getFromGraphNodeInputs(graphNodeOutput, nodeGraph) {
+      /** @type {GraphNodeOutputUI[]} */
+      const graphNodeOutputUI = [];
+
+      graphNodeOutput.forEach((graphNodeOutput) => {
+         graphNodeOutputUI.push(
+            new GraphNodeOutputUI(
+               graphNodeOutput.type,
+               graphNodeOutput.description,
+               nodeGraph
+            )
+         );
+      });
+
+      return graphNodeOutputUI;
+   }
+
+   /**
     * @param {string} type
     * @param {string} description
     */
@@ -227,9 +249,10 @@ class GraphNodeOutput {
 class GraphNodeInputUI extends GraphNodeInput {
    /**
     * @param {GraphNodeInput[]} graphNodeInputs
+    * @param {NodeGraphUI} nodeGraph
     * @returns {GraphNodeInputUI[]}
     */
-   static getFromGraphNodeInputs(graphNodeInputs) {
+   static getFromGraphNodeInputs(graphNodeInputs, nodeGraph) {
       /** @type {GraphNodeInputUI[]} */
       const graphNodeInputsUI = [];
 
@@ -238,7 +261,8 @@ class GraphNodeInputUI extends GraphNodeInput {
             new GraphNodeInputUI(
                graphNodeInput.name,
                graphNodeInput.type,
-               graphNodeInput.description
+               graphNodeInput.description,
+               nodeGraph
             )
          );
       });
@@ -250,19 +274,42 @@ class GraphNodeInputUI extends GraphNodeInput {
     * @param {string} name
     * @param {string} type
     * @param {string} description
+    * @param {NodeGraphUI} nodeGraph
     * @param {string} cssClass
     */
    constructor(
       name,
       type,
       description = undefined,
+      nodeGraph,
       cssClass = "graphNodeInput"
    ) {
       super(name, type, description);
+      this.nodeGraph = nodeGraph;
       this.domElement = document.createElement("li");
       this.domElement.innerText = name + " [" + type + "]";
       this.domElement.style.textAlign = "left";
       this.domElement.classList.add(cssClass);
+
+      this.domElement.addEventListener("click", this.clickHandler.bind(this));
+   }
+
+   /**
+    * @private
+    */
+   clickHandler() {
+      this.nodeGraph.toggleConnection(this);
+   }
+
+   /**
+    * @public
+    * @returns {GraphNodeOutputUI[]}
+    */
+   getConnections() {
+      return GraphNodeOutputUI.getFromGraphNodeOutputs(
+         this.connections,
+         this.nodeGraph
+      );
    }
 
    /**
@@ -287,9 +334,10 @@ class GraphNodeInputUI extends GraphNodeInput {
 class GraphNodeOutputUI extends GraphNodeOutput {
    /**
     * @param {GraphNodeOutput[]} graphNodeOutputs
+    * @param {NodeGraphUI} nodeGraph
     * @returns {GraphNodeOutputUI[]}
     */
-   static getFromGraphNodeOutputs(graphNodeOutputs) {
+   static getFromGraphNodeOutputs(graphNodeOutputs, nodeGraph) {
       /** @type {GraphNodeOutputUI[]} */
       const graphNodeOutputsUI = [];
 
@@ -297,7 +345,8 @@ class GraphNodeOutputUI extends GraphNodeOutput {
          graphNodeOutputsUI.push(
             new GraphNodeOutputUI(
                graphNodeOutput.type,
-               graphNodeOutput.description
+               graphNodeOutput.description,
+               nodeGraph
             )
          );
       });
@@ -307,14 +356,28 @@ class GraphNodeOutputUI extends GraphNodeOutput {
    /**
     * @param {string} type
     * @param {string} description
+    * @param {NodeGraphUI} nodeGraph
     * @param {string} cssClass
     */
-   constructor(type, description = undefined, cssClass = "graphNodeInput") {
+   constructor(
+      type,
+      description = undefined,
+      nodeGraph,
+      cssClass = "graphNodeInput"
+   ) {
       super(type, description);
+      this.nodeGraph = nodeGraph;
       this.domElement = document.createElement("li");
       this.domElement.innerText = "[" + type + "]";
       this.domElement.style.textAlign = "right";
       this.domElement.classList.add(cssClass);
+   }
+
+   /**
+    * @private
+    */
+   clickHandler() {
+      this.nodeGraph.toggleConnection(this);
    }
 }
 
@@ -355,7 +418,13 @@ class NodeGraphUI extends NodeGraph {
        * @private
        * @type {GraphNodeUI}
        */
-      this.grabbedNode = undefined;
+      this.grabbedNode = null;
+
+      /**
+       * @private
+       * @type {GraphNodeInputUI | GraphNodeOutputUI}
+       */
+      this.linkedNodeIO = null;
    }
 
    doubleClickHandler() {
@@ -370,8 +439,85 @@ class NodeGraphUI extends NodeGraph {
       this.domCanvas.height = this.domCanvas.offsetHeight;
    }
 
+   /**
+    * @public
+    * @param {GraphNodeInputUI | GraphNodeOutputUI} graphNodeIO
+    */
+   toggleConnection(graphNodeIO) {
+      if (this.linkedNodeIO === null) {
+         this.linkedNodeIO = graphNodeIO;
+      } else if (
+         graphNodeIO instanceof GraphNodeInputUI &&
+         this.linkedNodeIO instanceof GraphNodeOutputUI
+      ) {
+         graphNodeIO.addConnection(this.linkedNodeIO);
+         this.linkedNodeIO = null;
+      } else if (
+         graphNodeIO instanceof GraphNodeOutputUI &&
+         this.linkedNodeIO instanceof GraphNodeInputUI
+      ) {
+         this.linkedNodeIO.addConnection(graphNodeIO);
+         this.linkedNodeIO = null;
+      }
+      this.updateConnectionUI();
+   }
+
+   /**
+    * @private
+    */
+   updateConnectionUI() {
+      this.domCanvasContext.clearRect(
+         0,
+         0,
+         this.domCanvasContext.canvas.width,
+         this.domCanvasContext.canvas.height
+      );
+      this.domCanvasContext.beginPath();
+      this.domCanvasContext.strokeStyle = "white";
+      this.domCanvasContext.lineWidth = 2;
+
+      const graphNodesUI = GraphNodeUI.getFromGraphNodes(
+         super.graphNodes,
+         this
+      );
+
+      graphNodesUI.forEach(async (graphNode) => {
+         const connections = await graphNode.getConnections();
+
+         connections.forEach((connection) => {
+            const startRect =
+               connection.input.domElement.getBoundingClientRect();
+            const start = {
+               x: startRect.right,
+               y: (startRect.top + startRect.bottom) / 2,
+            };
+            const endRect =
+               connection.output.domElement.getBoundingClientRect();
+            const end = {
+               x: endRect.left,
+               y: (endRect.top + endRect.bottom) / 2,
+            };
+            this.domCanvasContext.moveTo(start.x, start.y);
+            this.domCanvasContext.lineTo(end.x, end.y);
+         });
+      });
+
+      if (this.linkedNodeIO) {
+         const startRect = this.linkedNodeIO.domElement.getBoundingClientRect();
+         const start = {
+            x: startRect.right,
+            y: (startRect.top + startRect.bottom) / 2,
+         };
+         const end = this.currentMousePosition;
+         this.domCanvasContext.moveTo(start.x, start.y);
+         this.domCanvasContext.lineTo(end.x, end.y);
+      }
+
+      this.domCanvasContext.stroke();
+   }
+
    releaseGrabbedNode() {
-      this.grabbedNode = undefined;
+      this.grabbedNode = null;
    }
 
    /**
@@ -393,6 +539,7 @@ class NodeGraphUI extends NodeGraph {
 
       if (this.grabbedNode) {
          this.grabbedNode.setPosition(this.currentMousePosition);
+         this.updateConnectionUI();
       }
    }
 
@@ -408,6 +555,21 @@ class NodeGraphUI extends NodeGraph {
 }
 
 class GraphNodeUI extends GraphNode {
+   /**
+    * @public
+    * @param {GraphNode[]} graphNodes
+    * @param {NodeGraph} nodeGraph
+    * @returns {GraphNodeUI[]}
+    */
+   static getFromGraphNodes(graphNodes, nodeGraph) {
+      /** @type {GraphNodeUI[]} */
+      const graphNodesUI = [];
+
+      graphNodes.forEach((graphNode) => {
+         graphNodesUI.push(new GraphNodeUI(graphNode.executer, nodeGraph));
+      });
+   }
+
    /**
     * @param {Function} executer
     * @param {NodeGraphUI} nodeGraph
@@ -432,7 +594,8 @@ class GraphNodeUI extends GraphNode {
        * @type {GraphNodeInputUI[]}
        */
       this.graphNodeInputs = GraphNodeInputUI.getFromGraphNodeInputs(
-         await super.getGraphNodeInputs()
+         await super.getGraphNodeInputs(),
+         this.nodeGraph
       );
 
       /**
@@ -441,7 +604,8 @@ class GraphNodeUI extends GraphNode {
        * @type {GraphNodeOutputUI[]}
        */
       this.graphNodeOutputs = GraphNodeOutputUI.getFromGraphNodeOutputs(
-         await super.getGraphNodeOutputs()
+         await super.getGraphNodeOutputs(),
+         this.nodeGraph
       );
 
       this.domElement.classList.add(this.cssClass);
@@ -478,6 +642,31 @@ class GraphNodeUI extends GraphNode {
    }
 
    /**
+    * @public
+    * @returns {Promise<{input: GraphNodeInputUI, output:GraphNodeOutputUI}[]>}
+    */
+   async getConnections() {
+      /** @type {{input: GraphNodeInputUI, output:GraphNodeOutputUI}[]} */
+      const connections = [];
+
+      const getGraphNodeInputs = GraphNodeInputUI.getFromGraphNodeInputs(
+         await this.getGraphNodeInputs(),
+         this.nodeGraph
+      );
+
+      getGraphNodeInputs.forEach((graphNodeInput) => {
+         graphNodeInput.getConnections().forEach((graphNodeOutput) => {
+            connections.push({
+               input: graphNodeInput,
+               output: graphNodeOutput,
+            });
+         });
+      });
+
+      return connections;
+   }
+
+   /**
     * @private
     */
    mousedownGrabHandler() {
@@ -499,11 +688,11 @@ class GraphNodeUI extends GraphNode {
 }
 
 /**
- * @param {number} aVeeeryLooongVariableName description of a
+ * @param {number} a description of a
  * @param {number} b description of b
  * @returns {number} description of the return
  */
-function add(aVeeeryLooongVariableName, b) {
+function add(a, b) {
    const sum = a + b;
    return sum;
 }
