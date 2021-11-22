@@ -33,18 +33,70 @@ class GraphNode {
       /** @private */
       this.executer = executer;
 
-      /** @private */
+      /**
+       * @protected
+       * @type {GraphNodeInput[]}
+       */
       this.graphNodeInputs = [];
-      /** @private */
-      this.graphNodeOutputs = [];
-
-      this.readFunctionSourceWithDocs();
 
       /**
-       * @private
+       * @protected
+       * @type {GraphNodeOutput[]}
+       */
+      this.graphNodeOutputs = [];
+
+      /**
+       * @protected
        * @type {{output: GraphNodeOutput, input: GraphNodeInput}[]}
        */
       this.outputConnections = [];
+
+      /**
+       * @private
+       * @type {boolean}
+       */
+      this.initialized = false;
+
+      /**
+       * @private
+       * @type {boolean}
+       */
+      this.initializing = false;
+   }
+
+   /**
+    * @private
+    */
+   async initialize() {
+      while (this.initializing === true) {
+         await new Promise((resolve) => {
+            setTimeout(resolve, 500);
+         });
+      }
+      if (this.initialized === false) {
+         this.initializing = true;
+         await this.readFunctionSourceWithDocs();
+         this.initialized = true;
+         this.initializing = false;
+      }
+   }
+
+   /**
+    * @protected
+    * @returns {Promise<GraphNodeInput[]>}
+    */
+   async getGraphNodeInputs() {
+      await this.initialize();
+      return this.graphNodeInputs;
+   }
+
+   /**
+    * @protected
+    * @returns {Promise<GraphNodeOutput[]>}
+    */
+   async getGraphNodeOutputs() {
+      await this.initialize();
+      return this.graphNodeOutputs;
    }
 
    /**
@@ -174,6 +226,27 @@ class GraphNodeOutput {
 
 class GraphNodeInputUI extends GraphNodeInput {
    /**
+    * @param {GraphNodeInput[]} graphNodeInputs
+    * @returns {GraphNodeInputUI[]}
+    */
+   static getFromGraphNodeInputs(graphNodeInputs) {
+      /** @type {GraphNodeInputUI[]} */
+      const graphNodeInputsUI = [];
+
+      graphNodeInputs.forEach((graphNodeInput) => {
+         graphNodeInputsUI.push(
+            new GraphNodeInputUI(
+               graphNodeInput.name,
+               graphNodeInput.type,
+               graphNodeInput.description
+            )
+         );
+      });
+
+      return graphNodeInputsUI;
+   }
+
+   /**
     * @param {string} name
     * @param {string} type
     * @param {string} description
@@ -187,6 +260,8 @@ class GraphNodeInputUI extends GraphNodeInput {
    ) {
       super(name, type, description);
       this.domElement = document.createElement("li");
+      this.domElement.innerText = name + " [" + type + "]";
+      this.domElement.style.textAlign = "left";
       this.domElement.classList.add(cssClass);
    }
 
@@ -211,6 +286,25 @@ class GraphNodeInputUI extends GraphNodeInput {
 
 class GraphNodeOutputUI extends GraphNodeOutput {
    /**
+    * @param {GraphNodeOutput[]} graphNodeOutputs
+    * @returns {GraphNodeOutputUI[]}
+    */
+   static getFromGraphNodeOutputs(graphNodeOutputs) {
+      /** @type {GraphNodeOutputUI[]} */
+      const graphNodeOutputsUI = [];
+
+      graphNodeOutputs.forEach((graphNodeOutput) => {
+         graphNodeOutputsUI.push(
+            new GraphNodeOutputUI(
+               graphNodeOutput.type,
+               graphNodeOutput.description
+            )
+         );
+      });
+      return graphNodeOutputsUI;
+   }
+
+   /**
     * @param {string} type
     * @param {string} description
     * @param {string} cssClass
@@ -218,6 +312,8 @@ class GraphNodeOutputUI extends GraphNodeOutput {
    constructor(type, description = undefined, cssClass = "graphNodeInput") {
       super(type, description);
       this.domElement = document.createElement("li");
+      this.domElement.innerText = "[" + type + "]";
+      this.domElement.style.textAlign = "right";
       this.domElement.classList.add(cssClass);
    }
 }
@@ -247,13 +343,23 @@ class NodeGraphUI extends NodeGraph {
          this.mousemoveHandler.bind(this)
       );
       this.parentElement.addEventListener(
+         "mouseup",
+         this.releaseGrabbedNode.bind(this)
+      );
+      this.parentElement.addEventListener(
          "dblclick",
          this.doubleClickHandler.bind(this)
       );
+
+      /**
+       * @private
+       * @type {GraphNodeUI}
+       */
+      this.grabbedNode = undefined;
    }
 
    doubleClickHandler() {
-      this.addNode(new GraphNodeUI(add));
+      this.addNode(new GraphNodeUI(add, this));
    }
 
    /**
@@ -262,6 +368,17 @@ class NodeGraphUI extends NodeGraph {
    resizeHandler() {
       this.domCanvas.width = this.domCanvas.offsetWidth;
       this.domCanvas.height = this.domCanvas.offsetHeight;
+   }
+
+   releaseGrabbedNode() {
+      this.grabbedNode = undefined;
+   }
+
+   /**
+    * @param {GraphNodeUI} graphNode
+    */
+   setGrabbedNode(graphNode) {
+      this.grabbedNode = graphNode;
    }
 
    /**
@@ -273,6 +390,10 @@ class NodeGraphUI extends NodeGraph {
          x: mouseEvent.pageX - this.parentElement.offsetLeft,
          y: mouseEvent.pageY - this.parentElement.offsetTop,
       };
+
+      if (this.grabbedNode) {
+         this.grabbedNode.setPosition(this.currentMousePosition);
+      }
    }
 
    /**
@@ -289,19 +410,78 @@ class NodeGraphUI extends NodeGraph {
 class GraphNodeUI extends GraphNode {
    /**
     * @param {Function} executer
+    * @param {NodeGraphUI} nodeGraph
     * @param {string} cssClass
     */
-   constructor(executer, cssClass = "graphNode") {
+   constructor(executer, nodeGraph, cssClass = "graphNode") {
       super(executer);
+      this.nodeGraph = nodeGraph;
+      this.cssClass = cssClass;
       this.domElement = document.createElement("span");
-      this.domElement.classList.add(cssClass);
+      this.position = { x: 0, y: 0 };
+      this.initializeUI();
+   }
+
+   /**
+    * @private
+    */
+   async initializeUI() {
+      /**
+       * @override
+       * @protected
+       * @type {GraphNodeInputUI[]}
+       */
+      this.graphNodeInputs = GraphNodeInputUI.getFromGraphNodeInputs(
+         await super.getGraphNodeInputs()
+      );
+
+      /**
+       * @override
+       * @protected
+       * @type {GraphNodeOutputUI[]}
+       */
+      this.graphNodeOutputs = GraphNodeOutputUI.getFromGraphNodeOutputs(
+         await super.getGraphNodeOutputs()
+      );
+
+      this.domElement.classList.add(this.cssClass);
 
       const domTitleElement = document.createElement("h1");
+      domTitleElement.style.cursor = "grab";
+      domTitleElement.addEventListener(
+         "mousedown",
+         this.mousedownGrabHandler.bind(this)
+      );
       domTitleElement.innerText = super.getName();
       domTitleElement.style.backgroundColor = "transparent";
       this.domElement.appendChild(domTitleElement);
 
-      this.position = { x: 0, y: 0 };
+      const domIOElement = document.createElement("div");
+      const domInputList = document.createElement("ul");
+      const domOutputList = document.createElement("ul");
+
+      domIOElement.style.display = "flex";
+      domIOElement.style.justifyContent = "space-between";
+      domIOElement.style.marginLeft = "-10%";
+      domIOElement.style.width = "120%";
+
+      this.domElement.appendChild(domIOElement);
+      domIOElement.appendChild(domInputList);
+      domIOElement.appendChild(domOutputList);
+
+      this.graphNodeInputs.forEach((graphNodeInput) => {
+         domInputList.appendChild(graphNodeInput.domElement);
+      });
+      this.graphNodeOutputs.forEach((graphNodeOutput) => {
+         domOutputList.appendChild(graphNodeOutput.domElement);
+      });
+   }
+
+   /**
+    * @private
+    */
+   mousedownGrabHandler() {
+      this.nodeGraph.setGrabbedNode(this);
    }
 
    /**
@@ -319,11 +499,11 @@ class GraphNodeUI extends GraphNode {
 }
 
 /**
- * @param {number} a description of a
+ * @param {number} aVeeeryLooongVariableName description of a
  * @param {number} b description of b
  * @returns {number} description of the return
  */
-function add(a, b) {
+function add(aVeeeryLooongVariableName, b) {
    const sum = a + b;
    return sum;
 }

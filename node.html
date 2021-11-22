@@ -12,11 +12,6 @@
             --nodeGraphBorderThickness: 0.15rem;
          }
 
-         * {
-            transition: all 1s;
-            background-color: black;
-         }
-
          .graphNode {
             user-select: none;
             font-family: sans-serif;
@@ -38,6 +33,24 @@
             border-bottom: var(--nodeGraphBorderThickness) solid
                var(--nodeGraphFontColor);
          }
+
+         .graphNode ul {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+         }
+
+         .graphNode li {
+            color: var(--nodeGraphBackgroundColor);
+            background-color: var(--nodeGraphFontColor);
+            word-wrap: break-word;
+            width: fit-content;
+            max-width: 5.5rem;
+            hyphens: auto;
+            margin: 0.5rem;
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+         }
       </style>
    </head>
    <body>
@@ -47,8 +60,10 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: fit-content;
+            height: fit-content;
+            min-width: 100%;
+            min-height: 100%;
             margin: 0;
             border: 0;
             padding: 0;
