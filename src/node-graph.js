@@ -30,7 +30,7 @@ class GraphNode {
     * @param {Function} executer
     */
    constructor(executer) {
-      /** @protected */
+      /** @public */
       this.executer = executer;
 
       /**
@@ -318,6 +318,10 @@ class GraphNodeInputUI extends GraphNodeInput {
     * @param {GraphNodeOutputUI} graphNodeOutput
     */
    addConnection(graphNodeOutput) {
+      this.nodeGraph.uiConnections.push({
+         input: this,
+         output: graphNodeOutput,
+      });
       super.addConnection(graphNodeOutput);
    }
 
@@ -327,6 +331,12 @@ class GraphNodeInputUI extends GraphNodeInput {
     * @param {GraphNodeOutputUI} graphNodeOutput
     */
    removeConnection(graphNodeOutput) {
+      this.nodeGraph.uiConnections.splice(
+         this.nodeGraph.uiConnections.findIndex({
+            input: this,
+            output: graphNodeOutput,
+         })
+      );
       super.removeConnection(graphNodeOutput);
    }
 }
@@ -350,6 +360,7 @@ class GraphNodeOutputUI extends GraphNodeOutput {
             )
          );
       });
+
       return graphNodeOutputsUI;
    }
 
@@ -371,6 +382,8 @@ class GraphNodeOutputUI extends GraphNodeOutput {
       this.domElement.innerText = "[" + type + "]";
       this.domElement.style.textAlign = "right";
       this.domElement.classList.add(cssClass);
+
+      this.domElement.addEventListener("click", this.clickHandler.bind(this));
    }
 
    /**
@@ -395,9 +408,9 @@ class NodeGraphUI extends NodeGraph {
       this.domCanvas.style.width = "100%";
       this.domCanvas.style.height = "100%";
 
-      this.domCanvasContext = this.domCanvas.getContext("2d");
       window.addEventListener("resize", this.resizeHandler.bind(this));
       this.parentElement.appendChild(this.domCanvas);
+      this.domCanvasContext = this.domCanvas.getContext("2d");
 
       this.currentMousePosition = { x: 0, y: 0 };
 
@@ -425,6 +438,14 @@ class NodeGraphUI extends NodeGraph {
        * @type {GraphNodeInputUI | GraphNodeOutputUI}
        */
       this.linkedNodeIO = null;
+
+      /**
+       * @public
+       * @type {{input: GraphNodeInputUI, output: GraphNodeOutputUI}[]}
+       */
+      this.uiConnections = [];
+
+      this.resizeHandler();
    }
 
    doubleClickHandler() {
@@ -435,8 +456,8 @@ class NodeGraphUI extends NodeGraph {
     * @private
     */
    resizeHandler() {
-      this.domCanvas.width = this.domCanvas.offsetWidth;
-      this.domCanvas.height = this.domCanvas.offsetHeight;
+      this.domCanvas.height = this.parentElement.clientHeight;
+      this.domCanvas.width = this.parentElement.clientWidth;
    }
 
    /**
@@ -476,42 +497,21 @@ class NodeGraphUI extends NodeGraph {
       this.domCanvasContext.strokeStyle = "white";
       this.domCanvasContext.lineWidth = 2;
 
-      const graphNodesUI = GraphNodeUI.getFromGraphNodes(
-         super.graphNodes,
-         this
-      );
-
-      graphNodesUI.forEach(async (graphNode) => {
-         const connections = await graphNode.getConnections();
-
-         connections.forEach((connection) => {
-            const startRect =
-               connection.input.domElement.getBoundingClientRect();
-            const start = {
-               x: startRect.right,
-               y: (startRect.top + startRect.bottom) / 2,
-            };
-            const endRect =
-               connection.output.domElement.getBoundingClientRect();
-            const end = {
-               x: endRect.left,
-               y: (endRect.top + endRect.bottom) / 2,
-            };
-            this.domCanvasContext.moveTo(start.x, start.y);
-            this.domCanvasContext.lineTo(end.x, end.y);
-         });
-      });
-
-      if (this.linkedNodeIO) {
-         const startRect = this.linkedNodeIO.domElement.getBoundingClientRect();
+      this.uiConnections.forEach((connection) => {
+         console.log(connection);
+         const startRect = connection.input.domElement.getBoundingClientRect();
          const start = {
-            x: startRect.right,
+            x: startRect.left,
             y: (startRect.top + startRect.bottom) / 2,
          };
-         const end = this.currentMousePosition;
+         const endRect = connection.output.domElement.getBoundingClientRect();
+         const end = {
+            x: endRect.right,
+            y: (endRect.top + endRect.bottom) / 2,
+         };
          this.domCanvasContext.moveTo(start.x, start.y);
          this.domCanvasContext.lineTo(end.x, end.y);
-      }
+      });
 
       this.domCanvasContext.stroke();
    }
@@ -541,6 +541,29 @@ class NodeGraphUI extends NodeGraph {
          this.grabbedNode.setPosition(this.currentMousePosition);
          this.updateConnectionUI();
       }
+
+      if (this.linkedNodeIO) {
+         this.domCanvasContext.clearRect(
+            0,
+            0,
+            this.domCanvasContext.canvas.width,
+            this.domCanvasContext.canvas.height
+         );
+         this.domCanvasContext.beginPath();
+         this.domCanvasContext.strokeStyle = "white";
+         this.domCanvasContext.lineWidth = 2;
+
+         const startRect = this.linkedNodeIO.domElement.getBoundingClientRect();
+         const start = {
+            x: startRect.right,
+            y: (startRect.top + startRect.bottom) / 2,
+         };
+         const end = this.currentMousePosition;
+         this.domCanvasContext.moveTo(start.x, start.y);
+         this.domCanvasContext.lineTo(end.x, end.y);
+
+         this.domCanvasContext.stroke();
+      }
    }
 
    /**
@@ -558,7 +581,7 @@ class GraphNodeUI extends GraphNode {
    /**
     * @public
     * @param {GraphNode[]} graphNodes
-    * @param {NodeGraph} nodeGraph
+    * @param {NodeGraphUI} nodeGraph
     * @returns {GraphNodeUI[]}
     */
    static getFromGraphNodes(graphNodes, nodeGraph) {
@@ -568,6 +591,8 @@ class GraphNodeUI extends GraphNode {
       graphNodes.forEach((graphNode) => {
          graphNodesUI.push(new GraphNodeUI(graphNode.executer, nodeGraph));
       });
+
+      return graphNodesUI;
    }
 
    /**
