@@ -391,28 +391,6 @@ class GraphNodeInput {
 
 class GraphNodeOutput {
    /**
-    * @param {GraphNodeOutput[]} graphNodeOutput
-    * @param {NodeGraph} nodeGraph
-    * @returns {GraphNodeOutputUI[]}
-    */
-   static getFromGraphNodeInputs(graphNodeOutput, nodeGraph) {
-      /** @type {GraphNodeOutputUI[]} */
-      const graphNodeOutputUI = [];
-
-      graphNodeOutput.forEach((graphNodeOutput) => {
-         graphNodeOutputUI.push(
-            new GraphNodeOutputUI(
-               graphNodeOutput.type,
-               graphNodeOutput.description,
-               nodeGraph
-            )
-         );
-      });
-
-      return graphNodeOutputUI;
-   }
-
-   /**
     * @param {string} type
     * @param {string} description
     */
@@ -496,7 +474,10 @@ class GraphNodeInputUI extends GraphNodeInput {
     * @param {GraphNodeOutputUI} graphNodeOutput
     */
    addConnection(graphNodeOutput) {
-      this.connections.push(graphNodeOutput);
+      if (!this.connections.includes(graphNodeOutput)) {
+         this.connections.push(graphNodeOutput);
+         console.log("connection added.");
+      }
    }
 
    /**
@@ -504,8 +485,10 @@ class GraphNodeInputUI extends GraphNodeInput {
     * @param {GraphNodeOutputUI} graphNodeOutput
     */
    removeConnection(graphNodeOutput) {
-      const connectionIndex = this.connections.indexOf(graphNodeOutput);
-      this.connections.splice(connectionIndex);
+      if (this.connections.includes(graphNodeOutput)) {
+         const connectionIndex = this.connections.indexOf(graphNodeOutput);
+         this.connections.splice(connectionIndex);
+      }
    }
 }
 
@@ -563,23 +546,6 @@ class GraphNodeOutputUI extends GraphNodeOutput {
 }
 
 class GraphNodeUI {
-   /**
-    * @public
-    * @param {GraphNode[]} graphNodes
-    * @param {NodeGraph} nodeGraph
-    * @returns {GraphNodeUI[]}
-    */
-   static getFromGraphNodes(graphNodes, nodeGraph) {
-      /** @type {GraphNodeUI[]} */
-      const graphNodesUI = [];
-
-      graphNodes.forEach((graphNode) => {
-         graphNodesUI.push(new GraphNodeUI(graphNode, nodeGraph));
-      });
-
-      return graphNodesUI;
-   }
-
    /**
     * @param {GraphNode} graphNode
     * @param {NodeGraph} nodeGraph
