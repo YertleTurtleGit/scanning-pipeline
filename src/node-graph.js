@@ -556,8 +556,18 @@ class GraphNodeUI {
       this.nodeGraph = nodeGraph;
       this.cssClass = cssClass;
       this.domElement = document.createElement("span");
-      this.position = { x: 0, y: 0 };
+      this.position = {
+         x: this.nodeGraph.parentElement.clientWidth / 2,
+         y: this.nodeGraph.parentElement.clientHeight / 2,
+      };
       this.initialize();
+   }
+
+   /**
+    * @public
+    */
+   async execute() {
+      await this.graphNode.executer();
    }
 
    /**
@@ -604,6 +614,12 @@ class GraphNodeUI {
       domIOElement.style.justifyContent = "space-between";
       domIOElement.style.marginLeft = "-10%";
       domIOElement.style.width = "120%";
+
+      const outputType = this.graphNodeOutputs[0].type;
+
+      if (outputType === "number") {
+         this.outputUIElement = document.createElement("div");
+      }
 
       this.domElement.appendChild(domIOElement);
       domIOElement.appendChild(domInputList);
@@ -668,9 +684,18 @@ function add(a, b) {
    return sum;
 }
 
+/**
+ * @returns {number}
+ */
+function five() {
+   return 5;
+}
+
 const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
 
 const addNode = nodeGraph.registerNode(add);
+const fiveNode = nodeGraph.registerNode(five);
 nodeGraph.placeNode(addNode);
+nodeGraph.placeNode(fiveNode);
 
 console.log("finished");
