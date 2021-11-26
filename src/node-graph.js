@@ -40,10 +40,10 @@ class NodeGraph {
          "mouseup",
          this.releaseGrabbedNode.bind(this)
       );
-      this.parentElement.addEventListener(
+      /*this.parentElement.addEventListener(
          "dblclick",
          this.doubleClickHandler.bind(this)
-      );
+      );*/
 
       /**
        * @private
@@ -80,6 +80,17 @@ class NodeGraph {
       this.placedNodes.push(graphNodeUI);
       graphNodeUI.setPosition(position);
       this.parentElement.appendChild(graphNodeUI.domElement);
+   }
+
+   /**
+    * @public
+    * @param {InputGraphNode} inputGraphNode
+    * @param {{x:number, y:number}} position
+    */
+   placeInputGraphNode(inputGraphNode, position) {
+      this.placedNodes.push(inputGraphNode);
+      inputGraphNode.setPosition(position);
+      this.parentElement.appendChild(inputGraphNode.domElement);
    }
 
    /**
@@ -140,7 +151,7 @@ class NodeGraph {
    }
 
    /**
-    * @private
+    * @public
     */
    async updateConnectionUI() {
       this.domCanvasContext.clearRect(
@@ -321,56 +332,46 @@ class GraphNode {
          });
 
          if (scriptSource.includes(functionSource)) {
-            const jsDocExists = scriptSource.includes("*/\n" + functionSource);
+            const jsDoc = new RegExp(
+               "(\\/\\*\\*\\s*\\n([^\\*]|(\\*(?!\\/)))*\\*\\/)(\\s*\\n*\\s*)(.*)" +
+                  this.getName() +
+                  "\\s*\\(",
+               "mg"
+            )
+               .exec(scriptSource)[0]
+               .replaceAll("\n", "")
+               .replaceAll("*", "");
 
-            if (jsDocExists) {
-               const jsDoc = scriptSource
-                  .split("*/\n" + functionSource)[0]
-                  .split("/**\n")
-                  .pop()
-                  .replaceAll("\n", "")
-                  .replaceAll("*", "");
+            const jsDocArguments = jsDoc.split("@");
+            jsDocArguments.shift();
 
-               const jsDocArguments = jsDoc.split("@");
-               jsDocArguments.shift();
+            jsDocArguments.forEach((argument) => {
+               const argumentType = argument.split(" ")[0];
 
-               jsDocArguments.forEach((argument) => {
-                  const argumentType = argument.split(" ")[0];
+               if (argumentType === "param") {
+                  const argumentVarType = argument.split("{")[1].split("}")[0];
+                  const argumentVarName = argument.split("} ")[1].split(" ")[0];
+                  const argumentDescription = argument.split(
+                     " " + argumentVarName + " ",
+                     2
+                  )[1];
 
-                  if (argumentType === "param") {
-                     const argumentVarType = argument
-                        .split("{")[1]
-                        .split("}")[0];
-                     const argumentVarName = argument
-                        .split("} ")[1]
-                        .split(" ")[0];
-                     const argumentDescription = argument.split(
-                        " " + argumentVarName + " ",
-                        2
-                     )[1];
+                  this.graphNodeInputs.push(
+                     new GraphNodeInput(
+                        argumentVarName,
+                        argumentVarType,
+                        argumentDescription
+                     )
+                  );
+               } else if (argumentType === "returns") {
+                  const argumentVarType = argument.split("{")[1].split("}")[0];
+                  const argumentDescription = argument.split("} ")[1];
 
-                     this.graphNodeInputs.push(
-                        new GraphNodeInput(
-                           argumentVarName,
-                           argumentVarType,
-                           argumentDescription
-                        )
-                     );
-                  } else if (argumentType === "returns") {
-                     const argumentVarType = argument
-                        .split("{")[1]
-                        .split("}")[0];
-                     const argumentDescription = argument.split("} ")[1];
-
-                     this.graphNodeOutputs.push(
-                        new GraphNodeOutput(
-                           argumentVarType,
-                           argumentDescription
-                        )
-                     );
-                  }
-               });
-            }
+                  this.graphNodeOutputs.push(
+                     new GraphNodeOutput(argumentVarType, argumentDescription)
+                  );
+               }
+            });
          }
       }
    }
@@ -383,9 +384,10 @@ class GraphNodeInput {
     * @param {string} description
     */
    constructor(name, type, description = undefined) {
-      this.name = name;
+      this.name = name.replace(/([A-Z])/g, " $1");
+      this.name = this.name.charAt(0).toUpperCase() + this.name.slice(1);
       this.type = type;
-      this.description = description;
+      this.description = description.replaceAll(/\s\s+/g, " ");
    }
 }
 
@@ -452,11 +454,16 @@ class GraphNodeInputUI extends GraphNodeInput {
       this.nodeGraph = nodeGraph;
       this.graphNode = graphNode;
       this.domElement = document.createElement("li");
-      this.domElement.innerText = name + " [" + type + "]";
+      this.domElement.innerText = name;
+      this.domElement.title = "[" + this.type + "]\n" + this.description;
       this.domElement.style.textAlign = "left";
       this.domElement.classList.add(cssClass);
 
       this.domElement.addEventListener("click", this.clickHandler.bind(this));
+      this.domElement.addEventListener(
+         "dblclick",
+         this.doubleClickHandler.bind(this)
+      );
    }
 
    /**
@@ -464,6 +471,16 @@ class GraphNodeInputUI extends GraphNodeInput {
     */
    clickHandler() {
       this.nodeGraph.toggleConnection(this);
+   }
+
+   /**
+    * @private
+    */
+   doubleClickHandler() {
+      this.nodeGraph.placeInputGraphNode(
+         new InputGraphNode(this.type, this.nodeGraph),
+         { x: this.domElement.clientLeft - 200, y: this.domElement.clientTop }
+      );
    }
 
    /**
@@ -543,7 +560,8 @@ class GraphNodeOutputUI extends GraphNodeOutput {
        */
       this.graphNode = graphNode;
       this.domElement = document.createElement("li");
-      this.domElement.innerText = "[" + type + "]";
+      this.domElement.innerText = "▶";
+      this.domElement.title = "[" + this.type + "]";
       this.domElement.style.textAlign = "right";
       this.domElement.classList.add(cssClass);
 
@@ -591,6 +609,7 @@ class GraphNodeUI {
          y: this.nodeGraph.parentElement.clientHeight / 2,
       };
       this.refreshFlag = true;
+      this.worker = undefined;
       this.initialize();
    }
 
@@ -606,30 +625,46 @@ class GraphNodeUI {
     * @public
     */
    async execute() {
+      if (this.worker) {
+         this.worker.terminate();
+      }
       if (this.refreshFlag) {
          const parameterValues = this.getParameterValues();
          if (!parameterValues.includes(undefined)) {
             console.log("executing " + this.graphNode.executer.name + ".");
-            const resultValue = await this.graphNode.executer(
-               ...parameterValues
-            );
 
-            // TODO Handle multiple outputs.
-            this.graphNodeOutputs[0].setValue(resultValue);
-            this.refreshValuePreview(resultValue);
+            this.worker = this.createWorker();
+
+            this.worker.addEventListener("message", (messageEvent) => {
+               const resultValue = messageEvent.data;
+               // TODO Handle multiple outputs.
+               this.graphNodeOutputs[0].setValue(resultValue);
+               this.refreshValuePreview(resultValue);
+            });
+
+            this.worker.postMessage(parameterValues);
          }
          this.refreshFlag = false;
       }
    }
 
    /**
-    * @private
+    * @protected
     * @param {any} value
     */
    refreshValuePreview(value) {
+      this.outputUIElement.innerHTML = "";
       if (typeof value === "number") {
-         this.outputUIElement.innerHTML = String(value);
+         const numberElement = document.createElement("div");
+         numberElement.innerText = String(value);
+         numberElement.style.textAlign = "center";
+         this.outputUIElement.appendChild(numberElement);
+      } else if (value instanceof HTMLImageElement) {
+         const imageElement = document.createElement("img");
+         imageElement.src = value.src;
+         this.outputUIElement.appendChild(imageElement);
       }
+      this.nodeGraph.updateConnectionUI();
    }
 
    /**
@@ -651,8 +686,71 @@ class GraphNodeUI {
 
    /**
     * @private
+    * @returns {Worker}
+    */
+   createWorker() {
+      let functionString = this.graphNode.executer.toString();
+
+      functionString = functionString.replaceAll(
+         "return ",
+         "self.postMessage("
+      );
+
+      functionString = functionString.replaceAll(
+         /(self\.postMessage\(.*?);/gm,
+         "$1);"
+      );
+
+      functionString =
+         "'use strict';\nself.addEventListener('message', " +
+         functionString +
+         ");";
+
+      const functionParameterRegExp = new RegExp(
+         "(" + this.graphNode.getName() + "\\s*\\()(.*?)(\\)\\s*{)",
+         "gm"
+      );
+
+      functionString = functionString.replaceAll(
+         functionParameterRegExp,
+         "$1messageEvent$3"
+      );
+
+      const functionParameterDeclarationRegExp = new RegExp(
+         this.graphNode.getName() + "\\s*\\(messageEvent\\)\\s*{(.*?|\\n)\\s",
+         "gm"
+      );
+
+      let replaceValue = "$&";
+
+      this.graphNodeInputs.forEach((input, index) => {
+         replaceValue +=
+            "const " +
+            input.name +
+            " = messageEvent.data[" +
+            String(index) +
+            "];\n";
+      });
+
+      functionString = functionString.replaceAll(
+         functionParameterDeclarationRegExp,
+         replaceValue
+      );
+
+      const blob = new Blob([functionString], {
+         type: "text/javascript",
+      });
+      const workerSrc = window.URL.createObjectURL(blob);
+      return new Worker(workerSrc);
+   }
+
+   /**
+    * @protected
     */
    async initialize() {
+      if (!this.graphNode) {
+         return;
+      }
       /**
        * @override
        * @protected
@@ -735,7 +833,7 @@ class GraphNodeUI {
    }
 
    /**
-    * @private
+    * @protected
     */
    mousedownGrabHandler() {
       this.nodeGraph.setGrabbedNode(this);
@@ -755,29 +853,67 @@ class GraphNodeUI {
    }
 }
 
-/**
- * @param {number} a description of a
- * @param {number} b description of b
- * @returns {number} description of the return
- */
-function add(a, b) {
-   const sum = a + b;
-   return sum;
+class InputGraphNode extends GraphNodeUI {
+   /**
+    * @param {string} type
+    * @param {NodeGraph} nodeGraph
+    * @param {GraphNodeInputUI} inputNode
+    * @param {string} cssClass
+    */
+   constructor(type, nodeGraph, inputNode, cssClass = "graphNode") {
+      super(undefined, nodeGraph, cssClass);
+      this.type = type;
+      this.inputNode = inputNode;
+      inputNode.setConnection(this.graphNodeOutputs[0]);
+   }
+
+   /**
+    * @override
+    * @protected
+    */
+   async initialize() {
+      this.domElement.classList.add(this.cssClass);
+
+      const domTitleElement = document.createElement("h1");
+      domTitleElement.style.cursor = "grab";
+      domTitleElement.addEventListener(
+         "mousedown",
+         this.mousedownGrabHandler.bind(this)
+      );
+      domTitleElement.innerText = this.type;
+      domTitleElement.style.backgroundColor = "transparent";
+      this.domElement.appendChild(domTitleElement);
+
+      this.outputUIElement = document.createElement("div");
+      this.domElement.appendChild(this.outputUIElement);
+
+      if (this.type === "number") {
+         const inputElement = document.createElement("input");
+         inputElement.type = "number";
+         this.domElement.appendChild(inputElement);
+      }
+   }
+
+   /**
+    * @override
+    * @public
+    * @returns {Promise<{input: GraphNodeInputUI, output:GraphNodeOutputUI}[]>}
+    */
+   async getConnections() {
+      return [];
+   }
+
+   /**
+    * @override
+    * @public
+    */
+   async execute() {
+      if (this.worker) {
+         this.worker.terminate();
+      }
+      if (this.refreshFlag) {
+         this.refreshValuePreview(resultValue);
+      }
+      this.refreshFlag = false;
+   }
 }
-
-/**
- * @returns {number}
- */
-function five() {
-   return 5;
-}
-
-const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
-
-const fiveNode = nodeGraph.registerNode(five);
-const addNode = nodeGraph.registerNode(add);
-
-nodeGraph.placeNode(fiveNode);
-nodeGraph.placeNode(addNode);
-
-console.log("finished");

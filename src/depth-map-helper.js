@@ -18,41 +18,22 @@ class DepthMapHelper {
     * @param {number} qualityPercent The quality in percent
     * defines how many anisotropic integrals are taken into
     * account to archive a higher quality depth mapping.
-    * @param {number} perspectiveCorrectingFactor Defines
+    * @param {number} perspectiveCorrectionFactor Defines
     * the factor of a radial-exponential depth correction.
     * Zero corresponds to no correction.
-    * @param {HTMLImageElement} imageElement The UI-element
-    * to display the resulting depth mapping.
-    * @param {HTMLProgressElement} progressElement The
-    * UI-element to display the progress.
-    * @param {HTMLElement} etaElement The ui element to
-    * display the ETA.
     * @returns {Promise<HTMLImageElement>} A depth mapping
     * according to the input normal mapping.
     */
    static async calculateDepthMap(
       normalMap,
       qualityPercent = 0.001,
-      perspectiveCorrectingFactor = 0,
-      imageElement = undefined,
-      progressElement = undefined,
-      etaElement = undefined
+      perspectiveCorrectionFactor = 0
    ) {
-      etaElement.innerText = "Initializing.";
-      if (etaElement) {
-         etaElement.style.opacity = "1";
-      }
-
       const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
       return new Promise((resolve) => {
          setTimeout(async () => {
             if (depthMapHelper.isRenderObsolete()) return;
-
-            if (progressElement) {
-               progressElement.removeAttribute("value");
-               progressElement.style.height = "1.25rem";
-            }
 
             const gradientPixelArray =
                await depthMapHelper.getLocalGradientFactor();
@@ -157,7 +138,7 @@ class DepthMapHelper {
 
             const depthMap = await DepthMapHelper.getPerspectiveCorrected(
                await depthMapHelper.getDepthMapImage(normalizedIntegral),
-               perspectiveCorrectingFactor
+               perspectiveCorrectionFactor
             );
 
             const maskedDepthMap = await depthMapHelper.applyMask(depthMap);
