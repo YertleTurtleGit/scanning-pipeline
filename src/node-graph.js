@@ -114,13 +114,13 @@ class NodeGraph {
          graphNodeIO instanceof GraphNodeInputUI &&
          this.linkedNodeIO instanceof GraphNodeOutputUI
       ) {
-         graphNodeIO.addConnection(this.linkedNodeIO);
+         graphNodeIO.setConnection(this.linkedNodeIO);
          this.linkedNodeIO = null;
       } else if (
          graphNodeIO instanceof GraphNodeOutputUI &&
          this.linkedNodeIO instanceof GraphNodeInputUI
       ) {
-         this.linkedNodeIO.addConnection(graphNodeIO);
+         this.linkedNodeIO.setConnection(graphNodeIO);
          this.linkedNodeIO = null;
       }
       this.updateConnectionUI();
@@ -404,9 +404,10 @@ class GraphNodeInputUI extends GraphNodeInput {
    /**
     * @param {GraphNodeInput[]} graphNodeInputs
     * @param {NodeGraph} nodeGraph
+    * @param {GraphNodeUI} graphNode
     * @returns {GraphNodeInputUI[]}
     */
-   static getFromGraphNodeInputs(graphNodeInputs, nodeGraph) {
+   static getFromGraphNodeInputs(graphNodeInputs, nodeGraph, graphNode) {
       /** @type {GraphNodeInputUI[]} */
       const graphNodeInputsUI = [];
 
@@ -416,7 +417,8 @@ class GraphNodeInputUI extends GraphNodeInput {
                graphNodeInput.name,
                graphNodeInput.type,
                graphNodeInput.description,
-               nodeGraph
+               nodeGraph,
+               graphNode
             )
          );
       });
@@ -429,6 +431,7 @@ class GraphNodeInputUI extends GraphNodeInput {
     * @param {string} type
     * @param {string} description
     * @param {NodeGraph} nodeGraph
+    * @param {GraphNodeUI} graphNode
     * @param {string} cssClass
     */
    constructor(
@@ -436,16 +439,18 @@ class GraphNodeInputUI extends GraphNodeInput {
       type,
       description = undefined,
       nodeGraph,
+      graphNode,
       cssClass = "graphNodeInput"
    ) {
       super(name, type, description);
       /**
        * @private
-       * @type {GraphNodeOutputUI[]}
+       * @type {GraphNodeOutputUI}
        */
-      this.connections = [];
+      this.connection = null;
 
       this.nodeGraph = nodeGraph;
+      this.graphNode = graphNode;
       this.domElement = document.createElement("li");
       this.domElement.innerText = name + " [" + type + "]";
       this.domElement.style.textAlign = "left";
@@ -463,32 +468,26 @@ class GraphNodeInputUI extends GraphNodeInput {
 
    /**
     * @public
-    * @returns {GraphNodeOutputUI[]}
+    * @returns {GraphNodeOutputUI}
     */
-   getConnections() {
-      return this.connections;
+   getConnection() {
+      return this.connection;
    }
 
    /**
     * @public
     * @param {GraphNodeOutputUI} graphNodeOutput
     */
-   addConnection(graphNodeOutput) {
-      if (!this.connections.includes(graphNodeOutput)) {
-         this.connections.push(graphNodeOutput);
-         console.log("connection added.");
-      }
+   setConnection(graphNodeOutput) {
+      this.connection = graphNodeOutput;
+      this.graphNode.setRefreshFlag();
    }
 
    /**
     * @public
-    * @param {GraphNodeOutputUI} graphNodeOutput
     */
-   removeConnection(graphNodeOutput) {
-      if (this.connections.includes(graphNodeOutput)) {
-         const connectionIndex = this.connections.indexOf(graphNodeOutput);
-         this.connections.splice(connectionIndex);
-      }
+   removeConnection() {
+      this.connection = null;
    }
 }
 
@@ -496,9 +495,10 @@ class GraphNodeOutputUI extends GraphNodeOutput {
    /**
     * @param {GraphNodeOutput[]} graphNodeOutputs
     * @param {NodeGraph} nodeGraph
+    * @param {GraphNodeUI} graphNode
     * @returns {GraphNodeOutputUI[]}
     */
-   static getFromGraphNodeOutputs(graphNodeOutputs, nodeGraph) {
+   static getFromGraphNodeOutputs(graphNodeOutputs, nodeGraph, graphNode) {
       /** @type {GraphNodeOutputUI[]} */
       const graphNodeOutputsUI = [];
 
@@ -507,7 +507,8 @@ class GraphNodeOutputUI extends GraphNodeOutput {
             new GraphNodeOutputUI(
                graphNodeOutput.type,
                graphNodeOutput.description,
-               nodeGraph
+               nodeGraph,
+               graphNode
             )
          );
       });
@@ -519,22 +520,51 @@ class GraphNodeOutputUI extends GraphNodeOutput {
     * @param {string} type
     * @param {string} description
     * @param {NodeGraph} nodeGraph
+    * @param {GraphNodeUI} graphNode
     * @param {string} cssClass
     */
    constructor(
       type,
       description = undefined,
       nodeGraph,
+      graphNode,
       cssClass = "graphNodeInput"
    ) {
       super(type, description);
+      /**
+       * @private
+       * @type {any}
+       */
+      this.value = undefined;
       this.nodeGraph = nodeGraph;
+      /**
+       * @private
+       * @type {GraphNodeUI}
+       */
+      this.graphNode = graphNode;
       this.domElement = document.createElement("li");
       this.domElement.innerText = "[" + type + "]";
       this.domElement.style.textAlign = "right";
       this.domElement.classList.add(cssClass);
 
       this.domElement.addEventListener("click", this.clickHandler.bind(this));
+   }
+
+   /**
+    * @public
+    * @returns {any}
+    */
+   getValue() {
+      return this.value;
+   }
+
+   /**
+    * @public
+    * @param {any} value
+    */
+   setValue(value) {
+      this.value = value;
+      // TODO Notify all connected inputs.
    }
 
    /**
@@ -560,14 +590,63 @@ class GraphNodeUI {
          x: this.nodeGraph.parentElement.clientWidth / 2,
          y: this.nodeGraph.parentElement.clientHeight / 2,
       };
+      this.refreshFlag = true;
       this.initialize();
    }
 
    /**
     * @public
     */
+   setRefreshFlag() {
+      this.refreshFlag = true;
+      this.execute();
+   }
+
+   /**
+    * @public
+    */
    async execute() {
-      await this.graphNode.executer();
+      if (this.refreshFlag) {
+         const parameterValues = this.getParameterValues();
+         if (!parameterValues.includes(undefined)) {
+            console.log("executing " + this.graphNode.executer.name + ".");
+            const resultValue = await this.graphNode.executer(
+               ...parameterValues
+            );
+
+            // TODO Handle multiple outputs.
+            this.graphNodeOutputs[0].setValue(resultValue);
+            this.refreshValuePreview(resultValue);
+         }
+         this.refreshFlag = false;
+      }
+   }
+
+   /**
+    * @private
+    * @param {any} value
+    */
+   refreshValuePreview(value) {
+      if (typeof value === "number") {
+         this.outputUIElement.innerHTML = String(value);
+      }
+   }
+
+   /**
+    * @private
+    * @returns {any[]}
+    */
+   getParameterValues() {
+      const parameterValues = [];
+      this.graphNodeInputs.forEach((input) => {
+         const connection = input.getConnection();
+         if (connection) {
+            parameterValues.push(connection.getValue());
+         } else {
+            parameterValues.push(undefined);
+         }
+      });
+      return parameterValues;
    }
 
    /**
@@ -581,7 +660,8 @@ class GraphNodeUI {
        */
       this.graphNodeInputs = GraphNodeInputUI.getFromGraphNodeInputs(
          await this.graphNode.getInputs(),
-         this.nodeGraph
+         this.nodeGraph,
+         this
       );
 
       /**
@@ -591,7 +671,8 @@ class GraphNodeUI {
        */
       this.graphNodeOutputs = GraphNodeOutputUI.getFromGraphNodeOutputs(
          await this.graphNode.getOutputs(),
-         this.nodeGraph
+         this.nodeGraph,
+         this
       );
 
       this.domElement.classList.add(this.cssClass);
@@ -606,6 +687,9 @@ class GraphNodeUI {
       domTitleElement.style.backgroundColor = "transparent";
       this.domElement.appendChild(domTitleElement);
 
+      this.outputUIElement = document.createElement("div");
+      this.domElement.appendChild(this.outputUIElement);
+
       const domIOElement = document.createElement("div");
       const domInputList = document.createElement("ul");
       const domOutputList = document.createElement("ul");
@@ -614,12 +698,6 @@ class GraphNodeUI {
       domIOElement.style.justifyContent = "space-between";
       domIOElement.style.marginLeft = "-10%";
       domIOElement.style.width = "120%";
-
-      const outputType = this.graphNodeOutputs[0].type;
-
-      if (outputType === "number") {
-         this.outputUIElement = document.createElement("div");
-      }
 
       this.domElement.appendChild(domIOElement);
       domIOElement.appendChild(domInputList);
@@ -631,6 +709,8 @@ class GraphNodeUI {
       this.graphNodeOutputs.forEach((graphNodeOutput) => {
          domOutputList.appendChild(graphNodeOutput.domElement);
       });
+
+      this.execute();
    }
 
    /**
@@ -642,12 +722,13 @@ class GraphNodeUI {
       const connections = [];
 
       this.graphNodeInputs.forEach((graphNodeInput) => {
-         graphNodeInput.getConnections().forEach((graphNodeOutput) => {
+         const output = graphNodeInput.getConnection();
+         if (output) {
             connections.push({
                input: graphNodeInput,
-               output: graphNodeOutput,
+               output: output,
             });
-         });
+         }
       });
 
       return connections;
@@ -693,9 +774,10 @@ function five() {
 
 const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
 
-const addNode = nodeGraph.registerNode(add);
 const fiveNode = nodeGraph.registerNode(five);
-nodeGraph.placeNode(addNode);
+const addNode = nodeGraph.registerNode(add);
+
 nodeGraph.placeNode(fiveNode);
+nodeGraph.placeNode(addNode);
 
 console.log("finished");
