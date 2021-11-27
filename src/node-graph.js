@@ -582,9 +582,12 @@ class GraphNodeOutputUI extends GraphNodeOutput {
     * @public
     * @param {any} value
     */
-   setValue(value) {
+   async setValue(value) {
       this.value = value;
-      // TODO Notify all connected inputs.
+      const connections = await this.graphNode.getConnections();
+      connections.forEach((connection) => {
+         connection.input.graphNode.setRefreshFlag();
+      });
    }
 
    /**
@@ -612,7 +615,10 @@ class GraphNodeUI {
       };
       this.refreshFlag = true;
       this.worker = undefined;
-      this.initialize();
+
+      if (this.graphNode) {
+         this.initialize();
+      }
    }
 
    /**
@@ -620,6 +626,7 @@ class GraphNodeUI {
     */
    setRefreshFlag() {
       this.refreshFlag = true;
+      console.log("Refresh flag of " + this.graphNode.getName() + " set.");
       this.execute();
    }
 
@@ -645,6 +652,8 @@ class GraphNodeUI {
             });
 
             this.worker.postMessage(parameterValues);
+         } else {
+            console.warn("Worker not executed. Parameter in undefined.");
          }
          this.refreshFlag = false;
       }
@@ -656,16 +665,20 @@ class GraphNodeUI {
     */
    refreshValuePreview(value) {
       this.outputUIElement.innerHTML = "";
+
       if (typeof value === "number") {
          const numberElement = document.createElement("div");
          numberElement.innerText = String(value);
          numberElement.style.textAlign = "center";
          this.outputUIElement.appendChild(numberElement);
       } else if (value instanceof HTMLImageElement) {
-         const imageElement = document.createElement("img");
-         imageElement.src = value.src;
-         this.outputUIElement.appendChild(imageElement);
+         value.style.maxWidth = "100%";
+         value.style.maxHeight = "5rem";
+         this.outputUIElement.style.display = "flex";
+         this.outputUIElement.style.justifyContent = "center";
+         this.outputUIElement.appendChild(value);
       }
+
       this.nodeGraph.updateConnectionUI();
    }
 
@@ -750,9 +763,6 @@ class GraphNodeUI {
     * @protected
     */
    async initialize() {
-      if (!this.graphNode) {
-         return;
-      }
       /**
        * @override
        * @protected
@@ -863,9 +873,11 @@ class InputGraphNode extends GraphNodeUI {
     */
    constructor(nodeGraph, inputNode, cssClass = "graphNode") {
       super(undefined, nodeGraph, cssClass);
+
       this.type = inputNode.type;
       this.inputNode = inputNode;
 
+      this.initialize();
       this.setConnectionToInputNode();
    }
 
@@ -910,13 +922,28 @@ class InputGraphNode extends GraphNodeUI {
       domIOElement.appendChild(domInputList);
       domIOElement.appendChild(domOutputList);
 
+      const inputElement = document.createElement("input");
+      inputElement.style.width = "80%";
+      inputElement.style.overflowWrap = "break-word";
+      inputElement.style.hyphens = "auto";
+      inputElement.style.whiteSpace = "normal";
+
       if (this.type === "number") {
-         const inputElement = document.createElement("input");
          inputElement.type = "number";
          domInputList.appendChild(inputElement);
+      } else if (this.type === "HTMLImageElement") {
+         inputElement.type = "file";
+         inputElement.accept = "image/*";
       } else {
          console.error("Input type '" + this.type + "' not supported.");
       }
+
+      inputElement.addEventListener(
+         "input",
+         this.inputChangeHandler.bind(this)
+      );
+
+      domInputList.appendChild(inputElement);
 
       this.graphNodeOutput = new GraphNodeOutputUI(
          this.type,
@@ -926,6 +953,45 @@ class InputGraphNode extends GraphNodeUI {
       );
 
       domOutputList.appendChild(this.graphNodeOutput.domElement);
+   }
+
+   /**
+    * @private
+    * @param {InputEvent} inputEvent
+    */
+   inputChangeHandler(inputEvent) {
+      let value;
+
+      if (this.type === "number") {
+         value = Number(
+            /** @type {HTMLInputElement} */ (inputEvent.target).value
+         );
+         if (!value) {
+            value = 0;
+         }
+         this.graphNodeOutput.setValue(value);
+         this.refreshValuePreview(value);
+      } else if (this.type === "HTMLImageElement") {
+         value = new Image();
+         const reader = new FileReader();
+         const cThis = this;
+
+         setTimeout(() => {
+            reader.addEventListener("load", () => {
+               value.addEventListener("load", () => {
+                  cThis.graphNodeOutput.setValue(value);
+                  cThis.refreshValuePreview(value);
+               });
+               value.addEventListener("error", () => {
+                  console.error("Error loading image.");
+               });
+               value.src = reader.result;
+            });
+            reader.readAsDataURL(
+               /** @type {HTMLInputElement} */ (inputEvent.target).files[0]
+            );
+         });
+      }
    }
 
    /**
@@ -942,12 +1008,6 @@ class InputGraphNode extends GraphNodeUI {
     * @public
     */
    async execute() {
-      if (this.worker) {
-         this.worker.terminate();
-      }
-      if (this.refreshFlag) {
-         //this.refreshValuePreview(resultValue);
-      }
       this.refreshFlag = false;
    }
 }

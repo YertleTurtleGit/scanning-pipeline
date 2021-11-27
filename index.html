@@ -4,416 +4,78 @@
       <meta charset="UTF-8" />
       <meta http-equiv="X-UA-Compatible" content="IE=edge" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Scanning Pipeline</title>
-      <link rel="stylesheet" href="style.css" />
+      <title>Node Test</title>
+      <style>
+         :root {
+            --nodeGraphFontColor: white;
+            --nodeGraphBackgroundColor: rgb(32, 32, 32);
+            --nodeGraphBorderThickness: 0.15rem;
+         }
+
+         .graphNode {
+            font-size: smaller;
+            user-select: none;
+            font-family: sans-serif;
+            color: var(--nodeGraphFontColor);
+            position: absolute;
+            width: 12rem;
+            min-height: 3rem;
+            border: var(--nodeGraphBorderThickness) solid
+               var(--nodeGraphFontColor);
+            border-radius: 0.5rem;
+            background-color: var(--nodeGraphBackgroundColor);
+         }
+
+         .graphNode h1 {
+            text-align: center;
+            font-size: medium;
+            margin: 0;
+            padding: 0.1rem;
+            border-bottom: var(--nodeGraphBorderThickness) solid
+               var(--nodeGraphFontColor);
+         }
+
+         .graphNode ul {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+         }
+
+         .graphNode li {
+            color: var(--nodeGraphBackgroundColor);
+            background-color: var(--nodeGraphFontColor);
+            word-wrap: break-word;
+            width: fit-content;
+            max-width: 5.5rem;
+            hyphens: auto;
+            margin: 0.5rem;
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+         }
+      </style>
    </head>
    <body>
-      <div id="loadingAll"></div>
-      <div id="all">
-         <div id="pipelineArea">
-            <div class="mainArea" id="inputArea">
-               <h2>Input</h2>
-
-               <select id="calculationType" size="2">
-                  <option value="photometric stereo" selected
-                     >photometric stereo</option
-                  >
-                  <option value="spherical gradient">spherical gradient</option>
-               </select>
-
-               <select id="inputType" class="selectMenu" size="4">
-                  <option value="render" title="render" class="icon" selected
-                     >🖥️</option
-                  >
-                  <option value="test" title="test dataset" class="icon"
-                     >🧪</option
-                  >
-                  <option
-                     value="file"
-                     title="file"
-                     class="icon"
-                     style="transform: rotate(180deg)"
-                     >📥</option
-                  >
-                  <option value="webcam" title="webcam" class="icon">🎥</option>
-               </select>
-
-               <div class="imageArea">
-                  <div id="photometricStereoImages">
-                     <img
-                        id="photometricStereoImage_000"
-                        title="← 0° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="photometricStereoImage_045"
-                        title="↖ 45° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="photometricStereoImage_090"
-                        title="↑ 90° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="photometricStereoImage_135"
-                        title="↗ 135° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="photometricStereoImage_180"
-                        title="→ 180° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="photometricStereoImage_225"
-                        title="↘ 225° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="photometricStereoImage_270"
-                        title="↓ 270° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="photometricStereoImage_315"
-                        title="↙ 315° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="photometricStereoImage_NONE"
-                        title="no lights (optional)"
-                        crossorigin="anonymous"
-                     />
-                  </div>
-
-                  <div id="sphericalGradientImages">
-                     <img
-                        id="sphericalGradientImage_000"
-                        title="← 0° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="sphericalGradientImage_090"
-                        title="↑ 90° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="sphericalGradientImage_180"
-                        title="→ 180° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="sphericalGradientImage_270"
-                        title="↓ 270° light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="sphericalGradientImage_ALL"
-                        title="all lights"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="sphericalGradientImage_FRONT"
-                        title="front light"
-                        crossorigin="anonymous"
-                     />
-                     <img
-                        id="sphericalGradientImage_NONE"
-                        title="no lights (optional)"
-                        crossorigin="anonymous"
-                     />
-                  </div>
-
-                  <br />
-
-                  <div id="webcamArea">
-                     <video id="webcamPreview"></video>
-                     <button id="webcamCapture">capture</button>
-                  </div>
-
-                  <div id="inputRenderArea">
-                     <canvas id="inputRenderCanvas"></canvas>
-
-                     <br />
-                     <br />
-
-                     <input
-                        title="light polar angle"
-                        id="renderLightPolarAngle"
-                        class="userInput"
-                        type="range"
-                        name="renderLightPolarAngle"
-                        min="1"
-                        max="89"
-                        value="75"
-                        step="1"
-                        onchange="renderLightPolarAngleOutput.value=value + '° '"
-                        oninput="renderLightPolarAngleOutput.value=value + '° '"
-                     />
-                     <button class="chartButton" title="chart">📈</button>
-                     <output id="renderLightPolarAngleOutput"></output>
-                     <label for="renderLightPolarAngle"
-                        >light polar angle</label
-                     >
-
-                     <br />
-
-                     <input
-                        id="cameraDistance"
-                        class="userInput"
-                        type="range"
-                        name="cameraDistance"
-                        min="2"
-                        max="8"
-                        value="6"
-                        step="0.5"
-                        onchange="cameraDistanceOutput.value=value + ' lu '"
-                        oninput="cameraDistanceOutput.value=value + ' lu '"
-                     />
-                     <output id="cameraDistanceOutput"></output>
-                     <label for="cameraDistance">camera distance</label>
-
-                     <br />
-
-                     <input
-                        id="lightDistance"
-                        class="userInput"
-                        type="range"
-                        name="lightDistance"
-                        min="1"
-                        max="15"
-                        value="6"
-                        step="1"
-                        onchange="lightDistanceOutput.value=value + ' lu '"
-                        oninput="lightDistanceOutput.value=value + ' lu '"
-                     />
-                     <output id="lightDistanceOutput"></output>
-                     <label for="lightDistance">light distance</label>
-                  </div>
-               </div>
-
-               <input id="fileBrowse" type="file" accept="image/*" multiple />
-            </div>
-
-            <div class="mainArea" id="normalMapArea">
-               <h2>Normal Mapping</h2>
-
-               <div class="mainAreaButtonArea">
-                  <button
-                     id="normalMapUploadButton"
-                     style="transform: translate(-100%, -150%) rotate(180deg)"
-                     class="icon"
-                     onclick="document.getElementById('normalMapUploadFileInput').click();"
-                     >📥</button
-                  >
-                  <input
-                     type="file"
-                     accept="image/*"
-                     style="display: none"
-                     id="normalMapUploadFileInput"
-                  />
-               </div>
-
-               <img id="normalMapImage" title="normal mapping" />
-
-               <br />
-               <br />
-
-               <input
-                  id="normalMapResolution"
-                  class="userInput"
-                  type="range"
-                  name="normalMapResolution"
-                  min="1"
-                  max="100"
-                  value="50"
-                  onchange="normalMapResolutionOutput.value=value + '% '"
-                  oninput="normalMapResolutionOutput.value=value + '% '"
-               />
-               <output id="normalMapResolutionOutput"></output>
-               <label for="normalMapResolution">resolution</label>
-
-               <br />
-
-               <input
-                  id="polarAngleDeg"
-                  class="userInput"
-                  type="range"
-                  name="polarAngleDeg"
-                  min="1"
-                  max="89"
-                  step="1"
-                  value="75"
-                  onchange="polarAngleDegOutput.value=value + '° '"
-                  oninput="polarAngleDegOutput.value=value + '° '"
-               />
-               <output id="polarAngleDegOutput"></output>
-               <label for="polarAngleDeg">polar angle</label>
-
-               <br />
-
-               <input
-                  id="maskThreshold"
-                  class="userInput"
-                  type="range"
-                  name="maskThreshold"
-                  min="0"
-                  max="25"
-                  value="5"
-                  step="0.5"
-                  onchange="maskThresholdOutput.value=value + '% '"
-                  oninput="maskThresholdOutput.value=value + '% '"
-               />
-               <output id="maskThresholdOutput"></output>
-               <label for="maskThreshold">mask threshold</label>
-
-               <br />
-               <br />
-
-               <div id="normalMapAccuracyArea">
-                  <span>accuracy: </span>
-                  <span id="normalMapAccuracy">...</span>
-                  <span> %</span>
-               </div>
-
-               <br />
-
-               <img
-                  id="normalMapGroundTruthImage"
-                  title="normal mapping ground truth"
-               />
-            </div>
-
-            <div class="mainArea" id="depthMapArea">
-               <h2>Depth Mapping</h2>
-
-               <span id="depthMapProgressInfo"></span>
-               <progress max="100" id="depthMapProgress"></progress>
-
-               <img id="depthMapImage" title="depth mapping" />
-
-               <br />
-               <br />
-
-               <input
-                  id="depthMapQuality"
-                  class="userInput"
-                  type="range"
-                  name="depthMapQuality"
-                  min="0.01"
-                  step="0.01"
-                  max="5"
-                  value="1"
-                  onchange="depthMapQualityOutput.value=value + '% '"
-                  oninput="depthMapQualityOutput.value=value + '% '"
-               />
-               <output id="depthMapQualityOutput"></output>
-               <label for="depthMapQuality">quality</label>
-
-               <br />
-
-               <input
-                  id="depthMapPerspectiveCorrection"
-                  class="userInput"
-                  type="range"
-                  name="depthMapPerspectiveCorrection"
-                  min="-1"
-                  step="0.01"
-                  max="1"
-                  value="0"
-                  onchange="depthMapPerspectiveCorrectionOutput.value=value + ' '"
-                  oninput="depthMapPerspectiveCorrectionOutput.value=value + ' '"
-               />
-               <!--<button class="chartButton" title="chart">📈</button>-->
-               <output id="depthMapPerspectiveCorrectionOutput"></output>
-               <label for="depthMapPerspectiveCorrection"
-                  >perspective correction factor</label
-               >
-
-               <br />
-               <br />
-
-               <div id="depthMapAccuracyArea">
-                  <span>accuracy: </span>
-                  <span id="depthMapAccuracy">...</span>
-                  <span> %</span>
-               </div>
-
-               <br />
-
-               <img
-                  id="depthMapGroundTruthImage"
-                  title="depth mapping ground truth"
-               />
-            </div>
-
-            <div class="mainArea" id="pointCloudArea">
-               <h2>Point Cloud</h2>
-
-               <div class="mainAreaButtonArea">
-                  <button id="pointCloudDownloadButton" class="icon">📥</button>
-               </div>
-
-               <canvas
-                  id="pointCloudCanvas"
-                  title="point cloud"
-                  style="width: 100%; height: auto"
-               ></canvas>
-
-               <br />
-               <br />
-
-               <input
-                  title="depth factor"
-                  id="depthFactor"
-                  class="userInput"
-                  type="range"
-                  name="depthFactor"
-                  min="0"
-                  step="0.01"
-                  max="1"
-                  value="0.3"
-                  onchange="depthFactorOutput.value=value"
-                  oninput="depthFactorOutput.value=value"
-               />
-               <output id="depthFactorOutput"></output>
-               <label for="depthFactor">depth factor</label>
-            </div>
-         </div>
-         <div id="chartArea">
-            <div id="chartButtonArea">
-               <button id="chartDownloadButton">download chart data</button>
-               <button id="chartPauseButton">pause charting</button>
-               <button id="chartAbortButton">abort charting</button>
-            </div>
-            <canvas id="chartCanvas"></canvas>
-         </div>
-      </div>
-
-      <script src="./lib/threejs/three.js"></script>
-      <script src="./lib/threejs/OrbitControls.js"></script>
-      <script src="./lib/threejs/GLTFLoader.js"></script>
-
-      <script src="./lib/chartjs/chart.js"></script>
+      <div
+         id="nodeGraphDiv"
+         style="
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: fit-content;
+            height: fit-content;
+            min-width: 100%;
+            min-height: 100%;
+            margin: 0;
+            border: 0;
+            padding: 0;
+            background-color: rgb(64, 64, 64);
+         "
+      ></div>
 
       <script src="./src/glsl-shader.js"></script>
-      <script src="./src/normal-map-helper.js"></script>
       <script src="./src/depth-map-helper.js"></script>
-      <script src="./src/point-cloud-helper.js"></script>
-      <script src="./src/webcam-dataset-helper.js"></script>
-      <script src="./src/virtual-input-renderer.js"></script>
-      <script src="./src/bulk-chart-helper.js"></script>
-      <script src="./src/dom-declarations.js"></script>
 
-      <script src="./src/main.js"></script>
-
-      <script>
-         document.getElementById("all").style.opacity = "1";
-         document.getElementById("loadingAll").style.opacity = "0";
-         setTimeout(() => {
-            document.getElementById("loadingAll").remove();
-         }, 1000);
-      </script>
+      <script crossorigin="anonymous" src="./src/node-graph.js"></script>
+      <script crossorigin="anonymous" src="./src/test-node-graph.js"></script>
    </body>
 </html>
