@@ -460,17 +460,19 @@ class GraphNodeInputUI extends GraphNodeInput {
       this.domElement.classList.add(cssClass);
 
       this.domElement.addEventListener("click", this.clickHandler.bind(this));
-      this.domElement.addEventListener(
-         "dblclick",
-         this.doubleClickHandler.bind(this)
-      );
    }
 
    /**
     * @private
+    * @param {MouseEvent} mouseEvent
     */
-   clickHandler() {
-      this.nodeGraph.toggleConnection(this);
+   clickHandler(mouseEvent) {
+      if (mouseEvent.detail === 1) {
+         // TODO Handle single click.
+         // this.nodeGraph.toggleConnection(this);
+      } else {
+         this.doubleClickHandler();
+      }
    }
 
    /**
@@ -478,8 +480,8 @@ class GraphNodeInputUI extends GraphNodeInput {
     */
    doubleClickHandler() {
       this.nodeGraph.placeInputGraphNode(
-         new InputGraphNode(this.type, this.nodeGraph),
-         { x: this.domElement.clientLeft - 200, y: this.domElement.clientTop }
+         new InputGraphNode(this.nodeGraph, this),
+         { x: this.domElement.offsetLeft - 50, y: this.domElement.offsetTop }
       );
    }
 
@@ -855,16 +857,24 @@ class GraphNodeUI {
 
 class InputGraphNode extends GraphNodeUI {
    /**
-    * @param {string} type
     * @param {NodeGraph} nodeGraph
     * @param {GraphNodeInputUI} inputNode
     * @param {string} cssClass
     */
-   constructor(type, nodeGraph, inputNode, cssClass = "graphNode") {
+   constructor(nodeGraph, inputNode, cssClass = "graphNode") {
       super(undefined, nodeGraph, cssClass);
-      this.type = type;
+      this.type = inputNode.type;
       this.inputNode = inputNode;
-      inputNode.setConnection(this.graphNodeOutputs[0]);
+
+      this.setConnectionToInputNode();
+   }
+
+   /**
+    * @private
+    */
+   async setConnectionToInputNode() {
+      this.inputNode.setConnection(this.graphNodeOutput);
+      this.nodeGraph.updateConnectionUI();
    }
 
    /**
@@ -887,11 +897,35 @@ class InputGraphNode extends GraphNodeUI {
       this.outputUIElement = document.createElement("div");
       this.domElement.appendChild(this.outputUIElement);
 
+      const domIOElement = document.createElement("div");
+      const domInputList = document.createElement("ul");
+      const domOutputList = document.createElement("ul");
+
+      domIOElement.style.display = "flex";
+      domIOElement.style.justifyContent = "space-between";
+      domIOElement.style.marginLeft = "10%";
+      domIOElement.style.width = "100%";
+
+      this.domElement.appendChild(domIOElement);
+      domIOElement.appendChild(domInputList);
+      domIOElement.appendChild(domOutputList);
+
       if (this.type === "number") {
          const inputElement = document.createElement("input");
          inputElement.type = "number";
-         this.domElement.appendChild(inputElement);
+         domInputList.appendChild(inputElement);
+      } else {
+         console.error("Input type '" + this.type + "' not supported.");
       }
+
+      this.graphNodeOutput = new GraphNodeOutputUI(
+         this.type,
+         "[" + this.type + "]",
+         this.nodeGraph,
+         this
+      );
+
+      domOutputList.appendChild(this.graphNodeOutput.domElement);
    }
 
    /**
@@ -912,7 +946,7 @@ class InputGraphNode extends GraphNodeUI {
          this.worker.terminate();
       }
       if (this.refreshFlag) {
-         this.refreshValuePreview(resultValue);
+         //this.refreshValuePreview(resultValue);
       }
       this.refreshFlag = false;
    }
