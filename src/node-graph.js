@@ -585,6 +585,7 @@ class GraphNodeOutputUI extends GraphNodeOutput {
    async setValue(value) {
       this.value = value;
       const connections = await this.graphNode.getConnections();
+      console.log(connections);
       connections.forEach((connection) => {
          connection.input.graphNode.setRefreshFlag();
       });
@@ -634,7 +635,9 @@ class GraphNodeUI {
     * @public
     */
    async execute() {
+      console.log("call " + this.graphNode.executer.name + ".");
       if (this.worker) {
+         console.log("terminating " + this.graphNode.executer.name + ".");
          this.worker.terminate();
       }
       if (this.refreshFlag) {
@@ -653,7 +656,7 @@ class GraphNodeUI {
 
             this.worker.postMessage(parameterValues);
          } else {
-            console.warn("Worker not executed. Parameter in undefined.");
+            console.warn("Worker not executed. Parameter is undefined.");
          }
          this.refreshFlag = false;
       }

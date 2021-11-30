@@ -26,8 +26,8 @@ class DepthMapHelper {
     */
    static async calculateDepthMap(
       normalMap,
-      qualityPercent = 0.001,
-      perspectiveCorrectionFactor = 0
+      qualityPercent,
+      perspectiveCorrectionFactor
    ) {
       const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
@@ -90,26 +90,15 @@ class DepthMapHelper {
                   });
                   integralArrayLock = false;
 
-                  if (progressElement) {
-                     const percent = (promisesResolvedCount / anglesCount) * 90;
-                     progressElement.value = percent;
-                  }
+                  const ETA =
+                     ((performance.now() - startTime) / promisesResolvedCount) *
+                     (anglesCount - promisesResolvedCount);
 
-                  if (etaElement) {
-                     const ETA =
-                        ((performance.now() - startTime) /
-                           promisesResolvedCount) *
-                        (anglesCount - promisesResolvedCount);
+                  let ETAsec = String(Math.floor((ETA / 1000) % 60));
+                  const ETAmin = String(Math.floor(ETA / (60 * 1000)));
 
-                     let ETAsec = String(Math.floor((ETA / 1000) % 60));
-                     const ETAmin = String(Math.floor(ETA / (60 * 1000)));
-
-                     if (ETAsec.length < 2) {
-                        ETAsec = "0" + ETAsec;
-                     }
-
-                     etaElement.innerText =
-                        "ETA in " + ETAmin + ":" + ETAsec + " min";
+                  if (ETAsec.length < 2) {
+                     ETAsec = "0" + ETAsec;
                   }
 
                   if (depthMapHelper.isRenderObsolete()) return;
@@ -132,8 +121,6 @@ class DepthMapHelper {
                   integralArray
                );
 
-            if (progressElement) progressElement.value = 95;
-
             if (depthMapHelper.isRenderObsolete()) return;
 
             const depthMap = await DepthMapHelper.getPerspectiveCorrected(
@@ -144,18 +131,6 @@ class DepthMapHelper {
             const maskedDepthMap = await depthMapHelper.applyMask(depthMap);
 
             resolve(maskedDepthMap);
-
-            if (imageElement && maskedDepthMap) {
-               imageElement.src = maskedDepthMap.src;
-            }
-
-            if (progressElement) {
-               progressElement.value = 100;
-               progressElement.style.height = "0";
-            }
-            if (etaElement) {
-               etaElement.style.opacity = "0";
-            }
          }, 100);
       });
    }
