@@ -31,7 +31,7 @@ class DepthMapHelper {
    ) {
       const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
-      return new Promise((resolve) => {
+      const depthMapping = new Promise((resolve) => {
          setTimeout(async () => {
             if (depthMapHelper.isRenderObsolete()) return;
 
@@ -133,6 +133,8 @@ class DepthMapHelper {
             resolve(maskedDepthMap);
          }, 100);
       });
+
+      return depthMapping;
    }
 
    /**

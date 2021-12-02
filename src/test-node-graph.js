@@ -1,7 +1,7 @@
-/* global NodeGraph, DepthMapHelper */
+/* global NodeGraph,  brighten */
 
 const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
 
-const depthMapNode = nodeGraph.registerNode(DepthMapHelper.calculateDepthMap);
+const brightenNode = nodeGraph.registerNode(brighten, "./src/glsl-shader.js");
 
-nodeGraph.placeNode(depthMapNode);
+nodeGraph.placeNode(brightenNode);

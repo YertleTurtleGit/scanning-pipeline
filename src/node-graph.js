@@ -63,10 +63,11 @@ class NodeGraph {
    /**
     * @public
     * @param {Function} nodeExecuter
+    * @param {string[]} dependencies
     * @returns {GraphNode}
     */
-   registerNode(nodeExecuter) {
-      const graphNode = new GraphNode(nodeExecuter);
+   registerNode(nodeExecuter, ...dependencies) {
+      const graphNode = new GraphNode(nodeExecuter, ...dependencies);
       this.registeredNodes.push(graphNode);
       return graphNode;
    }
@@ -237,10 +238,20 @@ class NodeGraph {
 class GraphNode {
    /**
     * @param {Function} executer
+    * @param {string[]} dependencies
     */
-   constructor(executer) {
-      /** @public */
+   constructor(executer, ...dependencies) {
+      /**
+       * @public
+       * @type {Function}
+       */
       this.executer = executer;
+
+      /**
+       * @private
+       * @type {string[]}
+       */
+      this.dependencies = dependencies;
 
       /**
        * @protected
@@ -271,6 +282,23 @@ class GraphNode {
        * @type {boolean}
        */
       this.initializing = false;
+   }
+
+   /**
+    * @public
+    * @returns {Promise<string>}
+    */
+   async getDependenciesSource() {
+      let dependenciesSource = "";
+      for (let i = 0; i < this.dependencies.length; i++) {
+         const dependencySource = await new Promise((resolve) => {
+            window.fetch(this.dependencies[i]).then(async (response) => {
+               resolve(await response.text());
+            });
+         });
+         dependenciesSource += dependencySource;
+      }
+      return dependenciesSource;
    }
 
    /**
@@ -385,7 +413,7 @@ class GraphNodeInput {
     */
    constructor(name, type, description = undefined) {
       this.name = name.replace(/([A-Z])/g, " $1");
-      this.name = this.name.charAt(0).toUpperCase() + this.name.slice(1);
+      this.uiName = this.name.charAt(0).toUpperCase() + this.name.slice(1);
       this.type = type;
       this.description = description.replaceAll(/\s\s+/g, " ");
    }
@@ -645,7 +673,7 @@ class GraphNodeUI {
          if (!parameterValues.includes(undefined)) {
             console.log("executing " + this.graphNode.executer.name + ".");
 
-            this.worker = this.createWorker();
+            this.worker = await this.createWorker();
 
             this.worker.addEventListener("message", (messageEvent) => {
                const resultValue = messageEvent.data;
@@ -654,7 +682,9 @@ class GraphNodeUI {
                this.refreshValuePreview(resultValue);
             });
 
-            this.worker.postMessage(parameterValues);
+            this.worker.postMessage(
+               JSON.parse(JSON.stringify(parameterValues))
+            );
          } else {
             console.warn("Worker not executed. Parameter is undefined.");
          }
@@ -704,9 +734,9 @@ class GraphNodeUI {
 
    /**
     * @private
-    * @returns {Worker}
+    * @returns {Promise<Worker>}
     */
-   createWorker() {
+   async createWorker() {
       let functionString = this.graphNode.executer.toString();
 
       functionString = functionString.replaceAll(
@@ -754,6 +784,11 @@ class GraphNodeUI {
          functionParameterDeclarationRegExp,
          replaceValue
       );
+
+      console.log(functionString);
+
+      const dependenciesSource = await this.graphNode.getDependenciesSource();
+      functionString = dependenciesSource + functionString;
 
       const blob = new Blob([functionString], {
          type: "text/javascript",
@@ -1003,7 +1038,7 @@ class InputGraphNode extends GraphNodeUI {
     * @returns {Promise<{input: GraphNodeInputUI, output:GraphNodeOutputUI}[]>}
     */
    async getConnections() {
-      return [];
+      return [{ input: this.inputNode, output: this.graphNodeOutput }];
    }
 
    /**

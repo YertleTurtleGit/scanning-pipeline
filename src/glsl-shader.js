@@ -272,16 +272,17 @@ class GlslContext {
     */
    constructor(dimensions) {
       this.glslShader = GlslShader.getCurrentShader();
-      this.glCanvas = document.createElement("canvas");
-      this.glCanvas.width = dimensions.width;
-      this.glCanvas.height = dimensions.height;
+      const dim = new Uint32Array(2);
+      dim[0] = dimensions.width;
+      dim[1] = dimensions.height;
+      this.glCanvas = new OffscreenCanvas(dim[0], dim[1]);
+      this.dimensions = { width: dimensions.width, height: dimensions.height };
       this.glContext = this.glCanvas.getContext("webgl2");
    }
 
    reset() {
       this.glContext.flush();
       this.glContext.finish();
-      this.glCanvas.remove();
       this.glContext.getExtension("WEBGL_lose_context").loseContext();
    }
    /**
@@ -404,7 +405,12 @@ class GlslContext {
     * @returns {void}
     */
    drawArraysFromVAO(vaoFrame) {
-      this.glContext.viewport(0, 0, this.glCanvas.width, this.glCanvas.height);
+      this.glContext.viewport(
+         0,
+         0,
+         this.dimensions.width,
+         this.dimensions.height
+      );
       this.glContext.clearColor(0, 0, 0, 0);
       this.glContext.clear(
          this.glContext.COLOR_BUFFER_BIT | this.glContext.DEPTH_BUFFER_BIT
@@ -422,13 +428,13 @@ class GlslContext {
     */
    readToPixelArray() {
       let pixelArray = new Uint8Array(
-         this.glCanvas.width * this.glCanvas.height * 4
+         this.dimensions.width * this.dimensions.height * 4
       );
       this.glContext.readPixels(
          0,
          0,
-         this.glCanvas.width,
-         this.glCanvas.height,
+         this.dimensions.width,
+         this.dimensions.height,
          this.glContext.RGBA,
          this.glContext.UNSIGNED_BYTE,
          pixelArray
