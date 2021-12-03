@@ -682,8 +682,18 @@ class GraphNodeUI {
                this.refreshValuePreview(resultValue);
             });
 
+            const encoder = new TextEncoder();
+
+            const encodedParameterValues = [];
+            parameterValues.forEach((value) => {
+               encodedParameterValues.push(
+                  encoder.encode(JSON.stringify(value.src)).buffer
+               );
+            });
+
             this.worker.postMessage(
-               JSON.parse(JSON.stringify(parameterValues))
+               encodedParameterValues,
+               encodedParameterValues
             );
          } else {
             console.warn("Worker not executed. Parameter is undefined.");
@@ -773,11 +783,14 @@ class GraphNodeUI {
 
       this.graphNodeInputs.forEach((input, index) => {
          replaceValue +=
+            "const decoder = new TextDecoder();\n" +
             "const " +
             input.name +
-            " = messageEvent.data[" +
+            " = JSON.parse(decoder.decode(messageEvent.data[" +
             String(index) +
-            "];\n";
+            "]));\n console.log({" +
+            input.name +
+            "});";
       });
 
       functionString = functionString.replaceAll(
