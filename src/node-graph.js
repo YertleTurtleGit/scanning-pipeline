@@ -682,24 +682,30 @@ class GraphNodeUI {
                this.refreshValuePreview(resultValue);
             });
 
-            const encoder = new TextEncoder();
-
             const encodedParameterValues = [];
-            parameterValues.forEach((value) => {
+            for (let i = 0; i < parameterValues.length; i++) {
                encodedParameterValues.push(
-                  encoder.encode(JSON.stringify(value.src)).buffer
+                  await this.encodeForWorker(parameterValues[i])
                );
-            });
+            }
 
-            this.worker.postMessage(
-               encodedParameterValues,
-               encodedParameterValues
-            );
+            this.worker.postMessage("", [encodedParameterValues]);
          } else {
             console.warn("Worker not executed. Parameter is undefined.");
          }
          this.refreshFlag = false;
       }
+   }
+
+   /**
+    *
+    * @param {any} parameter
+    * @returns {Promise<Transferable>}
+    */
+   async encodeForWorker(parameter) {
+      const string = JSON.stringify(parameter);
+      const encoder = new TextEncoder();
+      return encoder.encode(string).buffer;
    }
 
    /**
@@ -759,9 +765,9 @@ class GraphNodeUI {
          "$1);"
       );
 
-      functionString =
-         "'use strict';\nself.addEventListener('message', " +
-         functionString +
+      functionString +=
+         "\nself.addEventListener('message', " +
+         this.graphNode.executer.name +
          ");";
 
       const functionParameterRegExp = new RegExp(
@@ -783,14 +789,14 @@ class GraphNodeUI {
 
       this.graphNodeInputs.forEach((input, index) => {
          replaceValue +=
-            "const decoder = new TextDecoder();\n" +
-            "const " +
+         "\n    const decoder = new TextDecoder();"
+            "\n   const " +
             input.name +
             " = JSON.parse(decoder.decode(messageEvent.data[" +
             String(index) +
-            "]));\n console.log({" +
+            "]));\n   console.log({" +
             input.name +
-            "});";
+            "});\n\n";
       });
 
       functionString = functionString.replaceAll(
