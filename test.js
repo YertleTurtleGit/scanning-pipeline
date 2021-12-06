@@ -3,7 +3,7 @@
 
 /**
  * @param {HTMLImageElement} image
- * @returns {Promise<HTMLImageElement>}
+ * @returns {Promise<string>}
  */
 async function brighten(image) {
    const shader = new GLSL.Shader({ width: image.width, height: image.height });
@@ -12,7 +12,7 @@ async function brighten(image) {
    let color = GLSL.Image.load(image);
    color = color.addFloat(new GLSL.Float(0.5));
 
-   const result = GLSL.render(color).getJsImage();
+   const result = GLSL.render(color).getDataUrl();
    shader.purge();
 
    return await result;

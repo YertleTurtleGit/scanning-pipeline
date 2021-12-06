@@ -299,11 +299,20 @@ class GlslContext {
       return this.renderToPixelArray(outVariable);
    }
    /**
-    * @returns {string}
+    * @returns {Promise<string>}
     */
-   renderDataUrl() {
-      return this.glCanvas.toDataURL();
+   async renderDataUrl() {
+      return new Promise((resolve) => {
+         this.glCanvas.convertToBlob().then((blob) => {
+            const reader = new FileReader();
+            reader.addEventListener("load", () => {
+               resolve(reader.result);
+            });
+            reader.readAsDataURL(blob);
+         });
+      });
    }
+
    /**
     * @private
     * @param  {GlslVector4} outVariable
@@ -491,12 +500,12 @@ class GlslRendering {
       return this.pixelArray;
    }
    /**
-    * @returns {string}
+    * @returns {Promise<string>}
     */
-   getDataUrl() {
+   async getDataUrl() {
       if (!this.dataUrl) {
          this.getPixelArray();
-         this.dataUrl = this.glslContext.renderDataUrl();
+         this.dataUrl = await this.glslContext.renderDataUrl();
       }
       return this.dataUrl;
    }
@@ -505,7 +514,7 @@ class GlslRendering {
     */
    async getJsImage() {
       if (!this.jsImage) {
-         const thisDataUrl = this.getDataUrl();
+         const thisDataUrl = await this.getDataUrl();
          this.jsImage = await new Promise((resolve) => {
             const image = new Image();
             image.addEventListener("load", () => {

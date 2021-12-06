@@ -655,7 +655,6 @@ class GraphNodeUI {
     */
    setRefreshFlag() {
       this.refreshFlag = true;
-      console.log("Refresh flag of " + this.graphNode.getName() + " set.");
       this.execute();
    }
 
@@ -663,13 +662,17 @@ class GraphNodeUI {
     * @public
     */
    async execute() {
-      console.log("call " + this.graphNode.executer.name + ".");
-      if (this.worker) {
-         console.log("terminating " + this.graphNode.executer.name + ".");
-         this.worker.terminate();
-      }
+      console.log("Calling worker '" + this.graphNode.executer.name + "'.");
       if (this.refreshFlag) {
+         this.refreshFlag = false;
+
+         if (this.worker) {
+            console.log("terminating " + this.graphNode.executer.name + ".");
+            this.worker.terminate();
+         }
+
          const parameterValues = this.getParameterValues();
+
          if (!parameterValues.includes(undefined)) {
             console.log("executing " + this.graphNode.executer.name + ".");
 
@@ -689,9 +692,16 @@ class GraphNodeUI {
                );
             }
 
-            this.worker.postMessage("", [encodedParameterValues]);
+            this.worker.postMessage(
+               encodedParameterValues,
+               encodedParameterValues
+            );
          } else {
-            console.warn("Worker not executed. Parameter is undefined.");
+            console.warn(
+               "Worker '" +
+                  this.graphNode.executer.name +
+                  "' did not pick up, because at least one parameter is undefined."
+            );
          }
          this.refreshFlag = false;
       }
@@ -700,12 +710,15 @@ class GraphNodeUI {
    /**
     *
     * @param {any} parameter
-    * @returns {Promise<Transferable>}
+    * @returns {Promise<ImageBitmap>}
     */
    async encodeForWorker(parameter) {
-      const string = JSON.stringify(parameter);
-      const encoder = new TextEncoder();
-      return encoder.encode(string).buffer;
+      if (parameter instanceof HTMLImageElement) {
+         const imageBitmap = await createImageBitmap(parameter);
+         return imageBitmap;
+      } else {
+         console.error("Param type not supported.");
+      }
    }
 
    /**
@@ -726,6 +739,14 @@ class GraphNodeUI {
          this.outputUIElement.style.display = "flex";
          this.outputUIElement.style.justifyContent = "center";
          this.outputUIElement.appendChild(value);
+      } else if (typeof value === "string") {
+         const valueImage = new Image();
+         valueImage.src = value;
+         valueImage.style.maxWidth = "100%";
+         valueImage.style.maxHeight = "5rem";
+         this.outputUIElement.style.display = "flex";
+         this.outputUIElement.style.justifyContent = "center";
+         this.outputUIElement.appendChild(valueImage);
       }
 
       this.nodeGraph.updateConnectionUI();
@@ -789,12 +810,11 @@ class GraphNodeUI {
 
       this.graphNodeInputs.forEach((input, index) => {
          replaceValue +=
-         "\n    const decoder = new TextDecoder();"
             "\n   const " +
             input.name +
-            " = JSON.parse(decoder.decode(messageEvent.data[" +
+            " = messageEvent.data[" +
             String(index) +
-            "]));\n   console.log({" +
+            "];\n   console.log({" +
             input.name +
             "});\n\n";
       });
