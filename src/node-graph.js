@@ -685,17 +685,7 @@ class GraphNodeUI {
                this.refreshValuePreview(resultValue);
             });
 
-            const encodedParameterValues = [];
-            for (let i = 0; i < parameterValues.length; i++) {
-               encodedParameterValues.push(
-                  await this.encodeForWorker(parameterValues[i])
-               );
-            }
-
-            this.worker.postMessage(
-               encodedParameterValues,
-               encodedParameterValues
-            );
+            this.worker.postMessage(parameterValues, parameterValues);
          } else {
             console.warn(
                "Worker '" +
@@ -704,20 +694,6 @@ class GraphNodeUI {
             );
          }
          this.refreshFlag = false;
-      }
-   }
-
-   /**
-    *
-    * @param {any} parameter
-    * @returns {Promise<ImageBitmap>}
-    */
-   async encodeForWorker(parameter) {
-      if (parameter instanceof HTMLImageElement) {
-         const imageBitmap = await createImageBitmap(parameter);
-         return imageBitmap;
-      } else {
-         console.error("Param type not supported.");
       }
    }
 
@@ -733,12 +709,14 @@ class GraphNodeUI {
          numberElement.innerText = String(value);
          numberElement.style.textAlign = "center";
          this.outputUIElement.appendChild(numberElement);
-      } else if (value instanceof HTMLImageElement) {
-         value.style.maxWidth = "100%";
-         value.style.maxHeight = "5rem";
+      } else if (value instanceof ImageBitmap) {
+         const image = new Image();
+         image.style.maxWidth = "100%";
+         image.style.maxHeight = "5rem";
          this.outputUIElement.style.display = "flex";
          this.outputUIElement.style.justifyContent = "center";
-         this.outputUIElement.appendChild(value);
+         this.outputUIElement.appendChild(image);
+         image.src = encodeURIComponent(value);
       } else if (typeof value === "string") {
          const valueImage = new Image();
          valueImage.src = value;
@@ -1008,7 +986,7 @@ class InputGraphNode extends GraphNodeUI {
       if (this.type === "number") {
          inputElement.type = "number";
          domInputList.appendChild(inputElement);
-      } else if (this.type === "HTMLImageElement") {
+      } else if (this.type === "ImageBitmap") {
          inputElement.type = "file";
          inputElement.accept = "image/*";
       } else {
@@ -1048,14 +1026,15 @@ class InputGraphNode extends GraphNodeUI {
          }
          this.graphNodeOutput.setValue(value);
          this.refreshValuePreview(value);
-      } else if (this.type === "HTMLImageElement") {
+      } else if (this.type === "ImageBitmap") {
          value = new Image();
          const reader = new FileReader();
          const cThis = this;
 
          setTimeout(() => {
             reader.addEventListener("load", () => {
-               value.addEventListener("load", () => {
+               value.addEventListener("load", async () => {
+                  value = await createImageBitmap(value);
                   cThis.graphNodeOutput.setValue(value);
                   cThis.refreshValuePreview(value);
                });

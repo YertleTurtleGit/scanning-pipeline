@@ -299,6 +299,7 @@ class GlslContext {
       return this.renderToPixelArray(outVariable);
    }
    /**
+    * @deprecated
     * @returns {Promise<string>}
     */
    async renderDataUrl() {
@@ -306,7 +307,7 @@ class GlslContext {
          this.glCanvas.convertToBlob().then((blob) => {
             const reader = new FileReader();
             reader.addEventListener("load", () => {
-               resolve(reader.result);
+               resolve(reader.result[0]);
             });
             reader.readAsDataURL(blob);
          });
@@ -500,6 +501,7 @@ class GlslRendering {
       return this.pixelArray;
    }
    /**
+    * @deprecated
     * @returns {Promise<string>}
     */
    async getDataUrl() {
@@ -510,20 +512,13 @@ class GlslRendering {
       return this.dataUrl;
    }
    /**
-    * @returns {Promise<HTMLImageElement>}
+    * @returns {Promise<ImageBitmap>}
     */
-   async getJsImage() {
-      if (!this.jsImage) {
-         const thisDataUrl = await this.getDataUrl();
-         this.jsImage = await new Promise((resolve) => {
-            const image = new Image();
-            image.addEventListener("load", () => {
-               resolve(image);
-            });
-            image.src = thisDataUrl;
-         });
+   async getImageBitmap() {
+      if (!this.imageBitmap) {
+         this.imageBitmap = createImageBitmap(this.glslContext.glCanvas);
       }
-      return this.jsImage;
+      return this.imageBitmap;
    }
 }
 
@@ -681,7 +676,7 @@ class GlslUniform {
 
 class GlslUniformImage extends GlslUniform {
    /**
-    * @param {HTMLImageElement} initialValue
+    * @param {ImageBitmap} initialValue
     */
    constructor(initialValue) {
       super();
@@ -690,10 +685,10 @@ class GlslUniformImage extends GlslUniform {
 
    /**
     * @public
-    * @param {HTMLImageElement} jsImage
+    * @param {ImageBitmap} imageBitmap
     */
-   setValue(jsImage) {
-      this.glslImage.setImage(jsImage);
+   setValue(imageBitmap) {
+      this.glslImage.setImage(imageBitmap);
    }
 
    /**
@@ -708,10 +703,10 @@ class GlslUniformImage extends GlslUniform {
 class GlslImage {
    /**
     * @public
-    * @param  {HTMLImageElement} jsImage
+    * @param {ImageBitmap} imageBitmap
     */
-   constructor(jsImage) {
-      this.jsImage = jsImage;
+   constructor(imageBitmap) {
+      this.imageBitmap = imageBitmap;
       this.uniformGlslName = GlslVariable.getUniqueName("uniform");
       this.glslVector4 = new GlslVector4(
          null,
@@ -729,19 +724,19 @@ class GlslImage {
    /**
     * @public
     * @static
-    * @param  {HTMLImageElement} jsImage
+    * @param  {ImageBitmap} imageBitmap
     * @returns {GlslVector4}
     */
-   static load(jsImage) {
-      let glslImage = new GlslImage(jsImage);
+   static load(imageBitmap) {
+      let glslImage = new GlslImage(imageBitmap);
       return glslImage.glslVector4;
    }
    /**
     * @public
-    * @param {HTMLImageElement} jsImage
+    * @param {ImageBitmap} imageBitmap
     */
-   setImage(jsImage) {
-      this.jsImage = jsImage;
+   setImage(imageBitmap) {
+      this.imageBitmap = imageBitmap;
       const context = GlslShader.getGlslContext().getGlContext();
       this.createBaseTexture(context);
    }
@@ -784,7 +779,7 @@ class GlslImage {
          glContext.RGBA,
          glContext.RGBA,
          glContext.UNSIGNED_BYTE,
-         this.jsImage
+         this.imageBitmap
       );
       return texture;
    }
@@ -872,8 +867,8 @@ class GlslImage {
     * @returns {GlslVector4}
     */
    getNeighborPixel(offsetX, offsetY) {
-      const u = (1 / this.jsImage.width) * offsetX;
-      const v = (1 / this.jsImage.height) * offsetY;
+      const u = (1 / this.imageBitmap.width) * offsetX;
+      const v = (1 / this.imageBitmap.height) * offsetY;
 
       const glslOffset = {
          u: GlslFloat.getJsNumberAsString(u),
