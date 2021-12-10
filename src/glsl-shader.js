@@ -492,6 +492,7 @@ class GlslRendering {
       return new GlslRendering(GlslShader.getGlslContext(), outVariable);
    }
    /**
+    * @deprecated
     * @returns {Uint8Array}
     */
    getPixelArray() {
@@ -516,6 +517,7 @@ class GlslRendering {
     */
    async getImageBitmap() {
       if (!this.imageBitmap) {
+         this.glslContext.drawCall(this.outVariable);
          this.imageBitmap = createImageBitmap(this.glslContext.glCanvas);
       }
       return this.imageBitmap;

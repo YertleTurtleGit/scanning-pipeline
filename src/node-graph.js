@@ -113,6 +113,7 @@ class NodeGraph {
    resizeHandler() {
       this.domCanvas.height = this.parentElement.clientHeight;
       this.domCanvas.width = this.parentElement.clientWidth;
+      this.updateConnectionUI();
    }
 
    /**
@@ -613,7 +614,7 @@ class GraphNodeOutputUI extends GraphNodeOutput {
    async setValue(value) {
       this.value = value;
       const connections = await this.graphNode.getConnections();
-      console.log(connections);
+
       connections.forEach((connection) => {
          connection.input.graphNode.setRefreshFlag();
       });
