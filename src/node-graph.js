@@ -685,7 +685,10 @@ class GraphNodeUI {
                this.refreshValuePreview(resultValue);
             });
 
-            this.worker.postMessage(parameterValues, parameterValues);
+            this.worker.postMessage(
+               { parameterValues: parameterValues },
+               parameterValues
+            );
          } else {
             console.warn(
                "Worker '" +
@@ -710,13 +713,14 @@ class GraphNodeUI {
          numberElement.style.textAlign = "center";
          this.outputUIElement.appendChild(numberElement);
       } else if (value instanceof ImageBitmap) {
-         const image = new Image();
-         image.style.maxWidth = "100%";
-         image.style.maxHeight = "5rem";
+         const imageCanvas = document.createElement("canvas");
+         const context = imageCanvas.getContext("2d");
+         context.drawImage(value, value.width, value.height);
+         imageCanvas.style.maxWidth = "100%";
+         imageCanvas.style.maxHeight = "5rem";
          this.outputUIElement.style.display = "flex";
          this.outputUIElement.style.justifyContent = "center";
-         this.outputUIElement.appendChild(image);
-         image.src = encodeURIComponent(value);
+         this.outputUIElement.appendChild(imageCanvas);
       } else if (typeof value === "string") {
          const valueImage = new Image();
          valueImage.src = value;
@@ -790,11 +794,11 @@ class GraphNodeUI {
          replaceValue +=
             "\n   const " +
             input.name +
-            " = messageEvent.data[" +
+            " = messageEvent.data.parameterValues[" +
             String(index) +
-            "];\n   console.log({" +
+            "];\n   console.log(" +
             input.name +
-            "});\n\n";
+            ");\n\n";
       });
 
       functionString = functionString.replaceAll(
