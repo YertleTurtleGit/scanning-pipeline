@@ -715,7 +715,7 @@ class GraphNodeUI {
       } else if (value instanceof ImageBitmap) {
          const imageCanvas = document.createElement("canvas");
          const context = imageCanvas.getContext("2d");
-         context.drawImage(value, value.width, value.height);
+         context.drawImage(value, 0, 0, value.width, value.height);
          imageCanvas.style.maxWidth = "100%";
          imageCanvas.style.maxHeight = "5rem";
          this.outputUIElement.style.display = "flex";
