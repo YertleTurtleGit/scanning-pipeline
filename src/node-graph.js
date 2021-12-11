@@ -670,7 +670,6 @@ class GraphNodeUI {
 
          if (this.worker) {
             console.log("terminating " + this.graphNode.executer.name + ".");
-            return;
             this.worker.terminate();
          }
 
@@ -681,12 +680,17 @@ class GraphNodeUI {
 
             this.worker = await this.createWorker();
 
-            this.worker.addEventListener("message", (messageEvent) => {
-               const resultValue = messageEvent.data;
-               // TODO Handle multiple outputs.
-               this.graphNodeOutputs[0].setValue(resultValue);
-               this.refreshValuePreview(resultValue);
-            });
+            const cThis = this;
+            this.worker.addEventListener(
+               "message",
+               function handler(messageEvent) {
+                  cThis.worker.removeEventListener(messageEvent.type, handler);
+                  const resultValue = messageEvent.data;
+                  // TODO Handle multiple outputs.
+                  cThis.graphNodeOutputs[0].setValue(resultValue);
+                  cThis.refreshValuePreview(resultValue);
+               }
+            );
 
             /*const parameterNumberValues = [];
             const parameterImageBitmapValues = [];

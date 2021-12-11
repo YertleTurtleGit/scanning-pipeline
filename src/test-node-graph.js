@@ -9,4 +9,4 @@ const depthMapNode = nodeGraph.registerNode(
 );
 
 nodeGraph.placeNode(brightenNode);
-//nodeGraph.placeNode(depthMapNode);
+nodeGraph.placeNode(depthMapNode);
