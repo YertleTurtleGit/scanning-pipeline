@@ -413,7 +413,8 @@ class GraphNodeInput {
     * @param {string} description
     */
    constructor(name, type, description = undefined) {
-      this.name = name.replace(/([A-Z])/g, " $1");
+      //this.name = name.replace(/([A-Z])/g, " $1");
+      this.name = name;
       this.uiName = this.name.charAt(0).toUpperCase() + this.name.slice(1);
       this.type = type;
       this.description = description.replaceAll(/\s\s+/g, " ");
@@ -669,6 +670,7 @@ class GraphNodeUI {
 
          if (this.worker) {
             console.log("terminating " + this.graphNode.executer.name + ".");
+            return;
             this.worker.terminate();
          }
 
@@ -686,12 +688,23 @@ class GraphNodeUI {
                this.refreshValuePreview(resultValue);
             });
 
+            /*const parameterNumberValues = [];
+            const parameterImageBitmapValues = [];
+
+            parameterValues.forEach((value) => {
+               if (typeof value === "number") {
+                  parameterNumberValues.push(value);
+               } else if (value instanceof ImageBitmap) {
+                  parameterImageBitmapValues.push(value);
+               }
+            });*/
+
             this.worker.postMessage(
                { parameterValues: parameterValues },
                parameterValues
             );
          } else {
-            console.warn(
+            console.log(
                "Worker '" +
                   this.graphNode.executer.name +
                   "' did not pick up, because at least one parameter is undefined."

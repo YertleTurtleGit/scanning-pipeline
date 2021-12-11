@@ -1,13 +1,7 @@
 /* global GLSL */
 /* exported calculateDepthMap */
 
-/**
- * This functions calculates a depth mapping by a given
- * normal mapping.
- *
- * @public
- * @param {ImageBitmap} normalMap The normal mapping
- * that is used to calculate the depth mapping.
+/*
  * @param {number} qualityPercent The quality in percent
  * defines how many anisotropic integrals are taken into
  * account to archive a higher quality depth mapping.
@@ -15,15 +9,25 @@
  * the factor of a radial-exponential depth correction.
  * Zero corresponds to no correction.
  * @param {number} depthFactor
+ */
+
+/**
+ * This functions calculates a depth mapping by a given
+ * normal mapping.
+ *
+ * @public
+ * @param {ImageBitmap} normalMap The normal mapping
+ * that is used to calculate the depth mapping.
  * @returns {Promise<ImageBitmap>} A depth mapping
  * according to the input normal mapping.
  */
-function calculateDepthMap(
-   normalMap,
-   qualityPercent,
-   perspectiveCorrectionFactor,
-   depthFactor
-) {
+async function calculateDepthMap(normalMap) {
+   const qualityPercent = 0.01;
+   //const perspectiveCorrectionFactor = 0;
+   const depthFactor = 1;
+
+   const SLOPE_SHIFT = -255 / 2;
+
    const maximumAngleCount = normalMap.width * 2 + normalMap.height * 2;
    const angleCount = Math.round(maximumAngleCount * qualityPercent);
 
@@ -80,6 +84,22 @@ function calculateDepthMap(
 
          const maximumThreadCount = 128;
 
+         const edgeFramePixels = [];
+
+         const topY = -1;
+         const bottomY = normalMap.height;
+         const leftX = -1;
+         const rightX = normalMap.width;
+
+         for (let x = 0; x < normalMap.width; x++) {
+            edgeFramePixels.push({ x: x, y: topY });
+            edgeFramePixels.push({ x: x, y: bottomY });
+         }
+         for (let y = 0; y < normalMap.height; y++) {
+            edgeFramePixels.push({ x: leftX, y: y });
+            edgeFramePixels.push({ x: rightX, y: y });
+         }
+
          const calculateAnisotropicIntegral = (
             azimuthalAngle,
             gradientPixelArray
@@ -105,8 +125,6 @@ function calculateDepthMap(
             if (stepVector.y < minimumStep && stepVector.y > -minimumStep) {
                stepVector.y = 0;
             }
-
-            const edgeFramePixels = this.getEdgeFramePixels();
 
             for (
                let i = 0, edgeFramePixelsCount = edgeFramePixels.length;
@@ -140,24 +158,35 @@ function calculateDepthMap(
 
                   pixel.x = nextPixel.x;
                   pixel.y = nextPixel.y;
-                  inDimensions = this.isInDimensions(pixel);
+                  inDimensions =
+                     pixel.x < normalMap.width &&
+                     pixel.y < normalMap.height &&
+                     pixel.x >= 0 &&
+                     pixel.y >= 0;
 
                   if (inDimensions) {
                      const index =
                         pixel.x +
                         (normalMap.height - pixel.y - 1) * normalMap.width;
 
-                     const pixelSlope = this.getPixelSlope(
-                        pixel,
-                        stepVector,
-                        gradientPixelArray
-                     );
+                     if (gradientPixelArray[index + 2] === 0) {
+                        return 0;
+                     }
+
+                     const rightSlope =
+                        gradientPixelArray[index + 0] + SLOPE_SHIFT;
+                     const topSlope =
+                        gradientPixelArray[index + 1] + SLOPE_SHIFT;
+
+                     const pixelSlope =
+                        stepVector.x * rightSlope + stepVector.y * topSlope;
 
                      integralValue += pixelSlope * -depthFactor;
                      integral[index] = integralValue;
                   }
                } while (inDimensions);
             }
+
             return integral;
          };
 
@@ -248,7 +277,10 @@ function calculateDepthMap(
          const depthMapImage = await new Promise((resolve) => {
             setTimeout(() => {
                if (Math.min(normalMap.width, normalMap.height) > 0) {
-                  const canvas = document.createElement("canvas");
+                  const dim = new Uint32Array(2);
+                  dim[0] = normalMap.width;
+                  dim[1] = normalMap.height;
+                  const canvas = new OffscreenCanvas(dim[0], dim[1]);
                   const context = canvas.getContext("2d");
 
                   canvas.width = normalMap.width;
@@ -267,14 +299,20 @@ function calculateDepthMap(
             });
          });
 
-         /*const depthMap = await DepthMapHelper.getPerspectiveCorrected(
+         /*
+         const depthMap = await DepthMapHelper.getPerspectiveCorrected(
                depthMapImage,
                perspectiveCorrectionFactor
-            );*/
+            );
+         */
 
          resolve(depthMapImage);
       }, 100);
    });
 
-   return depthMapping;
+   const result = await depthMapping;
+
+   //console.log(result);
+
+   return result;
 }
