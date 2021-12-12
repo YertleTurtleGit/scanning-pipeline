@@ -617,7 +617,9 @@ class GraphNodeOutputUI extends GraphNodeOutput {
       const connections = await this.graphNode.getConnections();
 
       connections.forEach((connection) => {
-         connection.input.graphNode.setRefreshFlag();
+         if (connection.input.graphNode !== this.graphNode) {
+            connection.input.graphNode.setRefreshFlag();
+         }
       });
    }
 
@@ -656,6 +658,7 @@ class GraphNodeUI {
     * @public
     */
    setRefreshFlag() {
+      console.log("Set refresh flag of '" + this.graphNode.getName() + "'.");
       this.refreshFlag = true;
       this.execute();
    }
@@ -714,7 +717,6 @@ class GraphNodeUI {
                   "' did not pick up, because at least one parameter is undefined."
             );
          }
-         this.refreshFlag = false;
       }
    }
 
@@ -725,12 +727,7 @@ class GraphNodeUI {
    refreshValuePreview(value) {
       this.outputUIElement.innerHTML = "";
 
-      if (typeof value === "number") {
-         const numberElement = document.createElement("div");
-         numberElement.innerText = String(value);
-         numberElement.style.textAlign = "center";
-         this.outputUIElement.appendChild(numberElement);
-      } else if (value instanceof ImageBitmap) {
+      if (value instanceof ImageBitmap) {
          const imageCanvas = document.createElement("canvas");
          const context = imageCanvas.getContext("2d");
          context.drawImage(value, 0, 0, value.width, value.height);
@@ -739,6 +736,11 @@ class GraphNodeUI {
          this.outputUIElement.style.display = "flex";
          this.outputUIElement.style.justifyContent = "center";
          this.outputUIElement.appendChild(imageCanvas);
+      } else if (typeof value === "number") {
+         const numberElement = document.createElement("div");
+         numberElement.innerText = String(value);
+         numberElement.style.textAlign = "center";
+         this.outputUIElement.appendChild(numberElement);
       } else if (typeof value === "string") {
          const valueImage = new Image();
          valueImage.src = value;

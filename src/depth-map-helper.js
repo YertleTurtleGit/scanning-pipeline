@@ -100,96 +100,6 @@ async function calculateDepthMap(normalMap) {
             edgeFramePixels.push({ x: rightX, y: y });
          }
 
-         const calculateAnisotropicIntegral = (
-            azimuthalAngle,
-            gradientPixelArray
-         ) => {
-            const integral = new Array(normalMap.width * normalMap.height).fill(
-               0
-            );
-
-            // Inverse and thus, line FROM and NOT TO azimuthal angle.
-            azimuthalAngle += 180;
-            const azimuthalAngleInRadians = azimuthalAngle * (Math.PI / 180);
-
-            const stepVector = {
-               x: Math.cos(azimuthalAngleInRadians),
-               y: Math.sin(azimuthalAngleInRadians),
-            };
-
-            const minimumStep = 0.00000001;
-
-            if (stepVector.x < minimumStep && stepVector.x > -minimumStep) {
-               stepVector.x = 0;
-            }
-            if (stepVector.y < minimumStep && stepVector.y > -minimumStep) {
-               stepVector.y = 0;
-            }
-
-            for (
-               let i = 0, edgeFramePixelsCount = edgeFramePixels.length;
-               i < edgeFramePixelsCount;
-               i++
-            ) {
-               const startPixel = edgeFramePixels[i];
-
-               const stepOffset = {
-                  x: startPixel.x,
-                  y: startPixel.y,
-               };
-
-               const pixel = {
-                  x: startPixel.x,
-                  y: startPixel.y,
-               };
-
-               const nextPixel = { x: pixel.x, y: pixel.y };
-
-               let inDimensions;
-               let integralValue = 0;
-
-               do {
-                  do {
-                     stepOffset.x += stepVector.x;
-                     stepOffset.y += stepVector.y;
-                     nextPixel.x = Math.round(stepOffset.x);
-                     nextPixel.y = Math.round(stepOffset.y);
-                  } while (nextPixel.x === pixel.x && nextPixel.y === pixel.y);
-
-                  pixel.x = nextPixel.x;
-                  pixel.y = nextPixel.y;
-                  inDimensions =
-                     pixel.x < normalMap.width &&
-                     pixel.y < normalMap.height &&
-                     pixel.x >= 0 &&
-                     pixel.y >= 0;
-
-                  if (inDimensions) {
-                     const index =
-                        pixel.x +
-                        (normalMap.height - pixel.y - 1) * normalMap.width;
-
-                     if (gradientPixelArray[index + 2] === 0) {
-                        return 0;
-                     }
-
-                     const rightSlope =
-                        gradientPixelArray[index + 0] + SLOPE_SHIFT;
-                     const topSlope =
-                        gradientPixelArray[index + 1] + SLOPE_SHIFT;
-
-                     const pixelSlope =
-                        stepVector.x * rightSlope + stepVector.y * topSlope;
-
-                     integralValue += pixelSlope * -depthFactor;
-                     integral[index] = integralValue;
-                  }
-               } while (inDimensions);
-            }
-
-            return integral;
-         };
-
          for (let i = 0; i < anglesCount; i++) {
             while (i - promisesResolvedCount >= maximumThreadCount) {
                await new Promise((resolve) => {
@@ -199,12 +109,103 @@ async function calculateDepthMap(normalMap) {
 
             const integralPromise = new Promise((resolve) => {
                setTimeout(async () => {
-                  resolve(
-                     calculateAnisotropicIntegral(
-                        azimuthalAngles[i],
-                        gradientPixelArray
-                     )
-                  );
+                  let azimuthalAngle = azimuthalAngles[i];
+                  const integral = new Array(
+                     normalMap.width * normalMap.height
+                  ).fill(0);
+
+                  // Inverse and thus, line FROM and NOT TO azimuthal angle.
+                  azimuthalAngle += 180;
+                  const azimuthalAngleInRadians =
+                     azimuthalAngle * (Math.PI / 180);
+
+                  const stepVector = {
+                     x: Math.cos(azimuthalAngleInRadians),
+                     y: Math.sin(azimuthalAngleInRadians),
+                  };
+
+                  const minimumStep = 0.00000001;
+
+                  if (
+                     stepVector.x < minimumStep &&
+                     stepVector.x > -minimumStep
+                  ) {
+                     stepVector.x = 0;
+                  }
+                  if (
+                     stepVector.y < minimumStep &&
+                     stepVector.y > -minimumStep
+                  ) {
+                     stepVector.y = 0;
+                  }
+
+                  for (
+                     let i = 0, edgeFramePixelsCount = edgeFramePixels.length;
+                     i < edgeFramePixelsCount;
+                     i++
+                  ) {
+                     const startPixel = edgeFramePixels[i];
+
+                     const stepOffset = {
+                        x: startPixel.x,
+                        y: startPixel.y,
+                     };
+
+                     const pixel = {
+                        x: startPixel.x,
+                        y: startPixel.y,
+                     };
+
+                     const nextPixel = { x: pixel.x, y: pixel.y };
+
+                     let inDimensions;
+                     let integralValue = 0;
+
+                     do {
+                        do {
+                           stepOffset.x += stepVector.x;
+                           stepOffset.y += stepVector.y;
+                           nextPixel.x = Math.round(stepOffset.x);
+                           nextPixel.y = Math.round(stepOffset.y);
+                        } while (
+                           nextPixel.x === pixel.x &&
+                           nextPixel.y === pixel.y
+                        );
+
+                        pixel.x = nextPixel.x;
+                        pixel.y = nextPixel.y;
+                        inDimensions =
+                           pixel.x < normalMap.width &&
+                           pixel.y < normalMap.height &&
+                           pixel.x >= 0 &&
+                           pixel.y >= 0;
+
+                        if (inDimensions) {
+                           const index =
+                              pixel.x +
+                              (normalMap.height - pixel.y - 1) *
+                                 normalMap.width;
+
+                           if (gradientPixelArray[index + 2] === 0) {
+                              resolve(0);
+                           }
+
+                           const rightSlope =
+                              gradientPixelArray[index + 0] + SLOPE_SHIFT;
+                           const topSlope =
+                              gradientPixelArray[index + 1] + SLOPE_SHIFT;
+
+                           const pixelSlope =
+                              stepVector.x * rightSlope +
+                              stepVector.y * topSlope;
+
+                           integralValue += pixelSlope * -depthFactor;
+                           integral[index] = integralValue;
+                        }
+                     } while (inDimensions);
+                  }
+
+                  resolve(integral);
                });
             });
 
@@ -217,11 +218,13 @@ async function calculateDepthMap(normalMap) {
                   });
                }
 
-               integralArrayLock = true;
-               integral.forEach((value, index) => {
-                  integralArray[index] += value / anglesCount;
-               });
-               integralArrayLock = false;
+               if (integral) {
+                  integralArrayLock = true;
+                  integral.forEach((value, index) => {
+                     integralArray[index] += value / anglesCount;
+                  });
+                  integralArrayLock = false;
+               }
 
                const ETA =
                   ((performance.now() - startTime) / promisesResolvedCount) *
@@ -312,7 +315,7 @@ async function calculateDepthMap(normalMap) {
 
    const result = await depthMapping;
 
-   //console.log(result);
+   console.log(result);
 
    return result;
 }
