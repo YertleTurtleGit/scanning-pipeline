@@ -186,18 +186,18 @@ async function calculateDepthMap(normalMap) {
                               (normalMap.height - pixel.y - 1) *
                                  normalMap.width;
 
-                           if (gradientPixelArray[index + 2] === 0) {
-                              resolve(0);
+                           let pixelSlope = 0;
+
+                           if (gradientPixelArray[index + 2] !== 0) {
+                              const rightSlope =
+                                 gradientPixelArray[index + 0] + SLOPE_SHIFT;
+                              const topSlope =
+                                 gradientPixelArray[index + 1] + SLOPE_SHIFT;
+
+                              pixelSlope =
+                                 stepVector.x * rightSlope +
+                                 stepVector.y * topSlope;
                            }
-
-                           const rightSlope =
-                              gradientPixelArray[index + 0] + SLOPE_SHIFT;
-                           const topSlope =
-                              gradientPixelArray[index + 1] + SLOPE_SHIFT;
-
-                           const pixelSlope =
-                              stepVector.x * rightSlope +
-                              stepVector.y * topSlope;
 
                            integralValue += pixelSlope * -depthFactor;
                            integral[index] = integralValue;
