@@ -729,13 +729,17 @@ class GraphNodeUI {
 
       if (value instanceof ImageBitmap) {
          const imageCanvas = document.createElement("canvas");
+         imageCanvas.width = value.width;
+         imageCanvas.height = value.height;
          const context = imageCanvas.getContext("2d");
          context.drawImage(value, 0, 0, value.width, value.height);
-         imageCanvas.style.maxWidth = "100%";
+         const imageElement = new Image();
+         imageElement.style.maxWidth = "100%";
          imageCanvas.style.maxHeight = "5rem";
          this.outputUIElement.style.display = "flex";
          this.outputUIElement.style.justifyContent = "center";
-         this.outputUIElement.appendChild(imageCanvas);
+         this.outputUIElement.appendChild(imageElement);
+         imageElement.src = imageCanvas.toDataURL();
       } else if (typeof value === "number") {
          const numberElement = document.createElement("div");
          numberElement.innerText = String(value);
