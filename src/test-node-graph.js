@@ -8,5 +8,6 @@ const depthMapNode = nodeGraph.registerNode(
    "./src/glsl-shader.js"
 );
 
-nodeGraph.placeNode(brightenNode);
-nodeGraph.placeNode(depthMapNode);
+nodeGraph.placeNode(brightenNode, { x: 500, y: 350 });
+nodeGraph.placeNode(brightenNode, { x: 800, y: 350 });
+nodeGraph.placeNode(brightenNode, { x: 1100, y: 350 });

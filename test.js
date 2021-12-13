@@ -10,7 +10,7 @@ async function brighten(image) {
    shader.bind();
 
    let color = GLSL.Image.load(image);
-   color = color.addFloat(new GLSL.Float(0.5));
+   color = color.addFloat(new GLSL.Float(0.25));
 
    const result = await GLSL.render(color).getImageBitmap();
    shader.purge();

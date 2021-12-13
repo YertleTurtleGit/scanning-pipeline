@@ -42,7 +42,7 @@ async function calculateDepthMap(normalMap) {
       }
    }
 
-   const gradientPixelArray = await new Promise(async (resolve) => {
+   const gradientPixelArray = await new Promise((resolve) => {
       const depthMapShader = new GLSL.Shader({
          width: normalMap.width,
          height: normalMap.height,

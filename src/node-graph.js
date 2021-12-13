@@ -75,12 +75,14 @@ class NodeGraph {
    /**
     * @param {GraphNode} graphNode
     * @param {{x:number, y:number}} position
+    * @returns {GraphNodeUI}
     */
    placeNode(graphNode, position = this.currentMousePosition) {
       const graphNodeUI = new GraphNodeUI(graphNode, this);
       this.placedNodes.push(graphNodeUI);
       graphNodeUI.setPosition(position);
       this.parentElement.appendChild(graphNodeUI.domElement);
+      return graphNodeUI;
    }
 
    /**
@@ -378,7 +380,11 @@ class GraphNode {
                const argumentType = argument.split(" ")[0];
 
                if (argumentType === "param") {
-                  const argumentVarType = argument.split("{")[1].split("}")[0];
+                  const argumentVarType = argument
+                     .split("{")[1]
+                     .split("}")[0]
+                     .replace("Promise<", "")
+                     .replace(">", "");
                   const argumentVarName = argument.split("} ")[1].split(" ")[0];
                   const argumentDescription = argument.split(
                      " " + argumentVarName + " ",
@@ -393,7 +399,11 @@ class GraphNode {
                      )
                   );
                } else if (argumentType === "returns") {
-                  const argumentVarType = argument.split("{")[1].split("}")[0];
+                  const argumentVarType = argument
+                     .split("{")[1]
+                     .split("}")[0]
+                     .replace("Promise<", "")
+                     .replace(">", "");
                   const argumentDescription = argument.split("} ")[1];
 
                   this.graphNodeOutputs.push(
@@ -463,7 +473,7 @@ class GraphNodeInputUI extends GraphNodeInput {
     * @param {string} type
     * @param {string} description
     * @param {NodeGraph} nodeGraph
-    * @param {GraphNodeUI} graphNode
+    * @param {GraphNodeUI} graphNodeUI
     * @param {string} cssClass
     */
    constructor(
@@ -471,7 +481,7 @@ class GraphNodeInputUI extends GraphNodeInput {
       type,
       description = undefined,
       nodeGraph,
-      graphNode,
+      graphNodeUI,
       cssClass = "graphNodeInput"
    ) {
       super(name, type, description);
@@ -482,7 +492,7 @@ class GraphNodeInputUI extends GraphNodeInput {
       this.connection = null;
 
       this.nodeGraph = nodeGraph;
-      this.graphNode = graphNode;
+      this.graphNodeUI = graphNodeUI;
       this.domElement = document.createElement("li");
       this.domElement.innerText = name;
       this.domElement.title = "[" + this.type + "]\n" + this.description;
@@ -498,9 +508,11 @@ class GraphNodeInputUI extends GraphNodeInput {
     */
    clickHandler(mouseEvent) {
       if (mouseEvent.detail === 1) {
-         // TODO Handle single click.
-         // this.nodeGraph.toggleConnection(this);
+         this.singleClickCallbackId = setTimeout(() => {
+            this.nodeGraph.toggleConnection(this);
+         }, 500);
       } else {
+         clearTimeout(this.singleClickCallbackId);
          this.doubleClickHandler();
       }
    }
@@ -529,7 +541,7 @@ class GraphNodeInputUI extends GraphNodeInput {
     */
    setConnection(graphNodeOutput) {
       this.connection = graphNodeOutput;
-      this.graphNode.setRefreshFlag();
+      this.graphNodeUI.setRefreshFlag();
    }
 
    /**
@@ -617,8 +629,8 @@ class GraphNodeOutputUI extends GraphNodeOutput {
       const connections = await this.graphNode.getConnections();
 
       connections.forEach((connection) => {
-         if (connection.input.graphNode !== this.graphNode) {
-            connection.input.graphNode.setRefreshFlag();
+         if (connection.input.graphNodeUI !== this.graphNode) {
+            connection.input.graphNodeUI.setRefreshFlag();
          }
       });
    }
@@ -679,19 +691,28 @@ class GraphNodeUI {
          const parameterValues = this.getParameterValues();
 
          if (!parameterValues.includes(undefined)) {
-            console.log("executing " + this.graphNode.executer.name + ".");
+            console.log("Executing " + this.graphNode.executer.name + ".");
 
             this.worker = await this.createWorker();
 
             const cThis = this;
             this.worker.addEventListener(
                "message",
-               function handler(messageEvent) {
+               async function handler(messageEvent) {
                   cThis.worker.removeEventListener(messageEvent.type, handler);
                   const resultValue = messageEvent.data;
                   // TODO Handle multiple outputs.
                   cThis.graphNodeOutputs[0].setValue(resultValue);
                   cThis.refreshValuePreview(resultValue);
+
+                  cThis.worker.terminate();
+                  cThis.worker = undefined;
+
+                  const outConnections = await cThis.getConnections();
+                  outConnections.forEach((connection) => {
+                     connection.input.graphNodeUI.setRefreshFlag();
+                     console.log("blalala");
+                  });
                }
             );
 
@@ -830,7 +851,7 @@ class GraphNodeUI {
          replaceValue
       );
 
-      console.log(functionString);
+      //console.log(functionString);
 
       const dependenciesSource = await this.graphNode.getDependenciesSource();
       functionString = dependenciesSource + functionString;
@@ -915,12 +936,14 @@ class GraphNodeUI {
       const connections = [];
 
       this.graphNodeInputs.forEach((graphNodeInput) => {
-         const output = graphNodeInput.getConnection();
-         if (output) {
-            connections.push({
-               input: graphNodeInput,
-               output: output,
-            });
+         if (graphNodeInput.graphNodeUI === this) {
+            const output = graphNodeInput.getConnection();
+            if (output) {
+               connections.push({
+                  input: graphNodeInput,
+                  output: output,
+               });
+            }
          }
       });
 
@@ -1084,6 +1107,7 @@ class InputGraphNode extends GraphNodeUI {
     * @returns {Promise<{input: GraphNodeInputUI, output:GraphNodeOutputUI}[]>}
     */
    async getConnections() {
+      // TODO Handle multiple outputs.
       return [{ input: this.inputNode, output: this.graphNodeOutput }];
    }
 
