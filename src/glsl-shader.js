@@ -492,7 +492,6 @@ class GlslRendering {
       return new GlslRendering(GlslShader.getGlslContext(), outVariable);
    }
    /**
-    * @deprecated
     * @returns {Uint8Array}
     */
    getPixelArray() {
