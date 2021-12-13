@@ -602,7 +602,7 @@ class GraphNodeOutputUI extends GraphNodeOutput {
        * @private
        * @type {GraphNodeUI}
        */
-      this.graphNode = graphNode;
+      this.graphNodeUI = graphNode;
       this.domElement = document.createElement("li");
       this.domElement.innerText = "▶";
       this.domElement.title = "[" + this.type + "]";
@@ -626,10 +626,11 @@ class GraphNodeOutputUI extends GraphNodeOutput {
     */
    async setValue(value) {
       this.value = value;
-      const connections = await this.graphNode.getConnections();
 
+      const connections = await this.graphNodeUI.getConnections();
+      console.log(connections.length);
       connections.forEach((connection) => {
-         if (connection.input.graphNodeUI !== this.graphNode) {
+         if (connection.input.graphNodeUI !== this.graphNodeUI) {
             connection.input.graphNodeUI.setRefreshFlag();
          }
       });
@@ -707,12 +708,6 @@ class GraphNodeUI {
 
                   cThis.worker.terminate();
                   cThis.worker = undefined;
-
-                  const outConnections = await cThis.getConnections();
-                  outConnections.forEach((connection) => {
-                     connection.input.graphNodeUI.setRefreshFlag();
-                     console.log("blalala");
-                  });
                }
             );
 
