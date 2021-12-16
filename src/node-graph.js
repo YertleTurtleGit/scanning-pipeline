@@ -38,7 +38,7 @@ class NodeGraph {
       );
       this.parentElement.addEventListener(
          "mouseup",
-         this.releaseGrabbedNode.bind(this)
+         this.mouseUpHandler.bind(this)
       );
       /*this.parentElement.addEventListener(
          "dblclick",
@@ -187,8 +187,10 @@ class NodeGraph {
       this.domCanvasContext.stroke();
    }
 
-   releaseGrabbedNode() {
+   mouseUpHandler() {
       this.grabbedNode = null;
+      this.linkedNodeIO = null;
+      this.updateConnectionUI();
    }
 
    /**
@@ -500,6 +502,10 @@ class GraphNodeInputUI extends GraphNodeInput {
       this.domElement.classList.add(cssClass);
 
       this.domElement.addEventListener("click", this.clickHandler.bind(this));
+      this.domElement.addEventListener(
+         "mousedown",
+         this.mouseHandler.bind(this)
+      );
    }
 
    /**
@@ -507,14 +513,18 @@ class GraphNodeInputUI extends GraphNodeInput {
     * @param {MouseEvent} mouseEvent
     */
    clickHandler(mouseEvent) {
-      if (mouseEvent.detail === 1) {
-         this.singleClickCallbackId = setTimeout(() => {
-            this.nodeGraph.toggleConnection(this);
-         }, 500);
-      } else {
-         clearTimeout(this.singleClickCallbackId);
+      if (mouseEvent.detail > 1) {
          this.doubleClickHandler();
       }
+   }
+
+   /**
+    * @private
+    * @param {MouseEvent} mouseEvent
+    */
+   mouseHandler(mouseEvent) {
+      mouseEvent.stopPropagation();
+      this.nodeGraph.toggleConnection(this);
    }
 
    /**
@@ -540,6 +550,10 @@ class GraphNodeInputUI extends GraphNodeInput {
     * @param {GraphNodeOutputUI} graphNodeOutput
     */
    setConnection(graphNodeOutput) {
+      if (this.connection) {
+         this.connection.removeConnection(this);
+      }
+      graphNodeOutput.addConnection(this);
       this.connection = graphNodeOutput;
       this.graphNodeUI.setRefreshFlag();
    }
@@ -599,17 +613,50 @@ class GraphNodeOutputUI extends GraphNodeOutput {
       this.value = undefined;
       this.nodeGraph = nodeGraph;
       /**
-       * @private
+       * @public
        * @type {GraphNodeUI}
        */
       this.graphNodeUI = graphNode;
+      /**
+       * @private
+       * @type {GraphNodeInputUI[]}
+       */
+      this.connections = [];
       this.domElement = document.createElement("li");
       this.domElement.innerText = "▶";
       this.domElement.title = "[" + this.type + "]";
       this.domElement.style.textAlign = "right";
       this.domElement.classList.add(cssClass);
 
-      this.domElement.addEventListener("click", this.clickHandler.bind(this));
+      this.domElement.addEventListener(
+         "mousedown",
+         this.mouseHandler.bind(this)
+      );
+   }
+
+   /**
+    * @public
+    * @param {GraphNodeInputUI} graphNodeInputUI
+    */
+   addConnection(graphNodeInputUI) {
+      this.connections.push(graphNodeInputUI);
+   }
+
+   /**
+    * @public
+    * @param {GraphNodeInputUI} graphNodeInputUI
+    */
+   removeConnection(graphNodeInputUI) {
+      const id = this.connections.indexOf(graphNodeInputUI);
+      this.connections.splice(id);
+   }
+
+   /**
+    * @public
+    * @returns {GraphNodeInputUI[]}
+    */
+   getConnections() {
+      return this.connections;
    }
 
    /**
@@ -627,19 +674,21 @@ class GraphNodeOutputUI extends GraphNodeOutput {
    async setValue(value) {
       this.value = value;
 
-      const connections = await this.graphNodeUI.getConnections();
-      console.log(connections.length);
-      connections.forEach((connection) => {
-         if (connection.input.graphNodeUI !== this.graphNodeUI) {
-            connection.input.graphNodeUI.setRefreshFlag();
+      const outputNodes = this.graphNodeUI.getOutputNodes();
+
+      outputNodes.forEach((outputNode) => {
+         if (outputNode !== this.graphNodeUI) {
+            outputNode.setRefreshFlag();
          }
       });
    }
 
    /**
     * @private
+    * @param {MouseEvent} mouseEvent
     */
-   clickHandler() {
+   mouseHandler(mouseEvent) {
+      mouseEvent.stopPropagation();
       this.nodeGraph.toggleConnection(this);
    }
 }
@@ -946,6 +995,22 @@ class GraphNodeUI {
    }
 
    /**
+    * @public
+    * @returns {GraphNodeUI[]}
+    */
+   getOutputNodes() {
+      /** @type {GraphNodeUI[]} */
+      const outputNodes = [];
+
+      this.graphNodeOutputs.forEach((graphNodeOutput) => {
+         graphNodeOutput.getConnections().forEach((connection) => {
+            outputNodes.push(connection.graphNodeUI);
+         });
+      });
+      return outputNodes;
+   }
+
+   /**
     * @protected
     */
    mousedownGrabHandler() {
@@ -1104,6 +1169,15 @@ class InputGraphNode extends GraphNodeUI {
    async getConnections() {
       // TODO Handle multiple outputs.
       return [{ input: this.inputNode, output: this.graphNodeOutput }];
+   }
+
+   /**
+    * @override
+    * @public
+    * @returns {GraphNodeUI[]}
+    */
+   getOutputNodes() {
+      return [this.inputNode.graphNodeUI];
    }
 
    /**
