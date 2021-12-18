@@ -711,7 +711,6 @@ class GraphNodeUI {
          y: this.nodeGraph.parentElement.clientHeight / 2,
       };
       this.refreshFlag = true;
-      this.worker = undefined;
 
       if (this.graphNode) {
          this.initialize();
@@ -731,55 +730,22 @@ class GraphNodeUI {
     * @public
     */
    async execute() {
-      console.log("Calling worker '" + this.graphNode.executer.name + "'.");
+      console.log("Calling function '" + this.graphNode.executer.name + "'.");
       if (this.refreshFlag) {
          this.refreshFlag = false;
-
-         if (this.worker) {
-            console.log("terminating " + this.graphNode.executer.name + ".");
-            this.worker.terminate();
-         }
 
          const parameterValues = this.getParameterValues();
 
          if (!parameterValues.includes(undefined)) {
             console.log("Executing " + this.graphNode.executer.name + ".");
-
-            this.worker = await this.createWorker();
-
-            const cThis = this;
-            this.worker.addEventListener(
-               "message",
-               async function handler(messageEvent) {
-                  cThis.worker.removeEventListener(messageEvent.type, handler);
-                  const resultValue = messageEvent.data;
-                  // TODO Handle multiple outputs.
-                  cThis.graphNodeOutputs[0].setValue(resultValue);
-                  cThis.refreshValuePreview(resultValue);
-
-                  cThis.worker.terminate();
-                  cThis.worker = undefined;
-               }
-            );
-
-            /*const parameterNumberValues = [];
-            const parameterImageBitmapValues = [];
-
-            parameterValues.forEach((value) => {
-               if (typeof value === "number") {
-                  parameterNumberValues.push(value);
-               } else if (value instanceof ImageBitmap) {
-                  parameterImageBitmapValues.push(value);
-               }
-            });*/
-
-            this.worker.postMessage(
-               { parameterValues: parameterValues },
-               parameterValues
-            );
+            setTimeout(async () => {
+               const result = await this.graphNode.executer(...parameterValues);
+               this.graphNodeOutputs[0].setValue(result);
+               this.refreshValuePreview(result);
+            });
          } else {
             console.log(
-               "Worker '" +
+               "Function '" +
                   this.graphNode.executer.name +
                   "' did not pick up, because at least one parameter is undefined."
             );
@@ -840,73 +806,6 @@ class GraphNodeUI {
          }
       });
       return parameterValues;
-   }
-
-   /**
-    * @private
-    * @returns {Promise<Worker>}
-    */
-   async createWorker() {
-      let functionString = this.graphNode.executer.toString();
-
-      functionString = functionString.replaceAll(
-         "return ",
-         "self.postMessage("
-      );
-
-      functionString = functionString.replaceAll(
-         /(self\.postMessage\(.*?);/gm,
-         "$1);"
-      );
-
-      functionString +=
-         "\nself.addEventListener('message', " +
-         this.graphNode.executer.name +
-         ");";
-
-      const functionParameterRegExp = new RegExp(
-         "(" + this.graphNode.getName() + "\\s*\\()(.*?)(\\)\\s*{)",
-         "gm"
-      );
-
-      functionString = functionString.replaceAll(
-         functionParameterRegExp,
-         "$1messageEvent$3"
-      );
-
-      const functionParameterDeclarationRegExp = new RegExp(
-         this.graphNode.getName() + "\\s*\\(messageEvent\\)\\s*{(.*?|\\n)\\s",
-         "gm"
-      );
-
-      let replaceValue = "$&";
-
-      this.graphNodeInputs.forEach((input, index) => {
-         replaceValue +=
-            "\n   const " +
-            input.name +
-            " = messageEvent.data.parameterValues[" +
-            String(index) +
-            "];\n   console.log(" +
-            input.name +
-            ");\n\n";
-      });
-
-      functionString = functionString.replaceAll(
-         functionParameterDeclarationRegExp,
-         replaceValue
-      );
-
-      //console.log(functionString);
-
-      const dependenciesSource = await this.graphNode.getDependenciesSource();
-      functionString = dependenciesSource + functionString;
-
-      const blob = new Blob([functionString], {
-         type: "text/javascript",
-      });
-      const workerSrc = window.URL.createObjectURL(blob);
-      return new Worker(workerSrc);
    }
 
    /**
