@@ -1,4 +1,4 @@
-/* global GLSL */
+/* global GLSL, FunctionWorker */
 /* exported DepthMapHelper */
 
 /**
@@ -42,7 +42,7 @@ class DepthMapHelper {
 
             if (depthMapHelper.isRenderObsolete()) return;
 
-            let promisesResolvedCount = 0;
+            let workerResolvedCount = 0;
             let integralArrayLock = false;
             const integralArray = new Array(
                normalMap.width * normalMap.height
@@ -50,8 +50,27 @@ class DepthMapHelper {
 
             const maximumThreadCount = 128;
 
+            /** @type {number[]} */
+            const edgeFramePixels = [];
+
+            const topY = -1;
+            const bottomY = normalMap.height;
+            const leftX = -1;
+            const rightX = normalMap.width;
+
+            for (let x = 0; x < normalMap.width; x++) {
+               edgeFramePixels.push(x, topY);
+               edgeFramePixels.push(x, bottomY);
+            }
+            for (let y = 0; y < normalMap.height; y++) {
+               edgeFramePixels.push(leftX, y);
+               edgeFramePixels.push(rightX, y);
+            }
+
+            const edgeFramePixelArrayBuffer = new Int16Array(edgeFramePixels);
+
             for (let i = 0; i < anglesCount; i++) {
-               while (i - promisesResolvedCount >= maximumThreadCount) {
+               while (i - workerResolvedCount >= maximumThreadCount) {
                   if (depthMapHelper.isRenderObsolete()) return;
                   await new Promise((resolve) => {
                      if (depthMapHelper.isRenderObsolete()) return;
@@ -59,19 +78,146 @@ class DepthMapHelper {
                   });
                }
 
-               const integralPromise = new Promise((resolve) => {
-                  setTimeout(async () => {
-                     resolve(
-                        depthMapHelper.calculateAnisotropicIntegral(
-                           depthMapHelper.azimuthalAngles[i],
-                           gradientPixelArray
+               const workerFunction = function workerFunction() {
+                  self.addEventListener("message", (messageEvent) => {
+                     console.log("received");
+
+                     /**
+                      * @param {number} azimuthalAngle
+                      * @param {{width:number, height:number}} imageDimensions
+                      * @param {Uint8Array} gradientPixelArray
+                      * @param {Int16Array} edgeFramePixelArrayBuffer
+                      * @returns {number[]}
+                      */
+                     function calculateAnisotropicIntegral(
+                        azimuthalAngle,
+                        imageDimensions,
+                        edgeFramePixelArrayBuffer,
+                        gradientPixelArray
+                     ) {
+                        const integral = new Array(
+                           imageDimensions.width * imageDimensions.height
+                        ).fill(0);
+
+                        // Inverse and thus, line FROM and NOT TO azimuthal angle.
+                        azimuthalAngle += 180;
+                        const azimuthalAngleInRadians =
+                           azimuthalAngle * (Math.PI / 180);
+
+                        const stepVector = {
+                           x: Math.cos(azimuthalAngleInRadians),
+                           y: Math.sin(azimuthalAngleInRadians),
+                        };
+
+                        const minimumStep = 0.00000001;
+
+                        if (
+                           stepVector.x < minimumStep &&
+                           stepVector.x > -minimumStep
+                        ) {
+                           stepVector.x = 0;
+                        }
+                        if (
+                           stepVector.y < minimumStep &&
+                           stepVector.y > -minimumStep
+                        ) {
+                           stepVector.y = 0;
+                        }
+
+                        for (
+                           let i = 0,
+                              edgeFramePixelsCount =
+                                 edgeFramePixelArrayBuffer.length / 2;
+                           i < edgeFramePixelsCount;
+                           i++
+                        ) {
+                           const startPixel = {
+                              x: edgeFramePixelArrayBuffer[i],
+                              y: edgeFramePixelArrayBuffer[i + 1],
+                           };
+
+                           const stepOffset = {
+                              x: startPixel.x,
+                              y: startPixel.y,
+                           };
+
+                           const pixel = {
+                              x: startPixel.x,
+                              y: startPixel.y,
+                           };
+
+                           const nextPixel = { x: pixel.x, y: pixel.y };
+
+                           let inDimensions;
+                           let integralValue = 0;
+
+                           do {
+                              do {
+                                 stepOffset.x += stepVector.x;
+                                 stepOffset.y += stepVector.y;
+                                 nextPixel.x = Math.round(stepOffset.x);
+                                 nextPixel.y = Math.round(stepOffset.y);
+                              } while (
+                                 nextPixel.x === pixel.x &&
+                                 nextPixel.y === pixel.y
+                              );
+
+                              pixel.x = nextPixel.x;
+                              pixel.y = nextPixel.y;
+                              inDimensions =
+                                 pixel.x < this.width &&
+                                 pixel.y < this.height &&
+                                 pixel.x >= 0 &&
+                                 pixel.y >= 0;
+
+                              if (inDimensions) {
+                                 const index =
+                                    pixel.x +
+                                    (imageDimensions.height - pixel.y - 1) *
+                                       imageDimensions.width;
+
+                                 let pixelSlope = 0;
+
+                                 if (gradientPixelArray[index + 2] > 0) {
+                                    const rightSlope =
+                                       gradientPixelArray[index + 0] +
+                                       DepthMapHelper.SLOPE_SHIFT;
+                                    const topSlope =
+                                       gradientPixelArray[index + 1] +
+                                       DepthMapHelper.SLOPE_SHIFT;
+
+                                    pixelSlope =
+                                       stepVector.x * rightSlope +
+                                       stepVector.y * topSlope;
+                                 }
+
+                                 integralValue += pixelSlope * -1; // TODO Multiply by DEPTH_FACTOR.
+                                 integral[index] = integralValue;
+                              }
+                           } while (inDimensions);
+                        }
+                        return integral;
+                     }
+
+                     self.postMessage(
+                        calculateAnisotropicIntegral(
+                           messageEvent.data.azimuthalAngle,
+                           messageEvent.data.imageDimensions,
+                           messageEvent.data.edgeFramePixelArrayBuffer,
+                           messageEvent.data.gradientPixelArray
                         )
                      );
                   });
-               });
+               };
 
-               integralPromise.then(async (integral) => {
-                  promisesResolvedCount++;
+               const integralWorker = new FunctionWorker(workerFunction);
+
+               integralWorker.addMessageEventListener(async (messageEvent) => {
+                  const integral = messageEvent.data;
+                  integralWorker.terminate();
+
+                  workerResolvedCount++;
+                  console.log(workerResolvedCount);
 
                   if (depthMapHelper.isRenderObsolete()) return;
 
@@ -89,29 +235,39 @@ class DepthMapHelper {
                   integralArrayLock = false;
 
                   /*if (etaElement) {
-                     const ETA =
-                        ((performance.now() - startTime) /
-                           promisesResolvedCount) *
-                        (anglesCount - promisesResolvedCount);
-
-                     let ETAsec = String(Math.floor((ETA / 1000) % 60));
-                     const ETAmin = String(Math.floor(ETA / (60 * 1000)));
-
-                     if (ETAsec.length < 2) {
-                        ETAsec = "0" + ETAsec;
-                     }
-
-                     etaElement.innerText =
-                        "ETA in " + ETAmin + ":" + ETAsec + " min";
-                  }*/
+                        const ETA =
+                           ((performance.now() - startTime) /
+                              promisesResolvedCount) *
+                           (anglesCount - promisesResolvedCount);
+   
+                        let ETAsec = String(Math.floor((ETA / 1000) % 60));
+                        const ETAmin = String(Math.floor(ETA / (60 * 1000)));
+   
+                        if (ETAsec.length < 2) {
+                           ETAsec = "0" + ETAsec;
+                        }
+   
+                        etaElement.innerText =
+                           "ETA in " + ETAmin + ":" + ETAsec + " min";
+                     }*/
 
                   if (depthMapHelper.isRenderObsolete()) return;
+               });
+
+               integralWorker.postMessage({
+                  gradientPixelArray: gradientPixelArray,
+                  imageDimensions: {
+                     width: normalMap.width,
+                     height: normalMap.height,
+                  },
+                  edgeFramePixelArrayBuffer: edgeFramePixelArrayBuffer,
+                  azimuthalAngle: depthMapHelper.azimuthalAngles[i],
                });
 
                if (depthMapHelper.isRenderObsolete()) return;
             }
 
-            while (promisesResolvedCount < anglesCount) {
+            while (workerResolvedCount < anglesCount) {
                if (depthMapHelper.isRenderObsolete()) return;
                await new Promise((resolve) => {
                   setTimeout(resolve, 500);
@@ -320,148 +476,6 @@ class DepthMapHelper {
             depthMapShader.purge();
          });
       });
-   }
-
-   /**
-    * @private
-    * @param {number} azimuthalAngle
-    * @param {Uint8Array} gradientPixelArray
-    * @returns {number[]}
-    */
-   calculateAnisotropicIntegral(azimuthalAngle, gradientPixelArray) {
-      const integral = new Array(this.width * this.height).fill(0);
-
-      // Inverse and thus, line FROM and NOT TO azimuthal angle.
-      azimuthalAngle += 180;
-      const azimuthalAngleInRadians = azimuthalAngle * (Math.PI / 180);
-
-      const stepVector = {
-         x: Math.cos(azimuthalAngleInRadians),
-         y: Math.sin(azimuthalAngleInRadians),
-      };
-
-      const minimumStep = 0.00000001;
-
-      if (stepVector.x < minimumStep && stepVector.x > -minimumStep) {
-         stepVector.x = 0;
-      }
-      if (stepVector.y < minimumStep && stepVector.y > -minimumStep) {
-         stepVector.y = 0;
-      }
-
-      const edgeFramePixels = this.getEdgeFramePixels();
-
-      for (
-         let i = 0, edgeFramePixelsCount = edgeFramePixels.length;
-         i < edgeFramePixelsCount;
-         i++
-      ) {
-         const startPixel = edgeFramePixels[i];
-
-         const stepOffset = {
-            x: startPixel.x,
-            y: startPixel.y,
-         };
-
-         const pixel = {
-            x: startPixel.x,
-            y: startPixel.y,
-         };
-
-         const nextPixel = { x: pixel.x, y: pixel.y };
-
-         let inDimensions;
-         let integralValue = 0;
-
-         do {
-            do {
-               stepOffset.x += stepVector.x;
-               stepOffset.y += stepVector.y;
-               nextPixel.x = Math.round(stepOffset.x);
-               nextPixel.y = Math.round(stepOffset.y);
-            } while (nextPixel.x === pixel.x && nextPixel.y === pixel.y);
-
-            pixel.x = nextPixel.x;
-            pixel.y = nextPixel.y;
-            inDimensions = this.isInDimensions(pixel);
-
-            if (inDimensions) {
-               const index = pixel.x + (this.height - pixel.y - 1) * this.width;
-
-               const pixelSlope = this.getPixelSlope(
-                  pixel,
-                  stepVector,
-                  gradientPixelArray
-               );
-
-               integralValue += pixelSlope * -this.DEPTH_FACTOR;
-               integral[index] = integralValue;
-            }
-         } while (inDimensions);
-      }
-      return integral;
-   }
-
-   /**
-    * @private
-    * @returns {Pixel[]}
-    */
-   getEdgeFramePixels() {
-      if (this.edgeFramePixels === undefined) {
-         /** @type {Pixel[]} */
-         this.edgeFramePixels = [];
-
-         const topY = -1;
-         const bottomY = this.height;
-         const leftX = -1;
-         const rightX = this.width;
-
-         for (let x = 0; x < this.width; x++) {
-            this.edgeFramePixels.push({ x: x, y: topY });
-            this.edgeFramePixels.push({ x: x, y: bottomY });
-         }
-         for (let y = 0; y < this.height; y++) {
-            this.edgeFramePixels.push({ x: leftX, y: y });
-            this.edgeFramePixels.push({ x: rightX, y: y });
-         }
-      }
-      return this.edgeFramePixels;
-   }
-
-   /**
-    * @private
-    * @param {Pixel} pixel
-    * @returns {boolean}
-    */
-   isInDimensions(pixel) {
-      return (
-         pixel.x < this.width &&
-         pixel.y < this.height &&
-         pixel.x >= 0 &&
-         pixel.y >= 0
-      );
-   }
-
-   /**
-    * @private
-    * @param {Pixel} pixel
-    * @param {Pixel} stepVector
-    * @param {Uint8Array} gradientPixelArray
-    * @returns {number}
-    */
-   getPixelSlope(pixel, stepVector, gradientPixelArray) {
-      const index = (pixel.x + pixel.y * this.width) * 4;
-
-      if (gradientPixelArray[index + 2] === 0) {
-         return 0;
-      }
-
-      const rightSlope =
-         gradientPixelArray[index + 0] + DepthMapHelper.SLOPE_SHIFT;
-      const topSlope =
-         gradientPixelArray[index + 1] + DepthMapHelper.SLOPE_SHIFT;
-
-      return stepVector.x * rightSlope + stepVector.y * topSlope;
    }
 
    /**
