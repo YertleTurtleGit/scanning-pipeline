@@ -524,6 +524,7 @@ class GraphNodeInputUI extends GraphNodeInput {
     */
    mouseHandler(mouseEvent) {
       mouseEvent.stopPropagation();
+      mouseEvent.preventDefault();
       this.nodeGraph.toggleConnection(this);
    }
 
@@ -689,6 +690,7 @@ class GraphNodeOutputUI extends GraphNodeOutput {
     */
    mouseHandler(mouseEvent) {
       mouseEvent.stopPropagation();
+      mouseEvent.preventDefault();
       this.nodeGraph.toggleConnection(this);
    }
 }
