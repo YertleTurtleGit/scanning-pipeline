@@ -24,7 +24,12 @@ class NodeCallback {
     * @param {number} progressPercent
     */
    setProgressPercent(progressPercent) {
-      this.graphNodeUI.domProgressElement.value = progressPercent;
+      if (progressPercent <= 0 || progressPercent === 100) {
+         this.graphNodeUI.domProgressElement.hidden = true;
+      } else {
+         this.graphNodeUI.domProgressElement.hidden = false;
+         this.graphNodeUI.domProgressElement.value = progressPercent;
+      }
    }
 }
 
@@ -891,6 +896,7 @@ class GraphNodeUI {
       this.domProgressElement.value = 0;
       this.domProgressElement.max = 100;
       this.domElement.appendChild(this.domProgressElement);
+      this.domProgressElement.hidden = true;
 
       this.outputUIElement = document.createElement("div");
       this.domElement.appendChild(this.outputUIElement);
