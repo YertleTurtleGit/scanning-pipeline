@@ -1,3 +1,33 @@
+/* exported NodeCallback */
+
+class NodeCallback {
+   /**
+    * @param {GraphNodeUI} graphNodeUI
+    */
+   constructor(graphNodeUI) {
+      this.graphNodeUI = graphNodeUI;
+      /**
+       * @public
+       * @type {boolean}
+       */
+      this.abortFlag = false;
+   }
+
+   /**
+    * @public
+    * @param {string} info
+    */
+   setInfo(info) {}
+
+   /**
+    * @public
+    * @param {number} progressPercent
+    */
+   setProgressPercent(progressPercent) {
+      this.graphNodeUI.domProgressElement.value = progressPercent;
+   }
+}
+
 class NodeGraph {
    /**
     * @param {HTMLElement} parentElement
@@ -730,6 +760,11 @@ class GraphNodeUI {
     * @public
     */
    async execute() {
+      if (this.executerCallback) {
+         this.executerCallback.abortFlag = true;
+         console.log("abort");
+      }
+
       console.log("Calling function '" + this.graphNode.executer.name + "'.");
       if (this.refreshFlag) {
          this.refreshFlag = false;
@@ -739,7 +774,12 @@ class GraphNodeUI {
          if (!parameterValues.includes(undefined)) {
             console.log("Executing " + this.graphNode.executer.name + ".");
             setTimeout(async () => {
-               const result = await this.graphNode.executer(...parameterValues);
+               this.executerCallback = new NodeCallback(this);
+               const result = await this.graphNode.executer(
+                  ...parameterValues,
+                  this.executerCallback
+               );
+
                this.graphNodeOutputs[0].setValue(result);
                this.refreshValuePreview(result);
             });
@@ -845,6 +885,12 @@ class GraphNodeUI {
       domTitleElement.innerText = this.graphNode.getName();
       domTitleElement.style.backgroundColor = "transparent";
       this.domElement.appendChild(domTitleElement);
+
+      this.domProgressElement = document.createElement("progress");
+      this.domProgressElement.style.width = "100%";
+      this.domProgressElement.value = 0;
+      this.domProgressElement.max = 100;
+      this.domElement.appendChild(this.domProgressElement);
 
       this.outputUIElement = document.createElement("div");
       this.domElement.appendChild(this.outputUIElement);

@@ -1,4 +1,4 @@
-/* global GLSL, FunctionWorker */
+/* global GLSL, NodeCallback */
 /* exported DepthMapHelper */
 
 /**
@@ -21,19 +21,23 @@ class DepthMapHelper {
     * @returns {Promise<ImageBitmap>} A depth mapping
     * according to the input normal mapping.
     */
-   static async calculateDepthMap(normalMap, qualityPercent = 0.001) {
+   static async calculateDepthMap(
+      normalMap,
+      qualityPercent = 0.001,
+      nodeCallback = undefined
+   ) {
       const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
       return new Promise((resolve) => {
          setTimeout(async () => {
-            if (depthMapHelper.isRenderObsolete()) return;
+            if (nodeCallback.abortFlag) return;
 
             const gradientPixelArray =
                await depthMapHelper.getLocalGradientFactor();
 
             const anglesCount = depthMapHelper.azimuthalAngles.length;
 
-            if (depthMapHelper.isRenderObsolete()) return;
+            if (nodeCallback.abortFlag) return;
 
             let promisesResolvedCount = 0;
             let integralArrayLock = false;
@@ -45,9 +49,9 @@ class DepthMapHelper {
 
             for (let i = 0; i < anglesCount; i++) {
                while (i - promisesResolvedCount >= maximumThreadCount) {
-                  if (depthMapHelper.isRenderObsolete()) return;
+                  if (nodeCallback.abortFlag) return;
                   await new Promise((resolve) => {
-                     if (depthMapHelper.isRenderObsolete()) return;
+                     if (nodeCallback.abortFlag) return;
                      setTimeout(resolve, Math.random() * 100);
                   });
                }
@@ -66,11 +70,11 @@ class DepthMapHelper {
                integralPromise.then(async (integral) => {
                   promisesResolvedCount++;
 
-                  if (depthMapHelper.isRenderObsolete()) return;
+                  if (nodeCallback.abortFlag) return;
 
                   while (integralArrayLock) {
                      await new Promise((resolve) => {
-                        if (depthMapHelper.isRenderObsolete()) return;
+                        if (nodeCallback.abortFlag) return;
                         setTimeout(resolve, Math.random() * 100);
                      });
                   }
@@ -81,12 +85,10 @@ class DepthMapHelper {
                   });
                   integralArrayLock = false;
 
-                  /*if (progressElement) {
-                     const percent = (promisesResolvedCount / anglesCount) * 90;
-                     progressElement.value = percent;
-                  }
+                  const percent = (promisesResolvedCount / anglesCount) * 90;
+                  nodeCallback.setProgressPercent(percent);
 
-                  if (etaElement) {
+                  /*if (etaElement) {
                      const ETA =
                         ((performance.now() - startTime) /
                            promisesResolvedCount) *
@@ -103,20 +105,20 @@ class DepthMapHelper {
                         "ETA in " + ETAmin + ":" + ETAsec + " min";
                   }*/
 
-                  if (depthMapHelper.isRenderObsolete()) return;
+                  if (nodeCallback.abortFlag) return;
                });
 
-               if (depthMapHelper.isRenderObsolete()) return;
+               if (nodeCallback.abortFlag) return;
             }
 
             while (promisesResolvedCount < anglesCount) {
-               if (depthMapHelper.isRenderObsolete()) return;
+               if (nodeCallback.abortFlag) return;
                await new Promise((resolve) => {
                   setTimeout(resolve, 500);
                });
             }
 
-            if (depthMapHelper.isRenderObsolete()) return;
+            if (nodeCallback.abortFlag) return;
 
             const normalizedIntegral =
                await depthMapHelper.getNormalizedIntegralAsGrayscale(
@@ -125,21 +127,16 @@ class DepthMapHelper {
 
             //if (progressElement) progressElement.value = 95;
 
-            if (depthMapHelper.isRenderObsolete()) return;
+            if (nodeCallback.abortFlag) return;
 
             const depthMap = await depthMapHelper.getDepthMapImage(
                normalizedIntegral
             );
 
+            console.log("resolved " + qualityPercent);
             resolve(depthMap);
 
-            /*if (progressElement) {
-               progressElement.value = 100;
-               progressElement.style.height = "0";
-            }
-            if (etaElement) {
-               etaElement.style.opacity = "0";
-            }*/
+            nodeCallback.setProgressPercent(100);
          }, 100);
       });
    }
