@@ -278,14 +278,17 @@ class NodeGraph {
 class GraphNode {
    /**
     * @param {Function} executer
+    * @param {boolean} asWorker
     * @param {string[]} dependencies
     */
-   constructor(executer, ...dependencies) {
+   constructor(executer, asWorker = false, ...dependencies) {
       /**
        * @public
        * @type {Function}
        */
       this.executer = executer;
+
+      this.asWorker = asWorker;
 
       /**
        * @private
@@ -765,29 +768,34 @@ class GraphNodeUI {
     * @public
     */
    async execute() {
-      if (this.executerCallback) {
-         this.executerCallback.abortFlag = true;
-         console.log("abort");
+      if (this.graphNode.asWorker) {
+         if (this.worker) {
+            console.log("terminating " + this.graphNode.executer.name + ".");
+            this.worker.terminate();
+         }
+      } else {
+         if (this.executerPromiseCallback) {
+            console.log("aborting " + this.graphNode.executer.name + ".");
+            this.executerPromiseCallback.abortFlag = true;
+         }
       }
 
-      console.log("Calling function '" + this.graphNode.executer.name + "'.");
       if (this.refreshFlag) {
+         console.log(
+            "Calling function '" + this.graphNode.executer.name + "'."
+         );
          this.refreshFlag = false;
 
          const parameterValues = this.getParameterValues();
 
+         if (this.graphNode.asWorker) {
+            this.executeAsWorker(parameterValues);
+         } else {
+            this.executeAsPromise(parameterValues);
+         }
+
          if (!parameterValues.includes(undefined)) {
             console.log("Executing " + this.graphNode.executer.name + ".");
-            setTimeout(async () => {
-               this.executerCallback = new NodeCallback(this);
-               const result = await this.graphNode.executer(
-                  ...parameterValues,
-                  this.executerCallback
-               );
-
-               this.graphNodeOutputs[0].setValue(result);
-               this.refreshValuePreview(result);
-            });
          } else {
             console.log(
                "Function '" +
@@ -796,6 +804,118 @@ class GraphNodeUI {
             );
          }
       }
+   }
+
+   /**
+    * @private
+    * @param {any[]} parameterValues
+    */
+   async executeAsPromise(parameterValues) {
+      setTimeout(async () => {
+         this.executerPromiseCallback = new NodeCallback(this);
+         const result = await this.graphNode.executer(
+            ...parameterValues,
+            this.executerPromiseCallback
+         );
+
+         this.graphNodeOutputs[0].setValue(result);
+         this.refreshValuePreview(result);
+      });
+   }
+
+   /**
+    * @private
+    * @param {any[]} parameterValues
+    */
+   async executeAsWorker(parameterValues) {
+      this.worker = await this.createWorker();
+
+      const cThis = this;
+      this.worker.addEventListener(
+         "message",
+         async function handler(messageEvent) {
+            cThis.worker.removeEventListener(messageEvent.type, handler);
+            const resultValue = messageEvent.data;
+            // TODO Handle multiple outputs.
+            cThis.graphNodeOutputs[0].setValue(resultValue);
+            cThis.refreshValuePreview(resultValue);
+
+            cThis.worker.terminate();
+            cThis.worker = undefined;
+         }
+      );
+
+      this.worker.postMessage(
+         { parameterValues: parameterValues },
+         parameterValues
+      );
+   }
+
+   /**
+    * @private
+    * @returns {Promise<Worker>}
+    */
+   async createWorker() {
+      let functionString = this.graphNode.executer.toString();
+
+      functionString = functionString.replaceAll(
+         "return ",
+         "self.postMessage("
+      );
+
+      functionString = functionString.replaceAll(
+         /(self\.postMessage\(.*?);/gm,
+         "$1);"
+      );
+
+      functionString +=
+         "\nself.addEventListener('message', " +
+         this.graphNode.executer.name +
+         ");";
+
+      const functionParameterRegExp = new RegExp(
+         "(" + this.graphNode.getName() + "\\s*\\()(.*?)(\\)\\s*{)",
+         "gm"
+      );
+
+      functionString = functionString.replaceAll(
+         functionParameterRegExp,
+         "$1messageEvent$3"
+      );
+
+      const functionParameterDeclarationRegExp = new RegExp(
+         this.graphNode.getName() + "\\s*\\(messageEvent\\)\\s*{(.*?|\\n)\\s",
+         "gm"
+      );
+
+      let replaceValue = "$&";
+
+      this.graphNodeInputs.forEach((input, index) => {
+         replaceValue +=
+            "\n   const " +
+            input.name +
+            " = messageEvent.data.parameterValues[" +
+            String(index) +
+            "];\n   console.log(" +
+            input.name +
+            ");\n\n";
+      });
+
+      functionString = functionString.replaceAll(
+         functionParameterDeclarationRegExp,
+         replaceValue
+      );
+
+      //console.log(functionString);
+
+      const dependenciesSource = await this.graphNode.getDependenciesSource();
+      functionString = dependenciesSource + functionString;
+
+      const blob = new Blob([functionString], {
+         type: "text/javascript",
+      });
+      const workerSrc = window.URL.createObjectURL(blob);
+      return new Worker(workerSrc);
    }
 
    /**
