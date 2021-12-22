@@ -1,4 +1,4 @@
-/* global GLSL, NodeCallback */
+/* global GLSL */
 /* exported DepthMapHelper */
 
 /**
@@ -15,29 +15,19 @@ class DepthMapHelper {
     * @public
     * @param {ImageBitmap} normalMap The normal mapping
     * that is used to calculate the depth mapping.
-    * @param {number} qualityPercent The quality in percent
-    * defines how many anisotropic integrals are taken into
-    * account to archive a higher quality depth mapping.
     * @returns {Promise<ImageBitmap>} A depth mapping
     * according to the input normal mapping.
     */
-   static async calculateDepthMap(
-      normalMap,
-      qualityPercent = 0.001,
-      nodeCallback = undefined
-   ) {
+   static async calculateDepthMap(normalMap) {
+      const qualityPercent = 0.1;
       const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
       return new Promise((resolve) => {
          setTimeout(async () => {
-            if (nodeCallback.abortFlag) return;
-
             const gradientPixelArray =
                await depthMapHelper.getLocalGradientFactor();
 
             const anglesCount = depthMapHelper.azimuthalAngles.length;
-
-            if (nodeCallback.abortFlag) return;
 
             let promisesResolvedCount = 0;
             let integralArrayLock = false;
@@ -49,9 +39,7 @@ class DepthMapHelper {
 
             for (let i = 0; i < anglesCount; i++) {
                while (i - promisesResolvedCount >= maximumThreadCount) {
-                  if (nodeCallback.abortFlag) return;
                   await new Promise((resolve) => {
-                     if (nodeCallback.abortFlag) return;
                      setTimeout(resolve, Math.random() * 100);
                   });
                }
@@ -70,11 +58,8 @@ class DepthMapHelper {
                integralPromise.then(async (integral) => {
                   promisesResolvedCount++;
 
-                  if (nodeCallback.abortFlag) return;
-
                   while (integralArrayLock) {
                      await new Promise((resolve) => {
-                        if (nodeCallback.abortFlag) return;
                         setTimeout(resolve, Math.random() * 100);
                      });
                   }
@@ -86,7 +71,7 @@ class DepthMapHelper {
                   integralArrayLock = false;
 
                   const percent = (promisesResolvedCount / anglesCount) * 90;
-                  nodeCallback.setProgressPercent(percent);
+                  //nodeCallback.setProgressPercent(percent);
 
                   /*if (etaElement) {
                      const ETA =
@@ -104,21 +89,14 @@ class DepthMapHelper {
                      etaElement.innerText =
                         "ETA in " + ETAmin + ":" + ETAsec + " min";
                   }*/
-
-                  if (nodeCallback.abortFlag) return;
                });
-
-               if (nodeCallback.abortFlag) return;
             }
 
             while (promisesResolvedCount < anglesCount) {
-               if (nodeCallback.abortFlag) return;
                await new Promise((resolve) => {
                   setTimeout(resolve, 500);
                });
             }
-
-            if (nodeCallback.abortFlag) return;
 
             const normalizedIntegral =
                await depthMapHelper.getNormalizedIntegralAsGrayscale(
@@ -127,8 +105,6 @@ class DepthMapHelper {
 
             //if (progressElement) progressElement.value = 95;
 
-            if (nodeCallback.abortFlag) return;
-
             const depthMap = await depthMapHelper.getDepthMapImage(
                normalizedIntegral
             );
@@ -136,7 +112,7 @@ class DepthMapHelper {
             console.log("resolved " + qualityPercent);
             resolve(depthMap);
 
-            nodeCallback.setProgressPercent(100);
+            ///nodeCallback.setProgressPercent(100);
          }, 100);
       });
    }

@@ -2,10 +2,11 @@
 
 const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
 
-const brightenNode = nodeGraph.registerNode(brighten, "./src/glsl-shader.js");
-const depthMapNode = nodeGraph.registerNode(
+const brightenNode = nodeGraph.registerNode(brighten);
+const depthMapNode = nodeGraph.registerNodeAsWorker(
    DepthMapHelper.calculateDepthMap,
-   "./src/glsl-shader.js"
+   "./src/glsl-shader.js",
+   "./src/depth-map-helper.js"
 );
 
 nodeGraph.placeNode(depthMapNode, { x: 500, y: 350 });

@@ -98,11 +98,22 @@ class NodeGraph {
    /**
     * @public
     * @param {Function} nodeExecuter
+    * @returns {GraphNode}
+    */
+   registerNode(nodeExecuter) {
+      const graphNode = new GraphNode(nodeExecuter, false);
+      this.registeredNodes.push(graphNode);
+      return graphNode;
+   }
+
+   /**
+    * @public
+    * @param {Function} nodeExecuter
     * @param {string[]} dependencies
     * @returns {GraphNode}
     */
-   registerNode(nodeExecuter, ...dependencies) {
-      const graphNode = new GraphNode(nodeExecuter, ...dependencies);
+   registerNodeAsWorker(nodeExecuter, ...dependencies) {
+      const graphNode = new GraphNode(nodeExecuter, true, ...dependencies);
       this.registeredNodes.push(graphNode);
       return graphNode;
    }
@@ -281,7 +292,7 @@ class GraphNode {
     * @param {boolean} asWorker
     * @param {string[]} dependencies
     */
-   constructor(executer, asWorker = false, ...dependencies) {
+   constructor(executer, asWorker, ...dependencies) {
       /**
        * @public
        * @type {Function}
@@ -781,12 +792,14 @@ class GraphNodeUI {
       }
 
       if (this.refreshFlag) {
-         console.log(
-            "Calling function '" + this.graphNode.executer.name + "'."
-         );
          this.refreshFlag = false;
 
          const parameterValues = this.getParameterValues();
+         if (parameterValues.includes(undefined)) return;
+
+         console.log(
+            "Calling function '" + this.graphNode.executer.name + "'."
+         );
 
          if (this.graphNode.asWorker) {
             this.executeAsWorker(parameterValues);
@@ -828,7 +841,7 @@ class GraphNodeUI {
     * @param {any[]} parameterValues
     */
    async executeAsWorker(parameterValues) {
-      this.worker = await this.createWorker();
+      this.worker = await this.createWorker(parameterValues.length);
 
       const cThis = this;
       this.worker.addEventListener(
@@ -845,6 +858,8 @@ class GraphNodeUI {
          }
       );
 
+      console.log(parameterValues);
+
       this.worker.postMessage(
          { parameterValues: parameterValues },
          parameterValues
@@ -853,65 +868,29 @@ class GraphNodeUI {
 
    /**
     * @private
+    * @param {number} parameterValuesCount
     * @returns {Promise<Worker>}
     */
-   async createWorker() {
-      let functionString = this.graphNode.executer.toString();
-
-      functionString = functionString.replaceAll(
-         "return ",
-         "self.postMessage("
-      );
-
-      functionString = functionString.replaceAll(
-         /(self\.postMessage\(.*?);/gm,
-         "$1);"
-      );
-
-      functionString +=
-         "\nself.addEventListener('message', " +
-         this.graphNode.executer.name +
-         ");";
-
-      const functionParameterRegExp = new RegExp(
-         "(" + this.graphNode.getName() + "\\s*\\()(.*?)(\\)\\s*{)",
-         "gm"
-      );
-
-      functionString = functionString.replaceAll(
-         functionParameterRegExp,
-         "$1messageEvent$3"
-      );
-
-      const functionParameterDeclarationRegExp = new RegExp(
-         this.graphNode.getName() + "\\s*\\(messageEvent\\)\\s*{(.*?|\\n)\\s",
-         "gm"
-      );
-
-      let replaceValue = "$&";
-
-      this.graphNodeInputs.forEach((input, index) => {
-         replaceValue +=
-            "\n   const " +
-            input.name +
-            " = messageEvent.data.parameterValues[" +
-            String(index) +
-            "];\n   console.log(" +
-            input.name +
-            ");\n\n";
-      });
-
-      functionString = functionString.replaceAll(
-         functionParameterDeclarationRegExp,
-         replaceValue
-      );
-
-      //console.log(functionString);
-
+   async createWorker(parameterValuesCount) {
       const dependenciesSource = await this.graphNode.getDependenciesSource();
-      functionString = dependenciesSource + functionString;
 
-      const blob = new Blob([functionString], {
+      let parameterValuesString = "(";
+      for (let i = 0; i < parameterValuesCount; i++) {
+         parameterValuesString += "messageEvent.data[" + String(i) + "]";
+      }
+      parameterValuesString += ")";
+
+      const workerSource =
+         dependenciesSource +
+         "\n" +
+         "self.addEventListener('message', (messageEvent) => {" +
+         "console.log(messageEvent.data[0]);\n" +
+         "DepthMapHelper." +
+         this.graphNode.executer.name +
+         parameterValuesString +
+         ";});";
+
+      const blob = new Blob([workerSource], {
          type: "text/javascript",
       });
       const workerSrc = window.URL.createObjectURL(blob);
