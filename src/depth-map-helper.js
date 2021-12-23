@@ -55,7 +55,7 @@ class DepthMapHelper {
             let promisesResolvedCount = 0;
             let integralArrayLock = false;
             const integralArray = new Array(
-               normalMap.width * normalMap.height
+               dimensions.width * dimensions.height
             ).fill(0);
 
             const maximumThreadCount = 8;
