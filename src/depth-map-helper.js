@@ -15,11 +15,13 @@ class DepthMapHelper {
     * @public
     * @param {ImageBitmap} normalMap The normal mapping
     * that is used to calculate the depth mapping.
+    * @param {number} qualityPercent The quality in percent
+    * defines how many anisotropic integrals are taken into
+    * account to archive a higher quality depth mapping.
     * @returns {Promise<ImageBitmap>} A depth mapping
     * according to the input normal mapping.
     */
-   static async calculateDepthMap(normalMap) {
-      const qualityPercent = 0.1;
+   static async calculateDepthMap(normalMap, qualityPercent) {
       const depthMapHelper = new DepthMapHelper(normalMap, qualityPercent);
 
       return new Promise((resolve) => {
@@ -36,6 +38,8 @@ class DepthMapHelper {
             ).fill(0);
 
             const maximumThreadCount = 128;
+
+            const startTime = performance.now();
 
             for (let i = 0; i < anglesCount; i++) {
                while (i - promisesResolvedCount >= maximumThreadCount) {
@@ -73,22 +77,19 @@ class DepthMapHelper {
                   const percent = (promisesResolvedCount / anglesCount) * 90;
                   //nodeCallback.setProgressPercent(percent);
 
-                  /*if (etaElement) {
-                     const ETA =
-                        ((performance.now() - startTime) /
-                           promisesResolvedCount) *
-                        (anglesCount - promisesResolvedCount);
+                  const ETA =
+                     ((performance.now() - startTime) / promisesResolvedCount) *
+                     (anglesCount - promisesResolvedCount);
 
-                     let ETAsec = String(Math.floor((ETA / 1000) % 60));
-                     const ETAmin = String(Math.floor(ETA / (60 * 1000)));
+                  let ETAsec = String(Math.floor((ETA / 1000) % 60));
+                  const ETAmin = String(Math.floor(ETA / (60 * 1000)));
 
-                     if (ETAsec.length < 2) {
-                        ETAsec = "0" + ETAsec;
-                     }
+                  if (ETAsec.length < 2) {
+                     ETAsec = "0" + ETAsec;
+                  }
 
-                     etaElement.innerText =
-                        "ETA in " + ETAmin + ":" + ETAsec + " min";
-                  }*/
+                  const etaString = "ETA in " + ETAmin + ":" + ETAsec + " min";
+                  console.log(percent + " " + etaString);
                });
             }
 
@@ -170,7 +171,10 @@ class DepthMapHelper {
     */
    async getDepthMapImage(integral) {
       if (Math.min(this.width, this.height) > 0) {
-         const canvas = document.createElement("canvas");
+         const dim = new Uint32Array(2);
+         dim[0] = this.width;
+         dim[1] = this.height;
+         const canvas = new OffscreenCanvas(dim[0], dim[1]);
          const context = canvas.getContext("2d");
 
          canvas.width = this.width;

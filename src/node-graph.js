@@ -841,7 +841,30 @@ class GraphNodeUI {
     * @param {any[]} parameterValues
     */
    async executeAsWorker(parameterValues) {
-      this.worker = await this.createWorker(parameterValues.length);
+      const toTransfer = [];
+      const toCopy = [];
+
+      let parameterValuesString = "(";
+      let pointerCount = 0;
+      let copyCount = 0;
+
+      parameterValues.forEach((parameterValue) => {
+         if (parameterValue instanceof ImageBitmap) {
+            toTransfer.push(parameterValue);
+            parameterValuesString +=
+               "messageEvent.data.pointer[" + String(pointerCount) + "]";
+            pointerCount++;
+         } else {
+            toCopy.push(parameterValue);
+            parameterValuesString +=
+               "messageEvent.data.copy[" + String(copyCount) + "]";
+            copyCount++;
+         }
+         parameterValuesString += ",";
+      });
+      parameterValuesString += ")";
+
+      this.worker = await this.createWorker(parameterValuesString);
 
       const cThis = this;
       this.worker.addEventListener(
@@ -858,37 +881,33 @@ class GraphNodeUI {
          }
       );
 
-      console.log(parameterValues);
+      console.log({ toCopy });
 
       this.worker.postMessage(
-         { parameterValues: parameterValues },
-         parameterValues
+         { pointer: toTransfer, copy: toCopy },
+         toTransfer
       );
    }
 
    /**
     * @private
-    * @param {number} parameterValuesCount
+    * @param {string} parameterValuesString
     * @returns {Promise<Worker>}
     */
-   async createWorker(parameterValuesCount) {
+   async createWorker(parameterValuesString) {
       const dependenciesSource = await this.graphNode.getDependenciesSource();
-
-      let parameterValuesString = "(";
-      for (let i = 0; i < parameterValuesCount; i++) {
-         parameterValuesString += "messageEvent.data[" + String(i) + "]";
-      }
-      parameterValuesString += ")";
 
       const workerSource =
          dependenciesSource +
          "\n" +
-         "self.addEventListener('message', (messageEvent) => {" +
-         "console.log(messageEvent.data[0]);\n" +
-         "DepthMapHelper." +
+         "const cSelf = self;\n" +
+         "self.addEventListener('message', async (messageEvent) => {\n" +
+         // "console.log(messageEvent.data.parameterValues[0]);\n" +
+         "cSelf.postMessage(await DepthMapHelper." + // TODO Find solution.
          this.graphNode.executer.name +
          parameterValuesString +
-         ";});";
+         ");\n" +
+         "});";
 
       const blob = new Blob([workerSource], {
          type: "text/javascript",
