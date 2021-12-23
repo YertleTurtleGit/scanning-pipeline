@@ -247,6 +247,14 @@ class NodeGraph {
    }
 
    /**
+    * @param {GraphNodeInputUI | GraphNodeOutputUI} linkedNodeIO
+    */
+   setLinkedNodeIO(linkedNodeIO) {
+      this.linkedNodeIO = linkedNodeIO;
+      this.updateConnectionUI();
+   }
+
+   /**
     * @private
     * @param {MouseEvent} mouseEvent
     */
@@ -555,6 +563,7 @@ class GraphNodeInputUI extends GraphNodeInput {
          "mousedown",
          this.mouseHandler.bind(this)
       );
+      this.domElement.addEventListener("mouseup", this.mouseHandler.bind(this));
    }
 
    /**
@@ -563,6 +572,8 @@ class GraphNodeInputUI extends GraphNodeInput {
     */
    clickHandler(mouseEvent) {
       if (mouseEvent.detail > 1) {
+         mouseEvent.stopPropagation();
+         mouseEvent.preventDefault();
          this.doubleClickHandler();
       }
    }
@@ -585,6 +596,7 @@ class GraphNodeInputUI extends GraphNodeInput {
          new InputGraphNode(this.nodeGraph, this),
          { x: this.domElement.offsetLeft - 50, y: this.domElement.offsetTop }
       );
+      this.nodeGraph.setLinkedNodeIO(null);
    }
 
    /**
@@ -902,8 +914,7 @@ class GraphNodeUI {
          "\n" +
          "const cSelf = self;\n" +
          "self.addEventListener('message', async (messageEvent) => {\n" +
-         // "console.log(messageEvent.data.parameterValues[0]);\n" +
-         "cSelf.postMessage(await DepthMapHelper." + // TODO Find solution.
+         "cSelf.postMessage(await " +
          this.graphNode.executer.name +
          parameterValuesString +
          ");\n" +
