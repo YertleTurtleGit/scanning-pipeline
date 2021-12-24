@@ -22,120 +22,106 @@ class DepthMapHelper {
     * according to the input normal mapping.
     */
    static async calculateDepthMap(normalMap, qualityPercent) {
-      return new Promise((resolve) => {
-         setTimeout(async () => {
-            /** @constant */
-            const DEPTH_FACTOR = 1;
+      const maximumThreadCount = 8;
+      const dimensions = {
+         width: normalMap.width,
+         height: normalMap.height,
+      };
+      const maximumAngleCount = dimensions.width * 2 + dimensions.height * 2;
+      const angleCount = Math.round(maximumAngleCount * qualityPercent);
+      const azimuthalAngles = [];
+      const startTime = performance.now();
 
-            const dimensions = {
-               width: normalMap.width,
-               height: normalMap.height,
-            };
-
-            const maximumAngleCount =
-               dimensions.width * 2 + dimensions.height * 2;
-            const angleCount = Math.round(maximumAngleCount * qualityPercent);
-
-            const azimuthalAngles = [];
-
-            for (let frac = 1; frac < angleCount; frac *= 2) {
-               for (let angle = 0; angle < 360; angle += 360 / frac) {
-                  if (!azimuthalAngles.includes(angle)) {
-                     azimuthalAngles.push(angle);
-                     azimuthalAngles.push(180 + angle);
-                  }
-               }
+      for (let frac = 1; frac < angleCount; frac *= 2) {
+         for (let angle = 0; angle < 360; angle += 360 / frac) {
+            if (!azimuthalAngles.includes(angle)) {
+               azimuthalAngles.push(angle);
+               azimuthalAngles.push(180 + angle);
             }
+         }
+      }
 
-            const gradientPixelArray =
-               await DepthMapHelper.getLocalGradientFactor(normalMap);
+      const gradientPixelArray = await DepthMapHelper.getLocalGradientFactor(
+         normalMap
+      );
 
-            const anglesCount = azimuthalAngles.length;
+      const anglesCount = azimuthalAngles.length;
 
-            let promisesResolvedCount = 0;
-            let integralArrayLock = false;
-            const integralArray = new Array(
-               dimensions.width * dimensions.height
-            ).fill(0);
+      let promisesResolvedCount = 0;
+      let integralArrayLock = false;
+      const integralArray = new Array(
+         dimensions.width * dimensions.height
+      ).fill(0);
 
-            const maximumThreadCount = 8;
+      for (let i = 0; i < anglesCount; i++) {
+         while (i - promisesResolvedCount >= maximumThreadCount) {
+            await new Promise((resolve) => {
+               setTimeout(resolve, Math.random() * 100);
+            });
+         }
 
-            const startTime = performance.now();
-
-            for (let i = 0; i < anglesCount; i++) {
-               while (i - promisesResolvedCount >= maximumThreadCount) {
-                  await new Promise((resolve) => {
-                     setTimeout(resolve, Math.random() * 100);
-                  });
-               }
-
-               const integralPromise = new Promise((resolve) => {
-                  setTimeout(async () => {
-                     resolve(
-                        DepthMapHelper.calculateAnisotropicIntegral(
-                           azimuthalAngles[i],
-                           gradientPixelArray,
-                           dimensions,
-                           DEPTH_FACTOR
-                        )
-                     );
-                  });
-               });
-
-               integralPromise.then(async (integral) => {
-                  promisesResolvedCount++;
-
-                  while (integralArrayLock) {
-                     await new Promise((resolve) => {
-                        setTimeout(resolve, Math.random() * 100);
-                     });
-                  }
-
-                  integralArrayLock = true;
-                  integral.forEach((value, index) => {
-                     integralArray[index] += value / anglesCount;
-                  });
-                  integralArrayLock = false;
-
-                  const percent = (promisesResolvedCount / anglesCount) * 90;
-                  //nodeCallback.setProgressPercent(percent);
-
-                  const ETA =
-                     ((performance.now() - startTime) / promisesResolvedCount) *
-                     (anglesCount - promisesResolvedCount);
-
-                  let ETAsec = String(Math.floor((ETA / 1000) % 60));
-                  const ETAmin = String(Math.floor(ETA / (60 * 1000)));
-
-                  if (ETAsec.length < 2) {
-                     ETAsec = "0" + ETAsec;
-                  }
-
-                  const etaString = "ETA in " + ETAmin + ":" + ETAsec + " min";
-                  console.log(percent + " " + etaString);
-               });
-            }
-
-            while (promisesResolvedCount < anglesCount) {
-               await new Promise((resolve) => {
-                  setTimeout(resolve, 500);
-               });
-            }
-
-            const normalizedIntegral =
-               await DepthMapHelper.getNormalizedIntegralAsGrayscale(
-                  integralArray,
+         const integralPromise = new Promise((resolve) => {
+            resolve(
+               DepthMapHelper.calculateAnisotropicIntegral(
+                  azimuthalAngles[i],
+                  gradientPixelArray,
                   dimensions
-               );
-
-            const depthMap = await DepthMapHelper.getDepthMapImage(
-               normalizedIntegral,
-               dimensions
+               )
             );
+         });
 
-            resolve(depthMap);
-         }, 100);
-      });
+         integralPromise.then(async (integral) => {
+            promisesResolvedCount++;
+
+            while (integralArrayLock) {
+               await new Promise((resolve) => {
+                  setTimeout(resolve, Math.random() * 100);
+               });
+            }
+
+            integralArrayLock = true;
+            integral.forEach((value, index) => {
+               integralArray[index] += value / anglesCount;
+            });
+            integralArrayLock = false;
+
+            const percent = (promisesResolvedCount / anglesCount) * 100;
+            //nodeCallback.setProgressPercent(percent);
+
+            const ETA =
+               ((performance.now() - startTime) / promisesResolvedCount) *
+               (anglesCount - promisesResolvedCount);
+
+            let ETAsec = String(Math.floor((ETA / 1000) % 60));
+            const ETAmin = String(Math.floor(ETA / (60 * 1000)));
+
+            if (ETAsec.length < 2) {
+               ETAsec = "0" + ETAsec;
+            }
+
+            const etaString = "ETA in " + ETAmin + ":" + ETAsec + " min";
+            console.log(percent + " " + etaString);
+         });
+      }
+
+      while (promisesResolvedCount < anglesCount) {
+         await new Promise((resolve) => {
+            setTimeout(resolve, 500);
+         });
+      }
+
+      const normalizedIntegral =
+         await DepthMapHelper.getNormalizedIntegralAsGrayscale(
+            integralArray,
+            dimensions
+         );
+
+      const depthMap = await DepthMapHelper.getDepthMapImage(
+         normalizedIntegral,
+         dimensions
+      );
+
+      return depthMap;
    }
 
    /**
@@ -252,14 +238,12 @@ class DepthMapHelper {
     * @param {number} azimuthalAngle
     * @param {Uint8Array} gradientPixelArray
     * @param {{width:number, height:number}} dimensions
-    * @param {number} depthFactor
     * @returns {number[]}
     */
    static calculateAnisotropicIntegral(
       azimuthalAngle,
       gradientPixelArray,
-      dimensions,
-      depthFactor
+      dimensions
    ) {
       const integral = new Array(dimensions.width * dimensions.height).fill(0);
 
@@ -333,7 +317,7 @@ class DepthMapHelper {
                   gradientPixelArray
                );
 
-               integralValue += pixelSlope * -depthFactor;
+               integralValue -= pixelSlope;
                integral[index] = integralValue;
             }
          } while (inDimensions);
