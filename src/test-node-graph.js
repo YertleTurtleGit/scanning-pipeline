@@ -19,4 +19,5 @@ const brightenNodeB = nodeGraph.placeNode(brightenNode, { x: 1100, y: 350 });
 
 nodeGraph.connect(brightenNodeA.getOutput(), brightenNodeB.getInput("image"));
 nodeGraph.connect(depthMapNodeA.getOutput(), brightenNodeA.getInput("image"));
-nodeGraph.createInputNode(depthMapNodeA.getInput("normalMap"))
+nodeGraph.createInputNode(depthMapNodeA.getInput("qualityPercent"), 0.1);
+nodeGraph.createInputNode(depthMapNodeA.getInput("normalMap"));

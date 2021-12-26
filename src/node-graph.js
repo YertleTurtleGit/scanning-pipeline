@@ -134,18 +134,29 @@ class NodeGraph {
     */
    placeInputGraphNode(inputGraphNode, position) {
       this.placedNodes.push(inputGraphNode);
-      inputGraphNode.setPosition(position);
+      if (position) inputGraphNode.setPosition(position);
       this.parentElement.appendChild(inputGraphNode.domElement);
    }
 
    /**
     * @public
     * @param {Promise<GraphNodeInputUI>} input
+    * @param {any} initValue
     * @param {{x:number, y:number}} position
     */
-   async createInputNode(input, position = undefined) {
-      const inputGraphNode = new InputGraphNode(this, await input);
-      if (position) inputGraphNode.setPosition(position);
+   async createInputNode(input, initValue = undefined, position = undefined) {
+      const inputResolved = await input;
+
+      if (position === undefined) {
+         position = inputResolved.graphNodeUI.getPosition();
+         position.x -= 250;
+         position.y = inputResolved.domElement.getBoundingClientRect().top;
+      }
+      const inputGraphNode = new InputGraphNode(this, inputResolved);
+      if (initValue) {
+         inputGraphNode.setValue(initValue);
+      }
+      this.placeInputGraphNode(inputGraphNode, position);
    }
 
    /**
@@ -1157,6 +1168,18 @@ class GraphNodeUI {
    }
 
    /**
+    * @public
+    * @returns {{x:number, y:number}}
+    */
+   getPosition() {
+      const boundingRect = this.domElement.getBoundingClientRect();
+      return {
+         x: boundingRect.left + boundingRect.width / 2,
+         y: boundingRect.top + 5,
+      };
+   }
+
+   /**
     * @param {{x:number, y:number}} position
     */
    setPosition(position) {
@@ -1226,28 +1249,28 @@ class InputGraphNode extends GraphNodeUI {
       domIOElement.appendChild(domInputList);
       domIOElement.appendChild(domOutputList);
 
-      const inputElement = document.createElement("input");
-      inputElement.style.width = "80%";
-      inputElement.style.overflowWrap = "break-word";
-      inputElement.style.hyphens = "auto";
-      inputElement.style.whiteSpace = "normal";
+      this.inputElement = document.createElement("input");
+      this.inputElement.style.width = "80%";
+      this.inputElement.style.overflowWrap = "break-word";
+      this.inputElement.style.hyphens = "auto";
+      this.inputElement.style.whiteSpace = "normal";
 
       if (this.type === "number") {
-         inputElement.type = "number";
-         domInputList.appendChild(inputElement);
+         this.inputElement.type = "number";
+         domInputList.appendChild(this.inputElement);
       } else if (this.type === "ImageBitmap") {
-         inputElement.type = "file";
-         inputElement.accept = "image/*";
+         this.inputElement.type = "file";
+         this.inputElement.accept = "image/*";
       } else {
          console.error("Input type '" + this.type + "' not supported.");
       }
 
-      inputElement.addEventListener(
+      this.inputElement.addEventListener(
          "input",
          this.inputChangeHandler.bind(this)
       );
 
-      domInputList.appendChild(inputElement);
+      domInputList.appendChild(this.inputElement);
 
       this.graphNodeOutput = new GraphNodeOutputUI(
          this.type,
@@ -1257,6 +1280,15 @@ class InputGraphNode extends GraphNodeUI {
       );
 
       domOutputList.appendChild(this.graphNodeOutput.domElement);
+   }
+
+   /**
+    * @public
+    * @param {any} value
+    */
+   async setValue(value) {
+      this.inputElement.value = value;
+      this.inputElement.dispatchEvent(new Event("input"));
    }
 
    /**
