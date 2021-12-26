@@ -13,6 +13,10 @@ const depthMapNode = nodeGraph.registerNodeAsWorker(
    "./src/depth-map-helper.js"
 );
 
-nodeGraph.placeNode(depthMapNode, { x: 500, y: 350 });
-nodeGraph.placeNode(brightenNode, { x: 800, y: 350 });
-nodeGraph.placeNode(brightenNode, { x: 1100, y: 350 });
+const depthMapNodeA = nodeGraph.placeNode(depthMapNode, { x: 500, y: 350 });
+const brightenNodeA = nodeGraph.placeNode(brightenNode, { x: 800, y: 350 });
+const brightenNodeB = nodeGraph.placeNode(brightenNode, { x: 1100, y: 350 });
+
+nodeGraph.connect(brightenNodeA.getOutput(), brightenNodeB.getInput("image"));
+nodeGraph.connect(depthMapNodeA.getOutput(), brightenNodeA.getInput("image"));
+nodeGraph.createInputNode(depthMapNodeA.getInput("normalMap"))

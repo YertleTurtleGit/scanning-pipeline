@@ -75,10 +75,6 @@ class NodeGraph {
          "mouseup",
          this.mouseUpHandler.bind(this)
       );
-      /*this.parentElement.addEventListener(
-         "dblclick",
-         this.doubleClickHandler.bind(this)
-      );*/
 
       /**
        * @private
@@ -140,6 +136,28 @@ class NodeGraph {
       this.placedNodes.push(inputGraphNode);
       inputGraphNode.setPosition(position);
       this.parentElement.appendChild(inputGraphNode.domElement);
+   }
+
+   /**
+    * @public
+    * @param {Promise<GraphNodeInputUI>} input
+    * @param {{x:number, y:number}} position
+    */
+   async createInputNode(input, position = undefined) {
+      const inputGraphNode = new InputGraphNode(this, await input);
+      if (position) inputGraphNode.setPosition(position);
+   }
+
+   /**
+    * @public
+    * @param {Promise<GraphNodeOutputUI>} output
+    * @param {Promise<GraphNodeInputUI>} input
+    */
+   async connect(output, input) {
+      const inputResolved = await input;
+      const outputResolved = await output;
+      inputResolved.setConnection(outputResolved);
+      this.updateConnectionUI();
    }
 
    /**
@@ -572,19 +590,14 @@ class GraphNodeInputUI extends GraphNodeInput {
     */
    clickHandler(mouseEvent) {
       if (mouseEvent.detail > 1) {
-         mouseEvent.stopPropagation();
-         mouseEvent.preventDefault();
          this.doubleClickHandler();
       }
    }
 
    /**
     * @private
-    * @param {MouseEvent} mouseEvent
     */
-   mouseHandler(mouseEvent) {
-      mouseEvent.stopPropagation();
-      mouseEvent.preventDefault();
+   mouseHandler() {
       this.nodeGraph.toggleConnection(this);
    }
 
@@ -592,9 +605,10 @@ class GraphNodeInputUI extends GraphNodeInput {
     * @private
     */
    doubleClickHandler() {
+      const boundingRect = this.domElement.getBoundingClientRect();
       this.nodeGraph.placeInputGraphNode(
          new InputGraphNode(this.nodeGraph, this),
-         { x: this.domElement.offsetLeft - 50, y: this.domElement.offsetTop }
+         { x: boundingRect.left - 200, y: boundingRect.top - 25 }
       );
       this.nodeGraph.setLinkedNodeIO(null);
    }
@@ -747,11 +761,8 @@ class GraphNodeOutputUI extends GraphNodeOutput {
 
    /**
     * @private
-    * @param {MouseEvent} mouseEvent
     */
-   mouseHandler(mouseEvent) {
-      mouseEvent.stopPropagation();
-      mouseEvent.preventDefault();
+   mouseHandler() {
       this.nodeGraph.toggleConnection(this);
    }
 }
@@ -775,6 +786,38 @@ class GraphNodeUI {
 
       if (this.graphNode) {
          this.initialize();
+      }
+   }
+
+   /**
+    * @public
+    * @param {string} name
+    * @returns {Promise<GraphNodeInputUI>}
+    */
+   async getInput(name) {
+      await this.initialize();
+
+      for (let i = 0; i < this.graphNodeInputs.length; i++) {
+         if (this.graphNodeInputs[i].name === name)
+            return this.graphNodeInputs[i];
+      }
+   }
+
+   /**
+    * @public
+    * @param {string} description
+    * @returns {Promise<GraphNodeOutputUI>}
+    */
+   async getOutput(description = undefined) {
+      await this.initialize();
+
+      if (this.graphNodeOutputs.length === 1) {
+         return this.graphNodeOutputs[0];
+      } else {
+         for (let i = 0; i < this.graphNodeOutputs.length; i++) {
+            if (this.graphNodeOutputs[i].description === description)
+               return this.graphNodeOutputs[i];
+         }
       }
    }
 
@@ -983,9 +1026,20 @@ class GraphNodeUI {
    }
 
    /**
-    * @protected
+    * @public
     */
    async initialize() {
+      while (this.initializing) {
+         await new Promise((resolve) => {
+            setTimeout(resolve, 500);
+         });
+      }
+      if (this.initialized) {
+         return;
+      }
+      this.initialized = false;
+      this.initializing = true;
+
       /**
        * @override
        * @protected
@@ -1051,6 +1105,9 @@ class GraphNodeUI {
       });
 
       this.execute();
+
+      this.initialized = true;
+      this.initializing = false;
    }
 
    /**
@@ -1139,7 +1196,6 @@ class InputGraphNode extends GraphNodeUI {
 
    /**
     * @override
-    * @protected
     */
    async initialize() {
       this.domElement.classList.add(this.cssClass);
