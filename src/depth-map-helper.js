@@ -50,17 +50,20 @@ class DepthMapHelper {
       const anglesCount = azimuthalAngles.length;
 
       let promisesResolvedCount = 0;
+      /** @type {number[]} */
       const integral = new Array(dimensions.width * dimensions.height).fill(0);
 
-      for (let i = 0; i < anglesCount; i++) {
-         while (i - promisesResolvedCount >= maximumThreadCount) {
+      const edgeFramePixels = DepthMapHelper.getEdgeFramePixels(dimensions);
+
+      for (let angleIndex = 0; angleIndex < anglesCount; angleIndex++) {
+         while (angleIndex - promisesResolvedCount >= maximumThreadCount) {
             await new Promise((resolve) => {
-               setTimeout(resolve, Math.random() * 500);
+               setTimeout(resolve, Math.random() * 1000);
             });
          }
 
          new Promise((resolve) => {
-            let azimuthalAngle = azimuthalAngles[i];
+            let azimuthalAngle = azimuthalAngles[angleIndex];
 
             // Inverse and thus, line FROM and NOT TO azimuthal angle.
             azimuthalAngle += 180;
@@ -73,23 +76,20 @@ class DepthMapHelper {
 
             const minimumStep = 0.00000001;
 
-            if (stepVector.x < minimumStep && stepVector.x > -minimumStep) {
+            if (Math.abs(stepVector.x) < minimumStep) {
                stepVector.x = 0;
             }
-            if (stepVector.y < minimumStep && stepVector.y > -minimumStep) {
+            if (Math.abs(stepVector.y) < minimumStep) {
                stepVector.y = 0;
             }
 
-            // TODO caching
-            const edgeFramePixels =
-               DepthMapHelper.getEdgeFramePixels(dimensions);
-
             for (
-               let i = 0, edgeFramePixelsCount = edgeFramePixels.length;
-               i < edgeFramePixelsCount;
-               i++
+               let framePixelIndex = 0,
+                  edgeFramePixelsCount = edgeFramePixels.length;
+               framePixelIndex < edgeFramePixelsCount;
+               framePixelIndex++
             ) {
-               const startPixel = edgeFramePixels[i];
+               const startPixel = edgeFramePixels[framePixelIndex];
 
                const stepOffset = {
                   x: startPixel.x,
@@ -123,18 +123,21 @@ class DepthMapHelper {
                      pixel.y >= 0;
 
                   if (inDimensions) {
+                     // TODO y-flipping?
                      const index =
                         pixel.x +
-                        (dimensions.height - pixel.y - 1) * dimensions.width;
+                        (dimensions.height - 1 - pixel.y) * dimensions.width;
+                     const colorIndex =
+                        (pixel.x + pixel.y * dimensions.width) * 4;
 
                      let pixelSlope = 0;
 
-                     if (gradientPixelArray[index + 2] !== 0) {
+                     if (gradientPixelArray[colorIndex + 2] !== 0) {
                         const rightSlope =
-                           gradientPixelArray[index + 0] +
+                           gradientPixelArray[colorIndex + 0] +
                            DepthMapHelper.SLOPE_SHIFT;
                         const topSlope =
-                           gradientPixelArray[index + 1] +
+                           gradientPixelArray[colorIndex + 1] +
                            DepthMapHelper.SLOPE_SHIFT;
 
                         pixelSlope =
@@ -142,8 +145,7 @@ class DepthMapHelper {
                      }
 
                      integralValue -= pixelSlope;
-
-                     integral[index] += integralValue / anglesCount;
+                     integral[index] += integralValue;
                   }
                } while (inDimensions);
             }
@@ -234,30 +236,29 @@ class DepthMapHelper {
    static async getNormalizedIntegralAsGrayscale(integral, dimensions) {
       return new Promise((resolve) => {
          setTimeout(() => {
+            const colorImageArrayLength =
+               dimensions.width * dimensions.height * 4;
             const normalizedIntegral = new Uint8ClampedArray(
-               new ArrayBuffer(dimensions.width * dimensions.height * 4)
+               new ArrayBuffer(colorImageArrayLength)
             );
 
             let min = Number.MAX_VALUE;
             let max = Number.MIN_VALUE;
 
             integral.forEach((value) => {
-               if (value > max) {
-                  max = value;
-               }
-               if (value < min) {
-                  min = value;
-               }
+               if (value > max) max = value;
+               if (value < min) min = value;
             });
 
             const maxMinDelta = max - min;
 
             integral.forEach((value, index) => {
                const normalizedValue = ((value - min) * 255) / maxMinDelta;
-               normalizedIntegral[index * 4 + 0] = normalizedValue;
-               normalizedIntegral[index * 4 + 1] = normalizedValue;
-               normalizedIntegral[index * 4 + 2] = normalizedValue;
-               normalizedIntegral[index * 4 + 3] = 255;
+               const colorIndex = index * 4;
+               normalizedIntegral[colorIndex + 0] = normalizedValue;
+               normalizedIntegral[colorIndex + 1] = normalizedValue;
+               normalizedIntegral[colorIndex + 2] = normalizedValue;
+               normalizedIntegral[colorIndex + 3] = 255;
             });
 
             resolve(normalizedIntegral);

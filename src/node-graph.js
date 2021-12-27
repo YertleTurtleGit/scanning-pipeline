@@ -836,7 +836,6 @@ class GraphNodeUI {
     * @public
     */
    setRefreshFlag() {
-      console.log("Set refresh flag of '" + this.graphNode.getName() + "'.");
       this.refreshFlag = true;
       this.execute();
    }
@@ -946,8 +945,6 @@ class GraphNodeUI {
             cThis.worker = undefined;
          }
       );
-
-      console.log({ toCopy });
 
       this.worker.postMessage(
          { pointer: toTransfer, copy: toCopy },
