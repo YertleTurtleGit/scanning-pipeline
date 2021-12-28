@@ -52,6 +52,28 @@
             padding: 0.25rem;
             border-radius: 0.5rem;
          }
+
+         .nodeGraphMenuItem {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem;
+            width: 10rem;
+            height: 10rem;
+            z-index: 901;
+            color: white;
+            font-family: sans-serif;
+            font-size: 1.5rem;
+            border: solid white;
+            border-radius: 1rem;
+            cursor: pointer;
+            text-align: center;
+         }
+
+         .nodeGraphMenuItem:hover {
+            color: var(--nodeGraphBackgroundColor);
+            background-color: white;
+         }
       </style>
    </head>
    <body>
@@ -68,16 +90,69 @@
             margin: 0;
             border: 0;
             padding: 0;
-            background-color: rgb(64, 64, 64);
+            background-color: var(--nodeGraphBackgroundColor);
          "
       ></div>
 
-      <script src="./src/function-worker.js"></script>
-      <script src="./src/glsl-shader.js"></script>
-      <script src="./src/depth-map-helper.js"></script>
-      <script src="./test.js"></script>
+      <div
+         id="intro"
+         style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-flow: wrap;
+            gap: 2rem;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            border: 0;
+            z-index: 900;
+         "
+      >
+      </div>
 
-      <script crossorigin="anonymous" src="./src/node-graph.js"></script>
-      <script crossorigin="anonymous" src="./src/test-node-graph.js"></script>
+      <script src="./src/function-worker.js"></script>
+      <script src="./src/ambient-occlusion-map.js"></script>
+      <script src="./src/albedo-map.js"></script>
+      <script src="./src/roughness-map.js"></script>
+      <script src="./src/normal-map.js"></script>
+      <script src="./src/depth-map.js"></script>
+
+      <script src="./src/node-graph.js"></script>
+
+      <script>
+         const introDiv = document.getElementById("intro");
+         const nodeGraphUrls = [
+            "./node-graphs/photometric-stereo.ng.js",
+            "./node-graphs/ambient-occlusion-and-roughness.ng.js",
+         ];
+
+         nodeGraphUrls.forEach((url) => {
+            const nodeGraphDiv = document.createElement("span");
+            nodeGraphDiv.innerText = url
+               .replace("./node-graphs/", "")
+               .replace(".ng", "")
+               .replace(".js", "")
+               .replaceAll("-", " ");
+
+            nodeGraphDiv.classList.add("nodeGraphMenuItem");
+
+            introDiv.appendChild(nodeGraphDiv);
+            nodeGraphDiv.addEventListener("click", () => {
+               introDiv.remove();
+               const nodeGraphScript = document.createElement("script");
+               nodeGraphScript.src = url;
+               document.body.appendChild(nodeGraphScript);
+            });
+         });
+
+         introDiv.remove();
+         const nodeGraphScript = document.createElement("script");
+         nodeGraphScript.src = nodeGraphUrls[0];
+         document.body.appendChild(nodeGraphScript);
+      </script>
    </body>
 </html>

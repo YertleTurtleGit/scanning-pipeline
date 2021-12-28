@@ -1,5 +1,5 @@
 /* global GLSL */
-/* exported DepthMapHelper */
+/* exported depthMap */
 
 /**
  * @global
@@ -21,7 +21,7 @@ class DepthMapHelper {
     * @returns {Promise<ImageBitmap>} A depth mapping
     * according to the input normal mapping.
     */
-   static async calculateDepthMap(normalMap, qualityPercent) {
+   static async depthMap(normalMap, qualityPercent) {
       console.time("calculate depth mapping");
       const startTime = performance.now();
 
@@ -333,4 +333,4 @@ DepthMapHelper.SLOPE_SHIFT = -255 / 2;
 
 // @ts-ignore
 // eslint-disable-next-line no-unused-vars
-const calculateDepthMap = DepthMapHelper.calculateDepthMap;
+const depthMap = DepthMapHelper.depthMap;

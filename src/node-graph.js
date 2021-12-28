@@ -24,10 +24,12 @@ class NodeCallback {
     * @param {number} progressPercent
     */
    setProgressPercent(progressPercent) {
-      if (progressPercent <= 0 || progressPercent === 100) {
+      this.graphNodeUI.domProgressElement.hidden = false;
+      if (progressPercent <= 0) {
+         this.graphNodeUI.domProgressElement.removeAttribute("value");
+      } else if (progressPercent >= 100) {
          this.graphNodeUI.domProgressElement.hidden = true;
       } else {
-         this.graphNodeUI.domProgressElement.hidden = false;
          this.graphNodeUI.domProgressElement.value = progressPercent;
       }
    }
@@ -140,23 +142,18 @@ class NodeGraph {
 
    /**
     * @public
-    * @param {Promise<GraphNodeInputUI>} input
-    * @param {any} initValue
+    * @param {string} type
     * @param {{x:number, y:number}} position
+    * @param {any} initValue
+    * @returns {GraphNodeUI}
     */
-   async createInputNode(input, initValue = undefined, position = undefined) {
-      const inputResolved = await input;
-
-      if (position === undefined) {
-         position = inputResolved.graphNodeUI.getPosition();
-         position.x -= 250;
-         position.y = inputResolved.domElement.getBoundingClientRect().top;
-      }
-      const inputGraphNode = new InputGraphNode(this, inputResolved);
+   createInputNode(type, position, initValue = undefined) {
+      const inputGraphNode = new InputGraphNode(this, type);
       if (initValue) {
          inputGraphNode.setValue(initValue);
       }
       this.placeInputGraphNode(inputGraphNode, position);
+      return inputGraphNode;
    }
 
    /**
@@ -245,18 +242,22 @@ class NodeGraph {
 
       const connections = await this.getConnections();
       connections.forEach((connection) => {
-         const startRect = connection.input.domElement.getBoundingClientRect();
-         const start = {
-            x: startRect.left,
-            y: (startRect.top + startRect.bottom) / 2,
-         };
-         const endRect = connection.output.domElement.getBoundingClientRect();
-         const end = {
-            x: endRect.right,
-            y: (endRect.top + endRect.bottom) / 2,
-         };
-         this.domCanvasContext.moveTo(start.x, start.y);
-         this.domCanvasContext.lineTo(end.x, end.y);
+         if (connection.input && connection.output) {
+            const startRect =
+               connection.input.domElement.getBoundingClientRect();
+            const start = {
+               x: startRect.left,
+               y: (startRect.top + startRect.bottom) / 2,
+            };
+            const endRect =
+               connection.output.domElement.getBoundingClientRect();
+            const end = {
+               x: endRect.right,
+               y: (endRect.top + endRect.bottom) / 2,
+            };
+            this.domCanvasContext.moveTo(start.x, start.y);
+            this.domCanvasContext.lineTo(end.x, end.y);
+         }
       });
 
       this.domCanvasContext.stroke();
@@ -616,12 +617,12 @@ class GraphNodeInputUI extends GraphNodeInput {
     * @private
     */
    doubleClickHandler() {
-      const boundingRect = this.domElement.getBoundingClientRect();
+      /*const boundingRect = this.domElement.getBoundingClientRect();
       this.nodeGraph.placeInputGraphNode(
          new InputGraphNode(this.nodeGraph, this),
          { x: boundingRect.left - 200, y: boundingRect.top - 25 }
       );
-      this.nodeGraph.setLinkedNodeIO(null);
+      this.nodeGraph.setLinkedNodeIO(null);*/
    }
 
    /**
@@ -850,9 +851,9 @@ class GraphNodeUI {
             this.worker.terminate();
          }
       } else {
-         if (this.executerPromiseCallback) {
+         if (this.executerCallback) {
             console.log("aborting " + this.graphNode.executer.name + ".");
-            this.executerPromiseCallback.abortFlag = true;
+            this.executerCallback.abortFlag = true;
          }
       }
 
@@ -865,6 +866,9 @@ class GraphNodeUI {
          console.log(
             "Calling function '" + this.graphNode.executer.name + "'."
          );
+
+         this.executerCallback = new NodeCallback(this);
+         this.executerCallback.setProgressPercent(0);
 
          if (this.graphNode.asWorker) {
             this.executeAsWorker(parameterValues);
@@ -890,14 +894,14 @@ class GraphNodeUI {
     */
    async executeAsPromise(parameterValues) {
       setTimeout(async () => {
-         this.executerPromiseCallback = new NodeCallback(this);
          const result = await this.graphNode.executer(
             ...parameterValues,
-            this.executerPromiseCallback
+            this.executerCallback
          );
 
          this.graphNodeOutputs[0].setValue(result);
          this.refreshValuePreview(result);
+         this.executerCallback.setProgressPercent(100);
       });
    }
 
@@ -914,7 +918,7 @@ class GraphNodeUI {
       let copyCount = 0;
 
       parameterValues.forEach((parameterValue) => {
-         if (parameterValue instanceof ImageBitmap) {
+         if (false && parameterValue instanceof ImageBitmap) {
             toTransfer.push(parameterValue);
             parameterValuesString +=
                "messageEvent.data.pointer[" + String(pointerCount) + "]";
@@ -943,6 +947,7 @@ class GraphNodeUI {
 
             cThis.worker.terminate();
             cThis.worker = undefined;
+            cThis.executerCallback.setProgressPercent(100);
          }
       );
 
@@ -991,6 +996,19 @@ class GraphNodeUI {
          imageCanvas.height = value.height;
          const context = imageCanvas.getContext("2d");
          context.drawImage(value, 0, 0, value.width, value.height);
+         const imageElement = new Image();
+         imageElement.style.maxWidth = "100%";
+         imageCanvas.style.maxHeight = "5rem";
+         this.outputUIElement.style.display = "flex";
+         this.outputUIElement.style.justifyContent = "center";
+         this.outputUIElement.appendChild(imageElement);
+         imageElement.src = imageCanvas.toDataURL();
+      } else if (Array.isArray(value) && value[0] instanceof ImageBitmap) {
+         const imageCanvas = document.createElement("canvas");
+         imageCanvas.width = value[0].width;
+         imageCanvas.height = value[0].height;
+         const context = imageCanvas.getContext("2d");
+         context.drawImage(value[0], 0, 0, value[0].width, value[0].height);
          const imageElement = new Image();
          imageElement.style.maxWidth = "100%";
          imageCanvas.style.maxHeight = "5rem";
@@ -1048,27 +1066,29 @@ class GraphNodeUI {
       this.initialized = false;
       this.initializing = true;
 
-      /**
-       * @override
-       * @protected
-       * @type {GraphNodeInputUI[]}
-       */
-      this.graphNodeInputs = GraphNodeInputUI.getFromGraphNodeInputs(
-         await this.graphNode.getInputs(),
-         this.nodeGraph,
-         this
-      );
+      if (this.graphNode) {
+         /**
+          * @override
+          * @protected
+          * @type {GraphNodeInputUI[]}
+          */
+         this.graphNodeInputs = GraphNodeInputUI.getFromGraphNodeInputs(
+            await this.graphNode.getInputs(),
+            this.nodeGraph,
+            this
+         );
 
-      /**
-       * @override
-       * @protected
-       * @type {GraphNodeOutputUI[]}
-       */
-      this.graphNodeOutputs = GraphNodeOutputUI.getFromGraphNodeOutputs(
-         await this.graphNode.getOutputs(),
-         this.nodeGraph,
-         this
-      );
+         /**
+          * @override
+          * @protected
+          * @type {GraphNodeOutputUI[]}
+          */
+         this.graphNodeOutputs = GraphNodeOutputUI.getFromGraphNodeOutputs(
+            await this.graphNode.getOutputs(),
+            this.nodeGraph,
+            this
+         );
+      }
 
       this.domElement.classList.add(this.cssClass);
 
@@ -1193,24 +1213,30 @@ class GraphNodeUI {
 class InputGraphNode extends GraphNodeUI {
    /**
     * @param {NodeGraph} nodeGraph
-    * @param {GraphNodeInputUI} inputNode
+    * @param {GraphNodeInputUI | string} inputNodeOrType
     * @param {string} cssClass
     */
-   constructor(nodeGraph, inputNode, cssClass = "graphNode") {
+   constructor(nodeGraph, inputNodeOrType, cssClass = "graphNode") {
       super(undefined, nodeGraph, cssClass);
 
-      this.type = inputNode.type;
-      this.inputNode = inputNode;
+      if (inputNodeOrType instanceof GraphNodeInputUI) {
+         this.type = inputNodeOrType.type;
+         this.inputNode = inputNodeOrType;
+      } else {
+         this.type = inputNodeOrType;
+      }
 
       this.initialize();
-      this.setConnectionToInputNode();
+
+      if (inputNodeOrType instanceof GraphNodeInputUI)
+         this.setConnectionToInputNode();
    }
 
    /**
     * @private
     */
    async setConnectionToInputNode() {
-      this.inputNode.setConnection(this.graphNodeOutput);
+      this.inputNode.setConnection(this.graphNodeOutputs);
       this.nodeGraph.updateConnectionUI();
    }
 
@@ -1218,6 +1244,15 @@ class InputGraphNode extends GraphNodeUI {
     * @override
     */
    async initialize() {
+      while (this.initializing) {
+         await new Promise((resolve) => {
+            setTimeout(resolve, 500);
+         });
+      }
+      if (this.initialized) {
+         return;
+      }
+
       this.domElement.classList.add(this.cssClass);
 
       const domTitleElement = document.createElement("h1");
@@ -1229,6 +1264,13 @@ class InputGraphNode extends GraphNodeUI {
       domTitleElement.innerText = this.type;
       domTitleElement.style.backgroundColor = "transparent";
       this.domElement.appendChild(domTitleElement);
+
+      this.domProgressElement = document.createElement("progress");
+      this.domProgressElement.style.width = "100%";
+      this.domProgressElement.value = 0;
+      this.domProgressElement.max = 100;
+      this.domElement.appendChild(this.domProgressElement);
+      this.domProgressElement.hidden = true;
 
       this.outputUIElement = document.createElement("div");
       this.domElement.appendChild(this.outputUIElement);
@@ -1251,6 +1293,7 @@ class InputGraphNode extends GraphNodeUI {
       this.inputElement.style.overflowWrap = "break-word";
       this.inputElement.style.hyphens = "auto";
       this.inputElement.style.whiteSpace = "normal";
+      this.inputElement.multiple = false;
 
       if (this.type === "number") {
          this.inputElement.type = "number";
@@ -1258,6 +1301,10 @@ class InputGraphNode extends GraphNodeUI {
       } else if (this.type === "ImageBitmap") {
          this.inputElement.type = "file";
          this.inputElement.accept = "image/*";
+      } else if (this.type === "ImageBitmap[]") {
+         this.inputElement.type = "file";
+         this.inputElement.accept = "image/*";
+         this.inputElement.multiple = true;
       } else {
          console.error("Input type '" + this.type + "' not supported.");
       }
@@ -1269,14 +1316,19 @@ class InputGraphNode extends GraphNodeUI {
 
       domInputList.appendChild(this.inputElement);
 
-      this.graphNodeOutput = new GraphNodeOutputUI(
-         this.type,
-         "[" + this.type + "]",
-         this.nodeGraph,
-         this
-      );
+      this.graphNodeOutputs = [
+         new GraphNodeOutputUI(
+            this.type,
+            "[" + this.type + "]",
+            this.nodeGraph,
+            this
+         ),
+      ];
 
-      domOutputList.appendChild(this.graphNodeOutput.domElement);
+      domOutputList.appendChild(this.graphNodeOutputs[0].domElement);
+
+      this.initialized = true;
+      this.initializing = false;
    }
 
    /**
@@ -1293,37 +1345,56 @@ class InputGraphNode extends GraphNodeUI {
     * @param {InputEvent} inputEvent
     */
    inputChangeHandler(inputEvent) {
-      let value;
-
       if (this.type === "number") {
-         value = Number(
+         let value = Number(
             /** @type {HTMLInputElement} */ (inputEvent.target).value
          );
          if (!value) {
             value = 0;
          }
-         this.graphNodeOutput.setValue(value);
+         this.graphNodeOutputs[0].setValue(value);
          this.refreshValuePreview(value);
       } else if (this.type === "ImageBitmap") {
-         value = new Image();
-         const reader = new FileReader();
-         const cThis = this;
+         const nodeCallback = new NodeCallback(this);
+         nodeCallback.setProgressPercent(0);
 
-         setTimeout(() => {
-            reader.addEventListener("load", () => {
-               value.addEventListener("load", async () => {
-                  value = await createImageBitmap(value);
-                  cThis.graphNodeOutput.setValue(value);
-                  cThis.refreshValuePreview(value);
-               });
-               value.addEventListener("error", () => {
-                  console.error("Error loading image.");
-               });
-               value.src = reader.result;
-            });
-            reader.readAsDataURL(
-               /** @type {HTMLInputElement} */ (inputEvent.target).files[0]
+         const imageLoaderWorker = new Worker("./src/image-loader-worker.js");
+
+         imageLoaderWorker.addEventListener("message", async (messageEvent) => {
+            const imageBitmap = messageEvent.data;
+            this.graphNodeOutputs[0].setValue(imageBitmap);
+            this.refreshValuePreview(imageBitmap);
+            nodeCallback.setProgressPercent(100);
+         });
+         imageLoaderWorker.postMessage(inputEvent.target.files[0]);
+      } else if (this.type === "ImageBitmap[]") {
+         const nodeCallback = new NodeCallback(this);
+         nodeCallback.setProgressPercent(0);
+
+         const files = Array.from(inputEvent.target.files);
+         const imageCount = files.length;
+         const imageBitmapArray = [];
+
+         files.forEach((file) => {
+            const imageLoaderWorker = new Worker(
+               "./src/image-loader-worker.js"
             );
+
+            imageLoaderWorker.addEventListener(
+               "message",
+               async (messageEvent) => {
+                  const imageBitmap = messageEvent.data;
+                  imageBitmapArray.push(imageBitmap);
+                  if (imageBitmapArray.length === imageCount) {
+                     this.graphNodeOutputs[0].setValue(imageBitmapArray);
+                     this.refreshValuePreview(imageBitmap);
+                  }
+                  nodeCallback.setProgressPercent(
+                     (imageBitmapArray.length / imageCount) * 100
+                  );
+               }
+            );
+            imageLoaderWorker.postMessage(file);
          });
       }
    }
@@ -1335,16 +1406,7 @@ class InputGraphNode extends GraphNodeUI {
     */
    async getConnections() {
       // TODO Handle multiple outputs.
-      return [{ input: this.inputNode, output: this.graphNodeOutput }];
-   }
-
-   /**
-    * @override
-    * @public
-    * @returns {GraphNodeUI[]}
-    */
-   getOutputNodes() {
-      return [this.inputNode.graphNodeUI];
+      return [{ input: this.inputNode, output: this.graphNodeOutputs[0] }];
    }
 
    /**

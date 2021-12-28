@@ -17,13 +17,14 @@ class FunctionWorker {
       const workerFunctionString =
          this.workerFunction.toString() +
          "\n" +
+         "self.addEventListener('message', (messageEvent) => {\n" +
          this.workerFunction.name +
-         "();";
+         "(messageEvent);\n}\n);";
 
       const blob = new Blob([workerFunctionString], {
          type: "text/javascript",
       });
-      const workerSrc = window.URL.createObjectURL(blob);
+      const workerSrc = URL.createObjectURL(blob);
       return new Worker(workerSrc);
    }
 
@@ -38,9 +39,10 @@ class FunctionWorker {
    /**
     * @public
     * @param  {any} message
+    * @param {Transferable[]} transfer
     */
-   postMessage(message) {
-      this.worker.postMessage(message);
+   postMessage(message, transfer = undefined) {
+      this.worker.postMessage(message, transfer);
    }
 
    /**
