@@ -50,7 +50,7 @@ async function main() {
       y: 500,
    });
 
-   const testImageUrls = [
+   /*const testImageUrls = [
       "./../test-datasets/photometric-stereo/test_000_036.jpg",
       "./../test-datasets/photometric-stereo/test_045_036.jpg",
       "./../test-datasets/photometric-stereo/test_090_036.jpg",
@@ -61,7 +61,6 @@ async function main() {
       "./../test-datasets/photometric-stereo/test_315_036.jpg",
    ];
 
-   /** @type {ImageBitmap[]} */
    const testImages = [];
 
    for (let i = 0; i < testImageUrls.length; i++) {
@@ -74,7 +73,7 @@ async function main() {
          });
          htmlImage.src = testImageUrls[i];
       });
-   }
+   }*/
 
    const lightPolarAngleInputNode = nodeGraph.createInputNode(
       "number",
