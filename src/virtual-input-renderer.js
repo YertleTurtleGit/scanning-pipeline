@@ -353,7 +353,7 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
     * @param {number} lightDistance
     * @returns {Promise<ImageBitmap[]>}
     */
-   static async renderLightImages(
+   static async renderedLightImages(
       lightPolarAngleDeg,
       cameraDistance,
       lightDistance

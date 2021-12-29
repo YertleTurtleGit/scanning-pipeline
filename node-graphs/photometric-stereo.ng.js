@@ -118,10 +118,10 @@ async function main() {
          height: 250,
       }
    );
-   await PhotometricStereoRenderer.renderLightImages(45, 18, 18);
+   await PhotometricStereoRenderer.renderedLightImages(45, 18, 18);
 
    const lightImagesRenderNode = nodeGraph.registerNode(
-      PhotometricStereoRenderer.renderLightImages
+      PhotometricStereoRenderer.renderedLightImages
    );
    const lightImagesRenderNodeA = nodeGraph.placeNode(lightImagesRenderNode, {
       x: 450,
