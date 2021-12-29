@@ -1,4 +1,4 @@
-/* global NodeGraph, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap */
+/* global NodeGraph, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer */
 
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
@@ -30,23 +30,23 @@ async function main() {
    );
 
    const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
-      x: 450,
+      x: 750,
       y: 500,
    });
    const normalMapNodeA = nodeGraph.placeNode(normalMapNode, {
-      x: 450,
+      x: 750,
       y: 150,
    });
-   const depthMapNodeA = nodeGraph.placeNode(depthMapNode, { x: 700, y: 600 });
+   const depthMapNodeA = nodeGraph.placeNode(depthMapNode, { x: 1025, y: 600 });
    const ambientOcclusionMapNodeA = nodeGraph.placeNode(
       ambientOcclusionMapNode,
       {
-         x: 1000,
+         x: 1300,
          y: 150,
       }
    );
    const roughnessMapNodeA = nodeGraph.placeNode(roughnessMapNode, {
-      x: 1000,
+      x: 1300,
       y: 500,
    });
 
@@ -76,34 +76,99 @@ async function main() {
       });
    }
 
-   const lightPolarAngleInputNode = nodeGraph.createInputNode("number", {
-      x: 200,
-      y: 300,
-   });
-   const lightImagesInputNode = nodeGraph.createInputNode(
-      "ImageBitmap[]",
+   const lightPolarAngleInputNode = nodeGraph.createInputNode(
+      "number",
       {
          x: 200,
-         y: 400,
+         y: 300,
       },
-      testImageUrls.join(",")
+      45
    );
-   const qualityPercentInputNode = nodeGraph.createInputNode("number", {
+   const cameraDistanceInputNode = nodeGraph.createInputNode(
+      "number",
+      {
+         x: 200,
+         y: 500,
+      },
+      18
+   );
+   const lightDistanceInputNode = nodeGraph.createInputNode(
+      "number",
+      {
+         x: 200,
+         y: 600,
+      },
+      18
+   );
+   /*const lightImagesInputNode = nodeGraph.createInputNode("ImageBitmap[]", {
+      x: 200,
+      y: 400,
+   });*/
+
+   const uiCanvas = document.createElement("canvas");
+   uiCanvas.width = 250;
+   uiCanvas.height = 250;
+   uiCanvas.style.zIndex = "999";
+   document.body.appendChild(uiCanvas);
+
+   new PhotometricStereoRenderer(
+      uiCanvas,
+      "./test-datasets/models/mesh_plane.glb",
+      {
+         width: 250,
+         height: 250,
+      }
+   );
+   await PhotometricStereoRenderer.renderLightImages(45, 18, 18);
+
+   const lightImagesRenderNode = nodeGraph.registerNode(
+      PhotometricStereoRenderer.renderLightImages
+   );
+   const lightImagesRenderNodeA = nodeGraph.placeNode(lightImagesRenderNode, {
       x: 450,
-      y: 800,
+      y: 400,
    });
 
-   nodeGraph.connect(
+   const qualityPercentInputNode = nodeGraph.createInputNode(
+      "number",
+      {
+         x: 750,
+         y: 800,
+      },
+      1
+   );
+
+   /*nodeGraph.connect(
       lightImagesInputNode.getOutput(),
       normalMapNodeA.getInput("lightImages")
    );
    nodeGraph.connect(
       lightImagesInputNode.getOutput(),
       albedoMapNodeA.getInput("lightImages")
-   );
+   );*/
    nodeGraph.connect(
       lightPolarAngleInputNode.getOutput(),
       normalMapNodeA.getInput("lightPolarAngleDeg")
+   );
+   nodeGraph.connect(
+      lightPolarAngleInputNode.getOutput(),
+      lightImagesRenderNodeA.getInput("lightPolarAngleDeg")
+   );
+   nodeGraph.connect(
+      cameraDistanceInputNode.getOutput(),
+      lightImagesRenderNodeA.getInput("cameraDistance")
+   );
+   nodeGraph.connect(
+      lightDistanceInputNode.getOutput(),
+      lightImagesRenderNodeA.getInput("lightDistance")
+   );
+   nodeGraph.connect(
+      lightImagesRenderNodeA.getOutput(),
+      normalMapNodeA.getInput("lightImages")
+   );
+   nodeGraph.connect(
+      lightImagesRenderNodeA.getOutput(),
+      albedoMapNodeA.getInput("lightImages")
    );
    nodeGraph.connect(
       normalMapNodeA.getOutput(),
