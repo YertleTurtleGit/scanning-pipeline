@@ -5,7 +5,7 @@
  * @global
  * @abstract
  */
- class VirtualInputRenderer {
+class VirtualInputRenderer {
    /**
     * @protected
     * @param {HTMLCanvasElement} uiCanvas
@@ -38,7 +38,7 @@
     * @abstract
     * @public
     * @throws {Error} Cannot call an abstract method.
-    * @returns {Promise<HTMLImageElement[]>}
+    * @returns {Promise<ImageBitmap[]>}
     */
    async render() {
       throw new Error("Cannot call an abstract method.");
@@ -343,6 +343,28 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
       renderDimensions = { width: 300, height: 300 }
    ) {
       super(uiCanvas, modelUrl, renderDimensions);
+      PhotometricStereoRenderer.current = this;
+   }
+
+   /**
+    * @public
+    * @param {number} lightPolarAngleDeg
+    * @param {number} cameraDistance
+    * @param {number} lightDistance
+    * @returns {Promise<ImageBitmap[]>}
+    */
+   static async renderLightImages(
+      lightPolarAngleDeg,
+      cameraDistance,
+      lightDistance
+   ) {
+      PhotometricStereoRenderer.current.setLightPolarAngleDeg(
+         lightPolarAngleDeg
+      );
+      PhotometricStereoRenderer.current.setCameraDistance(cameraDistance);
+      PhotometricStereoRenderer.current.setLightDistance(lightDistance);
+
+      return PhotometricStereoRenderer.current.render();
    }
 
    /**
@@ -388,7 +410,7 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
    /**
     * @override
     * @public
-    * @returns {Promise<HTMLImageElement[]>}
+    * @returns {Promise<ImageBitmap[]>}
     */
    async render() {
       this.renderId++;
@@ -417,17 +439,10 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
          if (this.isRenderObsolete(renderId)) return;
 
          this.renderer.render(this.scene, this.camera);
-         const renderImageDataUrl = this.renderer.domElement.toDataURL();
 
          renderPromises.push(
             new Promise((resolve) => {
-               setTimeout(() => {
-                  const image = new Image();
-                  image.addEventListener("load", () => {
-                     resolve(image);
-                  });
-                  image.src = renderImageDataUrl;
-               });
+               resolve(createImageBitmap(this.renderer.domElement));
             })
          );
       }
@@ -518,3 +533,6 @@ class SphericalGradientRenderer extends VirtualInputRenderer {
       super(uiCanvas, modelUrl, renderDimensions);
    }
 }
+
+/** @type {PhotometricStereoRenderer} */
+PhotometricStereoRenderer.current = undefined;

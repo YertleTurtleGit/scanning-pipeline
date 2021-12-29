@@ -272,16 +272,17 @@ class GlslContext {
     */
    constructor(dimensions) {
       this.glslShader = GlslShader.getCurrentShader();
-      this.glCanvas = document.createElement("canvas");
-      this.glCanvas.width = dimensions.width;
-      this.glCanvas.height = dimensions.height;
+      const dim = new Uint32Array(2);
+      dim[0] = dimensions.width;
+      dim[1] = dimensions.height;
+      this.glCanvas = new OffscreenCanvas(dim[0], dim[1]);
+      this.dimensions = { width: dimensions.width, height: dimensions.height };
       this.glContext = this.glCanvas.getContext("webgl2");
    }
 
    reset() {
       this.glContext.flush();
       this.glContext.finish();
-      this.glCanvas.remove();
       this.glContext.getExtension("WEBGL_lose_context").loseContext();
    }
    /**
@@ -298,11 +299,21 @@ class GlslContext {
       return this.renderToPixelArray(outVariable);
    }
    /**
-    * @returns {string}
+    * @deprecated
+    * @returns {Promise<string>}
     */
-   renderDataUrl() {
-      return this.glCanvas.toDataURL();
+   async renderDataUrl() {
+      return new Promise((resolve) => {
+         this.glCanvas.convertToBlob().then((blob) => {
+            const reader = new FileReader();
+            reader.addEventListener("load", () => {
+               resolve(reader.result[0]);
+            });
+            reader.readAsDataURL(blob);
+         });
+      });
    }
+
    /**
     * @private
     * @param  {GlslVector4} outVariable
@@ -404,7 +415,12 @@ class GlslContext {
     * @returns {void}
     */
    drawArraysFromVAO(vaoFrame) {
-      this.glContext.viewport(0, 0, this.glCanvas.width, this.glCanvas.height);
+      this.glContext.viewport(
+         0,
+         0,
+         this.dimensions.width,
+         this.dimensions.height
+      );
       this.glContext.clearColor(0, 0, 0, 0);
       this.glContext.clear(
          this.glContext.COLOR_BUFFER_BIT | this.glContext.DEPTH_BUFFER_BIT
@@ -422,13 +438,13 @@ class GlslContext {
     */
    readToPixelArray() {
       let pixelArray = new Uint8Array(
-         this.glCanvas.width * this.glCanvas.height * 4
+         this.dimensions.width * this.dimensions.height * 4
       );
       this.glContext.readPixels(
          0,
          0,
-         this.glCanvas.width,
-         this.glCanvas.height,
+         this.dimensions.width,
+         this.dimensions.height,
          this.glContext.RGBA,
          this.glContext.UNSIGNED_BYTE,
          pixelArray
@@ -485,30 +501,25 @@ class GlslRendering {
       return this.pixelArray;
    }
    /**
-    * @returns {string}
+    * @deprecated
+    * @returns {Promise<string>}
     */
-   getDataUrl() {
+   async getDataUrl() {
       if (!this.dataUrl) {
          this.getPixelArray();
-         this.dataUrl = this.glslContext.renderDataUrl();
+         this.dataUrl = await this.glslContext.renderDataUrl();
       }
       return this.dataUrl;
    }
    /**
-    * @returns {Promise<HTMLImageElement>}
+    * @returns {Promise<ImageBitmap>}
     */
-   async getJsImage() {
-      if (!this.jsImage) {
-         const thisDataUrl = this.getDataUrl();
-         this.jsImage = await new Promise((resolve) => {
-            const image = new Image();
-            image.addEventListener("load", () => {
-               resolve(image);
-            });
-            image.src = thisDataUrl;
-         });
+   async getImageBitmap() {
+      if (!this.imageBitmap) {
+         this.glslContext.drawCall(this.outVariable);
+         this.imageBitmap = createImageBitmap(this.glslContext.glCanvas);
       }
-      return this.jsImage;
+      return this.imageBitmap;
    }
 }
 
@@ -666,7 +677,7 @@ class GlslUniform {
 
 class GlslUniformImage extends GlslUniform {
    /**
-    * @param {HTMLImageElement} initialValue
+    * @param {ImageBitmap} initialValue
     */
    constructor(initialValue) {
       super();
@@ -675,10 +686,10 @@ class GlslUniformImage extends GlslUniform {
 
    /**
     * @public
-    * @param {HTMLImageElement} jsImage
+    * @param {ImageBitmap} imageBitmap
     */
-   setValue(jsImage) {
-      this.glslImage.setImage(jsImage);
+   setValue(imageBitmap) {
+      this.glslImage.setImage(imageBitmap);
    }
 
    /**
@@ -693,10 +704,10 @@ class GlslUniformImage extends GlslUniform {
 class GlslImage {
    /**
     * @public
-    * @param  {HTMLImageElement} jsImage
+    * @param {ImageBitmap} imageBitmap
     */
-   constructor(jsImage) {
-      this.jsImage = jsImage;
+   constructor(imageBitmap) {
+      this.imageBitmap = imageBitmap;
       this.uniformGlslName = GlslVariable.getUniqueName("uniform");
       this.glslVector4 = new GlslVector4(
          null,
@@ -714,19 +725,19 @@ class GlslImage {
    /**
     * @public
     * @static
-    * @param  {HTMLImageElement} jsImage
+    * @param  {ImageBitmap} imageBitmap
     * @returns {GlslVector4}
     */
-   static load(jsImage) {
-      let glslImage = new GlslImage(jsImage);
+   static load(imageBitmap) {
+      let glslImage = new GlslImage(imageBitmap);
       return glslImage.glslVector4;
    }
    /**
     * @public
-    * @param {HTMLImageElement} jsImage
+    * @param {ImageBitmap} imageBitmap
     */
-   setImage(jsImage) {
-      this.jsImage = jsImage;
+   setImage(imageBitmap) {
+      this.imageBitmap = imageBitmap;
       const context = GlslShader.getGlslContext().getGlContext();
       this.createBaseTexture(context);
    }
@@ -769,7 +780,7 @@ class GlslImage {
          glContext.RGBA,
          glContext.RGBA,
          glContext.UNSIGNED_BYTE,
-         this.jsImage
+         this.imageBitmap
       );
       return texture;
    }
@@ -857,8 +868,8 @@ class GlslImage {
     * @returns {GlslVector4}
     */
    getNeighborPixel(offsetX, offsetY) {
-      const u = (1 / this.jsImage.width) * offsetX;
-      const v = (1 / this.jsImage.height) * offsetY;
+      const u = (1 / this.imageBitmap.width) * offsetX;
+      const v = (1 / this.imageBitmap.height) * offsetY;
 
       const glslOffset = {
          u: GlslFloat.getJsNumberAsString(u),
