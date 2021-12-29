@@ -178,7 +178,7 @@ class NodeGraph {
 
    doubleClickHandler() {
       // TODO Add node selection menu.
-      this.placeNode(this.registeredNodes[0]);
+      // this.placeNode(this.registeredNodes[0]);
    }
 
    /**
@@ -616,13 +616,23 @@ class GraphNodeInputUI extends GraphNodeInput {
    /**
     * @private
     */
-   doubleClickHandler() {
-      /*const boundingRect = this.domElement.getBoundingClientRect();
-      this.nodeGraph.placeInputGraphNode(
-         new InputGraphNode(this.nodeGraph, this),
-         { x: boundingRect.left - 200, y: boundingRect.top - 25 }
+   async doubleClickHandler() {
+      this.nodeGraph.setLinkedNodeIO(null);
+      this.removeConnection();
+
+      const boundingRect = this.domElement.getBoundingClientRect();
+      const inputNode = this.nodeGraph.createInputNode(this.type, {
+         x: boundingRect.left - 200,
+         y: boundingRect.top - 25,
+      });
+      this.nodeGraph.connect(
+         inputNode.getOutput(),
+         new Promise((resolve) => {
+            resolve(this);
+         })
       );
-      this.nodeGraph.setLinkedNodeIO(null);*/
+
+      this.nodeGraph.updateConnectionUI();
    }
 
    /**
