@@ -1323,6 +1323,10 @@ class InputGraphNode extends GraphNodeUI {
          "input",
          this.inputChangeHandler.bind(this)
       );
+      this.inputElement.addEventListener(
+         "change",
+         this.inputChangeHandler.bind(this)
+      );
 
       domInputList.appendChild(this.inputElement);
 

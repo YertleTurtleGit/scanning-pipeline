@@ -434,7 +434,7 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
          }
          this.lights[i].visible = true;
          // TODO Remove hard code.
-         this.lights[i].intensity = 25 * (this.cameraDistance / 8);
+         this.lights[i].intensity = 25 * (this.lightDistance / 8);
 
          if (this.isRenderObsolete(renderId)) return;
 
@@ -451,7 +451,7 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
          this.lights[i].visible = true;
          this.lightHelpers[i].visible = true;
          // TODO Remove hard code.
-         this.lights[i].intensity = 0.25;
+         // this.lights[i].intensity = 0.25;
       }
       this.cameraHelper.visible = true;
 
@@ -482,6 +482,7 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
       this.lightDistance = lightDistance;
       for (let i = 0; i < this.lights.length; i++) {
          this.lights[i].distance = this.lightDistance * 2;
+         this.lights[i].intensity = 25 * (this.lightDistance / 8);
       }
       this.updateLightPositions();
    }
