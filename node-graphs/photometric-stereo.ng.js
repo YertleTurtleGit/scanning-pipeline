@@ -1,5 +1,9 @@
 /* global NodeGraph, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer */
 
+/*
+Cross-Origin-Embedder-Policy: require-corp
+Cross-Origin-Opener-Policy: same-origin
+*/
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
 
@@ -16,6 +20,7 @@ async function main() {
    const depthMapNode = nodeGraph.registerNodeAsWorker(
       depthMap,
       "./src/glsl-shader.js",
+      "./src/function-worker.js",
       "./src/depth-map.js"
    );
    const ambientOcclusionMapNode = nodeGraph.registerNodeAsWorker(
