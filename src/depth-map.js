@@ -1,5 +1,5 @@
 /* global GLSL, FunctionWorker */
-/* exported DepthMapHelper */
+/* exported depthMap */
 
 /**
  * @global
@@ -366,6 +366,8 @@ function calculateAnisotropicIntegral(messageEvent) {
       }
       self.postMessage({ azimuthalAngle: azimuthalAngle });
    });
+
+   self.close();
 }
 
 // @ts-ignore
