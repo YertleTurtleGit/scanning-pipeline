@@ -22,6 +22,9 @@ class DepthMapHelper {
     * according to the input normal mapping.
     */
    static async depthMap(normalMap, qualityPercent) {
+      console.time("depth mapping");
+      const startTime = performance.now();
+
       const dimensions = {
          width: normalMap.width,
          height: normalMap.height,
@@ -41,8 +44,9 @@ class DepthMapHelper {
 
       const anglesCount = azimuthalAngles.length;
       const threadCount = Math.min(navigator.hardwareConcurrency, anglesCount);
+      const maxAnglesPerThread = Math.ceil(angleCount / threadCount);
 
-      let workerFinishedCount = 0;
+      let azimuthalAnglesFinished = 0;
 
       const edgeFramePixels = DepthMapHelper.getEdgeFramePixels(dimensions);
 
@@ -65,15 +69,31 @@ class DepthMapHelper {
             calculateAnisotropicIntegral
          );
 
-         const threadAzimuthalAngles = azimuthalAngles.slice(
-            threadId * Math.floor(anglesCount / threadCount),
-            (threadId + 1) * Math.floor(anglesCount / threadCount) - 1
-         );
+         const threadAzimuthalAngles = [];
+         while (
+            azimuthalAngles.length > 0 &&
+            threadAzimuthalAngles.length < maxAnglesPerThread
+         ) {
+            threadAzimuthalAngles.push(azimuthalAngles.pop());
+         }
 
-         functionWorker.addMessageEventListener((messageEvent) => {
-            const newIntegralSA = new Int32Array(messageEvent.data.integralSAB);
-            integralSA.set(newIntegralSA);
-            workerFinishedCount++;
+         functionWorker.addMessageEventListener(() => {
+            azimuthalAnglesFinished++;
+
+            const percent = (azimuthalAnglesFinished / anglesCount) * 100;
+            //nodeCallback.setProgressPercent(percent);
+
+            const ETA =
+               ((performance.now() - startTime) / azimuthalAnglesFinished) *
+               (anglesCount - azimuthalAnglesFinished);
+
+            let ETAsec = String(Math.floor((ETA / 1000) % 60));
+            const ETAmin = String(Math.floor(ETA / (60 * 1000)));
+
+            if (ETAsec.length < 2) ETAsec = "0" + ETAsec;
+
+            const etaString = "ETA in " + ETAmin + ":" + ETAsec + " min";
+            console.log(percent + " " + etaString);
          });
 
          functionWorker.postMessage({
@@ -85,7 +105,7 @@ class DepthMapHelper {
          });
       }
 
-      while (workerFinishedCount < threadCount) {
+      while (azimuthalAnglesFinished < anglesCount) {
          await new Promise((resolve) => {
             setTimeout(resolve, 500);
          });
@@ -102,6 +122,7 @@ class DepthMapHelper {
          dimensions
       );
 
+      console.timeEnd("depth mapping");
       return depthMap;
    }
 
@@ -343,9 +364,8 @@ function calculateAnisotropicIntegral(messageEvent) {
             }
          } while (inDimensions);
       }
+      self.postMessage({ azimuthalAngle: azimuthalAngle });
    });
-
-   self.postMessage({ integralSAB: integralSAB });
 }
 
 // @ts-ignore
