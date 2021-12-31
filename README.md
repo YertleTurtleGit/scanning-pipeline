@@ -1,7 +1,5 @@
 # Scanning Pipeline
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/1fa275d8-ee26-4f66-adba-6e039cac123b/deploy-status)](https://app.netlify.com/sites/scanning-pipeline/deploys)
-
 ## Live Demo in Web Browser
 
 [<img src="screenshot.png">](https://yertleturtlegit.github.io/scanning-pipeline/)
