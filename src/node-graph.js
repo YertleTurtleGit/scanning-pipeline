@@ -858,6 +858,7 @@ class GraphNodeUI {
       if (this.graphNode.asWorker) {
          if (this.worker) {
             console.log("terminating " + this.graphNode.executer.name + ".");
+            this.worker.postMessage("CLOSE");
             this.worker.terminate();
          }
       } else {
@@ -980,11 +981,12 @@ class GraphNodeUI {
          "\n" +
          "const cSelf = self;\n" +
          "self.addEventListener('message', async (messageEvent) => {\n" +
+         "if(messageEvent.data === 'CLOSE' && onClose) {onClose();} else {\n" +
          "cSelf.postMessage(await " +
          this.graphNode.executer.name +
          parameterValuesString +
          ");\n" +
-         "});";
+         "}});";
 
       const blob = new Blob([workerSource], {
          type: "text/javascript",

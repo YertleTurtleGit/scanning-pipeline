@@ -69,6 +69,8 @@ class DepthMapHelper {
             calculateAnisotropicIntegral
          );
 
+         DepthMapHelper.functionWorkers.push(functionWorker);
+
          const threadAzimuthalAngles = [];
          while (
             azimuthalAngles.length > 0 &&
@@ -264,6 +266,8 @@ class DepthMapHelper {
       return edgeFramePixels;
    }
 }
+/** @type {FunctionWorker[]} */
+DepthMapHelper.functionWorkers = [];
 
 // @ts-ignore
 // eslint-disable-next-line no-unused-vars
@@ -367,6 +371,13 @@ function calculateAnisotropicIntegral(messageEvent) {
       self.postMessage({ azimuthalAngle: azimuthalAngle });
    });
 
+   self.close();
+}
+
+function onClose() {
+   DepthMapHelper.functionWorkers.forEach((functionWorker) => {
+      functionWorker.terminate();
+   });
    self.close();
 }
 
