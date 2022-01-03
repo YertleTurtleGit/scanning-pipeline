@@ -1,5 +1,5 @@
 /* global THREE */
-/* exported PointCloudHelper */
+/* exported pointCloud */
 
 /**
  * @global
@@ -10,42 +10,29 @@ class PointCloudHelper {
     * depth mapping.
     *
     * @public
-    * @param {HTMLImageElement} depthMapImage The depth
+    * @param {ImageBitmap} depthMap The depth
     * mapping that is used to calculate the point cloud.
-    * @param {HTMLCanvasElement} renderCanvas The
-    * UI-canvas to display the point cloud.
     * @param {number} depthFactor The factor that is
     * multiplied with the z-coordinate (depth-coordinate).
-    * @param {HTMLImageElement} textureImage The texture
+    * @param {ImageBitmap} texture The texture
     * that is used for the point cloud vertex color.
     * @returns {Promise<number[]>} The vertices of the
     * calculated point cloud in an array. [x1, y1, z1, x2,
     * y2, z2, ...]
     */
-   static async calculatePointCloud(
-      depthMapImage,
-      renderCanvas,
-      depthFactor = 0.15,
-      textureImage = depthMapImage
-   ) {
-      const pointCloudHelper = new PointCloudHelper(renderCanvas);
-
+   static async pointCloud(depthMap, depthFactor = 0.15, texture = depthMap) {
       return new Promise((resolve) => {
          setTimeout(async () => {
-            if (depthMapImage.naturalWidth === 0) return;
+            const dim = new Uint32Array(2);
+            dim[0] = depthMap.width;
+            dim[1] = depthMap.height;
+            const dataCanvas = new OffscreenCanvas(dim[0], dim[1]);
 
-            if (pointCloudHelper.isRenderObsolete()) return;
-            await pointCloudHelper.renderingContext.initialize();
-            if (pointCloudHelper.isRenderObsolete()) return;
-
-            const dataCanvas = document.createElement("canvas");
-            dataCanvas.width = depthMapImage.naturalWidth;
-            dataCanvas.height = depthMapImage.naturalHeight;
+            dataCanvas.width = depthMap.width;
+            dataCanvas.height = depthMap.height;
             const dataContext = dataCanvas.getContext("2d");
 
-            dataContext.drawImage(depthMapImage, 0, 0);
-
-            if (pointCloudHelper.isRenderObsolete()) return;
+            dataContext.drawImage(depthMap, 0, 0);
 
             const imageData = dataContext.getImageData(
                0,
@@ -54,9 +41,7 @@ class PointCloudHelper {
                dataCanvas.height
             ).data;
 
-            dataContext.drawImage(textureImage, 0, 0);
-
-            if (pointCloudHelper.isRenderObsolete()) return;
+            dataContext.drawImage(depthMap, 0, 0);
 
             const textureData = dataContext.getImageData(
                0,
@@ -69,10 +54,6 @@ class PointCloudHelper {
             const vertexColors = [];
 
             const maxDimension = Math.max(dataCanvas.width, dataCanvas.height);
-            /*
-            const aspectWidth = dataCanvas.width / dataCanvas.height;
-            const aspectHeight = dataCanvas.height / dataCanvas.width;
-            */
 
             for (let x = 0; x < dataCanvas.width; x++) {
                for (let y = 0; y < dataCanvas.height; y++) {
@@ -91,84 +72,54 @@ class PointCloudHelper {
                      vertexColors.push(r / 255, g / 255, b / 255);
                   }
                }
-               if (pointCloudHelper.isRenderObsolete()) return;
             }
 
-            PointCloudHelper.vertices = vertices;
-            // TODO Better design
             resolve(vertices);
-
-            pointCloudHelper.renderingContext.geometry.setAttribute(
-               "position",
-               new THREE.Float32BufferAttribute(vertices, 3)
-            );
-            pointCloudHelper.renderingContext.geometry.setAttribute(
-               "color",
-               new THREE.Float32BufferAttribute(vertexColors, 3)
-            );
-
-            if (pointCloudHelper.isRenderObsolete()) return;
-
-            pointCloudHelper.renderingContext.geometry.attributes.position.needsUpdate = true;
-            pointCloudHelper.renderingContext.geometry.attributes.color.needsUpdate = true;
-
-            pointCloudHelper.renderingContext.render();
-
-            pointCloudHelper.renderingContext.handleResize();
          }, 100);
       });
    }
 
-   static async downloadOBJ() {
-      // TODO Better design.
-      const vertices = PointCloudHelper.vertices;
-
-      if (vertices.length > 3) {
-         await new Promise((resolve) => {
-            setTimeout(() => {
-               const filename = "point_cloud.obj";
-               let objString = "";
-
-               for (
-                  let i = 0, vertexCount = vertices.length;
-                  i < vertexCount;
-                  i += 3
-               ) {
-                  const x = vertices[i];
-                  const y = vertices[i + 1];
-                  const z = vertices[i + 2];
-                  objString += "v " + x + " " + y + " " + z + "\n";
-               }
-
-               let element = document.createElement("a");
-               element.style.display = "none";
-
-               let blob = new Blob([objString], {
-                  type: "text/plain; charset = utf-8",
-               });
-
-               let url = window.URL.createObjectURL(blob);
-               element.setAttribute("href", window.URL.createObjectURL(blob));
-               element.setAttribute("download", filename);
-
-               document.body.appendChild(element);
-
-               element.click();
-
-               window.URL.revokeObjectURL(url);
-               element.remove();
-
-               resolve();
-            });
-         });
-      }
-   }
-
    /**
-    * @public
+    * @param {number[]} vertices
     */
-   static cancelRenderJobs() {
-      PointCloudHelper.renderId++;
+   static async downloadOBJ(vertices) {
+      await new Promise((resolve) => {
+         setTimeout(() => {
+            const filename = "point_cloud.obj";
+            let objString = "";
+
+            for (
+               let i = 0, vertexCount = vertices.length;
+               i < vertexCount;
+               i += 3
+            ) {
+               const x = vertices[i + 0];
+               const y = vertices[i + 1];
+               const z = vertices[i + 2];
+               objString += "v " + x + " " + y + " " + z + "\n";
+            }
+
+            let element = document.createElement("a");
+            element.style.display = "none";
+
+            let blob = new Blob([objString], {
+               type: "text/plain; charset = utf-8",
+            });
+
+            let url = window.URL.createObjectURL(blob);
+            element.setAttribute("href", window.URL.createObjectURL(blob));
+            element.setAttribute("download", filename);
+
+            document.body.appendChild(element);
+
+            element.click();
+
+            window.URL.revokeObjectURL(url);
+            element.remove();
+
+            resolve();
+         });
+      });
    }
 
    /**
@@ -199,21 +150,10 @@ class PointCloudHelper {
     * @param {HTMLCanvasElement} renderCanvas
     */
    constructor(renderCanvas) {
-      this.renderId = PointCloudHelper.renderId;
-
       this.renderingContext =
          PointCloudHelperRenderingContext.getInstance(renderCanvas);
    }
-
-   /**
-    * @private
-    * @returns {boolean}
-    */
-   isRenderObsolete() {
-      return this.renderId < PointCloudHelper.renderId;
-   }
 }
-PointCloudHelper.renderId = 0;
 
 /** @type {PointCloudHelperRenderingContext[]} */
 const PointCloudHelperRenderingContext_instances = [];
@@ -318,6 +258,26 @@ class PointCloudHelperRenderingContext {
 
             this.controls.update();
             this.handleResize();
+
+            /*
+            await pointCloudHelper.renderingContext.initialize();
+
+            pointCloudHelper.renderingContext.geometry.setAttribute(
+               "position",
+               new THREE.Float32BufferAttribute(vertices, 3)
+            );
+            pointCloudHelper.renderingContext.geometry.setAttribute(
+               "color",
+               new THREE.Float32BufferAttribute(vertexColors, 3)
+            );
+
+            pointCloudHelper.renderingContext.geometry.attributes.position.needsUpdate = true;
+            pointCloudHelper.renderingContext.geometry.attributes.color.needsUpdate = true;
+
+            pointCloudHelper.renderingContext.render();
+
+            pointCloudHelper.renderingContext.handleResize();
+            */
          });
       });
    }
@@ -342,8 +302,7 @@ class PointCloudHelperRenderingContext {
    }
 }
 
-/** @type {number[]} */
-PointCloudHelper.vertices = [];
-
 /** @constant */
 PointCloudHelperRenderingContext.MAX_INSTANCES = 8;
+
+const pointCloud = PointCloudHelper.pointCloud;

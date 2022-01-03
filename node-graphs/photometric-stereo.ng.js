@@ -1,38 +1,36 @@
-/* global NodeGraph, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer */
+/* global NodeGraph, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer, pointCloud */
 
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
 
-   const albedoMapNode = nodeGraph.registerNodeAsWorker(
-      albedoMap,
+   const albedoMapNode = nodeGraph.registerNodeAsWorker(albedoMap, [
       "./src/glsl-shader.js",
-      "./src/albedo-map.js"
-   );
+      "./src/albedo-map.js",
+   ]);
    const normalMapNode = nodeGraph.registerNodeAsWorker(
       photometricStereoNormalMap,
-      "./src/glsl-shader.js",
-      "./src/normal-map.js"
+      ["./src/glsl-shader.js", "./src/normal-map.js"]
    );
-   const depthMapNode = nodeGraph.registerNodeAsWorker(
-      depthMap,
+   const depthMapNode = nodeGraph.registerNodeAsWorker(depthMap, [
       "./src/glsl-shader.js",
       "./src/function-worker.js",
-      "./src/depth-map.js"
-   );
+      "./src/depth-map.js",
+   ]);
    const ambientOcclusionMapNode = nodeGraph.registerNodeAsWorker(
       ambientOcclusionMap,
-      "./src/glsl-shader.js",
-      "./src/ambient-occlusion-map.js"
+      ["./src/glsl-shader.js", "./src/ambient-occlusion-map.js"]
    );
-   const roughnessMapNode = nodeGraph.registerNodeAsWorker(
-      roughnessMap,
+   const roughnessMapNode = nodeGraph.registerNodeAsWorker(roughnessMap, [
       "./src/glsl-shader.js",
-      "./src/roughness-map.js"
-   );
+      "./src/roughness-map.js",
+   ]);
+   const pointCloudNode = nodeGraph.registerNodeAsWorker(pointCloud, [
+      "./src/point-cloud.js",
+   ]);
 
    const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
       x: 750,
-      y: 500,
+      y: 850,
    });
    const normalMapNodeA = nodeGraph.placeNode(normalMapNode, {
       x: 750,
@@ -43,38 +41,17 @@ async function main() {
       ambientOcclusionMapNode,
       {
          x: 1300,
-         y: 150,
+         y: 50,
       }
    );
    const roughnessMapNodeA = nodeGraph.placeNode(roughnessMapNode, {
       x: 1300,
-      y: 500,
+      y: 400,
    });
-
-   /*const testImageUrls = [
-      "./../test-datasets/photometric-stereo/test_000_036.jpg",
-      "./../test-datasets/photometric-stereo/test_045_036.jpg",
-      "./../test-datasets/photometric-stereo/test_090_036.jpg",
-      "./../test-datasets/photometric-stereo/test_135_036.jpg",
-      "./../test-datasets/photometric-stereo/test_180_036.jpg",
-      "./../test-datasets/photometric-stereo/test_225_036.jpg",
-      "./../test-datasets/photometric-stereo/test_270_036.jpg",
-      "./../test-datasets/photometric-stereo/test_315_036.jpg",
-   ];
-
-   const testImages = [];
-
-   for (let i = 0; i < testImageUrls.length; i++) {
-      await new Promise((resolve) => {
-         const htmlImage = new Image();
-         htmlImage.addEventListener("load", async () => {
-            const imageBitmap = await createImageBitmap(htmlImage);
-            testImages.push(imageBitmap);
-            resolve();
-         });
-         htmlImage.src = testImageUrls[i];
-      });
-   }*/
+   const pointCloudNodeA = nodeGraph.placeNode(pointCloudNode, {
+      x: 1300,
+      y: 800,
+   });
 
    const lightPolarAngleInputNode = nodeGraph.createInputNode(
       "number",
@@ -128,14 +105,21 @@ async function main() {
       x: 450,
       y: 400,
    });
-
    const qualityPercentInputNode = nodeGraph.createInputNode(
       "number",
       {
          x: 750,
-         y: 800,
+         y: 750,
       },
       1
+   );
+   const depthFactorInputNode = nodeGraph.createInputNode(
+      "number",
+      {
+         x: 1025,
+         y: 950,
+      },
+      0.15
    );
 
    /*nodeGraph.connect(
@@ -193,6 +177,18 @@ async function main() {
    nodeGraph.connect(
       depthMapNodeA.getOutput(),
       roughnessMapNodeA.getInput("depthMap")
+   );
+   nodeGraph.connect(
+      depthMapNodeA.getOutput(),
+      pointCloudNodeA.getInput("depthMap")
+   );
+   nodeGraph.connect(
+      albedoMapNodeA.getOutput(),
+      pointCloudNodeA.getInput("texture")
+   );
+   nodeGraph.connect(
+      depthFactorInputNode.getOutput(),
+      pointCloudNodeA.getInput("depthFactor")
    );
 }
 main();

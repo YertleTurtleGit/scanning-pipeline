@@ -108,9 +108,10 @@ class NodeGraph {
     * @public
     * @param {Function} nodeExecuter
     * @param {string[]} dependencies
+    * @param {string} previewType
     * @returns {GraphNode}
     */
-   registerNodeAsWorker(nodeExecuter, ...dependencies) {
+   registerNodeAsWorker(nodeExecuter, dependencies = [], uiElementFunction = null) {
       const graphNode = new GraphNode(nodeExecuter, true, ...dependencies);
       this.registeredNodes.push(graphNode);
       return graphNode;
