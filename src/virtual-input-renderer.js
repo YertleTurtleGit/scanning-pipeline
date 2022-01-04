@@ -216,8 +216,8 @@ class VirtualInputRenderer {
             max = VirtualInputRenderer.MIN_CAMERA_PLANES_DISTANCE;
          }
 
-         this.camera.near = min + this.cameraDistance;
-         this.camera.far = max + this.cameraDistance;
+         //this.camera.near = min + this.cameraDistance;
+         //this.camera.far = max + this.cameraDistance;
 
          this.camera.updateProjectionMatrix();
 

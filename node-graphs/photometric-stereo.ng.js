@@ -1,4 +1,4 @@
-/* global NodeGraph, UI_PREVIEW_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer, pointCloud */
+/* global NodeGraph, UI_PREVIEW_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer, pointCloud, pointCloudSkeleton */
 
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
@@ -29,6 +29,11 @@ async function main() {
       ["./src/point-cloud.js"],
       UI_PREVIEW_TYPE.POINT_CLOUD
    );
+   const pointCloudSkeletonNode = nodeGraph.registerNodeAsWorker(
+      pointCloudSkeleton,
+      ["./src/point-cloud-skeleton.js"],
+      UI_PREVIEW_TYPE.POINT_CLOUD
+   );
 
    const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
       x: 750,
@@ -52,6 +57,10 @@ async function main() {
    });
    const pointCloudNodeA = nodeGraph.placeNode(pointCloudNode, {
       x: 1300,
+      y: 800,
+   });
+   const pointCloudSkeletonNodeA = nodeGraph.placeNode(pointCloudSkeletonNode, {
+      x: 1550,
       y: 800,
    });
 
@@ -191,6 +200,10 @@ async function main() {
    nodeGraph.connect(
       depthFactorInputNode.getOutput(),
       pointCloudNodeA.getInput("depthFactor")
+   );
+   nodeGraph.connect(
+      pointCloudNodeA.getOutput(),
+      pointCloudSkeletonNodeA.getInput("pointCloud")
    );
 }
 main();
