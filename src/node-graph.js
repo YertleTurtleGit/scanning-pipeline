@@ -1079,6 +1079,7 @@ class GraphNodeUI {
 
          pointCloudCanvas.style.width = "100%";
          pointCloudCanvas.style.height = "100%";
+         pointCloudCanvas.style.cursor = "move";
          this.outputUIElement.appendChild(pointCloudCanvas);
 
          controls.addEventListener("change", () => {
