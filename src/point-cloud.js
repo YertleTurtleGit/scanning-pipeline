@@ -16,9 +16,9 @@ class PointCloudHelper {
     * multiplied with the z-coordinate (depth-coordinate).
     * @param {ImageBitmap} texture The texture
     * that is used for the point cloud vertex color.
-    * @returns {Promise<number[]>} The vertices of the
-    * calculated point cloud in an array. [x1, y1, z1, x2,
-    * y2, z2, ...]
+    * @returns {Promise<{vertices: number[], colors: number[]}>}
+    * The vertices and vertex color of the
+    * calculated point cloud in an array. [x1, y1, z1, x2, y2, z2, ...]
     */
    static async pointCloud(depthMap, depthFactor = 0.15, texture = depthMap) {
       return new Promise((resolve) => {
@@ -41,7 +41,7 @@ class PointCloudHelper {
                dataCanvas.height
             ).data;
 
-            dataContext.drawImage(depthMap, 0, 0);
+            dataContext.drawImage(texture, 0, 0);
 
             const textureData = dataContext.getImageData(
                0,
@@ -74,7 +74,7 @@ class PointCloudHelper {
                }
             }
 
-            resolve(vertices);
+            resolve({ vertices: vertices, colors: vertexColors });
          }, 100);
       });
    }

@@ -1,4 +1,4 @@
-/* global NodeGraph, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer, pointCloud */
+/* global NodeGraph, UI_PREVIEW_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer, pointCloud */
 
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
@@ -24,9 +24,11 @@ async function main() {
       "./src/glsl-shader.js",
       "./src/roughness-map.js",
    ]);
-   const pointCloudNode = nodeGraph.registerNodeAsWorker(pointCloud, [
-      "./src/point-cloud.js",
-   ]);
+   const pointCloudNode = nodeGraph.registerNodeAsWorker(
+      pointCloud,
+      ["./src/point-cloud.js"],
+      UI_PREVIEW_TYPE.POINT_CLOUD
+   );
 
    const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
       x: 750,
@@ -119,7 +121,7 @@ async function main() {
          x: 1025,
          y: 950,
       },
-      0.15
+      0.5
    );
 
    /*nodeGraph.connect(

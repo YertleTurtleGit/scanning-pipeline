@@ -1,4 +1,5 @@
-/* exported NodeCallback */
+/* global THREE */
+/* exported NodeCallback, UI_PREVIEW_TYPE */
 
 class NodeCallback {
    /**
@@ -96,10 +97,11 @@ class NodeGraph {
    /**
     * @public
     * @param {Function} nodeExecuter
+    * @param {UI_PREVIEW_TYPE} uiPreviewType
     * @returns {GraphNode}
     */
-   registerNode(nodeExecuter) {
-      const graphNode = new GraphNode(nodeExecuter, false);
+   registerNode(nodeExecuter, uiPreviewType) {
+      const graphNode = new GraphNode(nodeExecuter, false, [], uiPreviewType);
       this.registeredNodes.push(graphNode);
       return graphNode;
    }
@@ -108,11 +110,20 @@ class NodeGraph {
     * @public
     * @param {Function} nodeExecuter
     * @param {string[]} dependencies
-    * @param {string} previewType
+    * @param {UI_PREVIEW_TYPE} uiPreviewType
     * @returns {GraphNode}
     */
-   registerNodeAsWorker(nodeExecuter, dependencies = [], uiElementFunction = null) {
-      const graphNode = new GraphNode(nodeExecuter, true, ...dependencies);
+   registerNodeAsWorker(
+      nodeExecuter,
+      dependencies = [],
+      uiPreviewType = UI_PREVIEW_TYPE.AUTO
+   ) {
+      const graphNode = new GraphNode(
+         nodeExecuter,
+         true,
+         dependencies,
+         uiPreviewType
+      );
       this.registeredNodes.push(graphNode);
       return graphNode;
    }
@@ -330,8 +341,9 @@ class GraphNode {
     * @param {Function} executer
     * @param {boolean} asWorker
     * @param {string[]} dependencies
+    * @param {UI_PREVIEW_TYPE} uiPreviewType
     */
-   constructor(executer, asWorker, ...dependencies) {
+   constructor(executer, asWorker, dependencies, uiPreviewType) {
       /**
        * @public
        * @type {Function}
@@ -345,6 +357,12 @@ class GraphNode {
        * @type {string[]}
        */
       this.dependencies = dependencies;
+
+      /**
+       * @public
+       * @type {UI_PREVIEW_TYPE}
+       */
+      this.uiPreviewType = uiPreviewType;
 
       /**
        * @protected
@@ -505,6 +523,14 @@ class GraphNode {
       }
    }
 }
+
+/** @typedef {string} UI_PREVIEW_TYPE */
+const UI_PREVIEW_TYPE = {
+   AUTO: "auto",
+   NUMBER: "number",
+   IMAGE: "image",
+   POINT_CLOUD: "pointCloud",
+};
 
 class GraphNodeInput {
    /**
@@ -1003,7 +1029,64 @@ class GraphNodeUI {
    refreshValuePreview(value) {
       this.outputUIElement.innerHTML = "";
 
-      if (value instanceof ImageBitmap) {
+      if (this.graphNode.uiPreviewType === UI_PREVIEW_TYPE.POINT_CLOUD) {
+         const pointCloudCanvas = document.createElement("canvas");
+         pointCloudCanvas.width = 200;
+         pointCloudCanvas.height = 200;
+
+         const renderer = new THREE.WebGLRenderer({
+            canvas: pointCloudCanvas,
+            alpha: true,
+            antialias: true,
+         });
+         const camera = new THREE.PerspectiveCamera(
+            50,
+            pointCloudCanvas.width / pointCloudCanvas.height,
+            0.01,
+            1000
+         );
+
+         // @ts-ignore
+         const controls = new THREE.OrbitControls(camera, pointCloudCanvas);
+         const scene = new THREE.Scene();
+         const geometry = new THREE.BufferGeometry();
+         const material = new THREE.PointsMaterial({
+            size: 0.1,
+            vertexColors: true,
+         });
+         const pointCloud = new THREE.Points(geometry, material);
+
+         pointCloud.rotateX(35 * (Math.PI / 180));
+         pointCloud.translateY(15);
+
+         scene.add(pointCloud);
+
+         camera.position.z = 75;
+         camera.position.y = -100;
+
+         controls.target = new THREE.Vector3(0, 0, 0);
+
+         geometry.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(value.vertices, 3)
+         );
+         geometry.setAttribute(
+            "color",
+            new THREE.Float32BufferAttribute(value.colors, 3)
+         );
+         geometry.attributes.position.needsUpdate = true;
+         geometry.attributes.color.needsUpdate = true;
+
+         pointCloudCanvas.style.width = "100%";
+         pointCloudCanvas.style.height = "100%";
+         this.outputUIElement.appendChild(pointCloudCanvas);
+
+         controls.addEventListener("change", () => {
+            renderer.render(scene, camera);
+         });
+         renderer.render(scene, camera);
+         controls.update();
+      } else if (value instanceof ImageBitmap) {
          const imageCanvas = document.createElement("canvas");
          imageCanvas.width = value.width;
          imageCanvas.height = value.height;
@@ -1021,7 +1104,16 @@ class GraphNodeUI {
          imageCanvas.width = value[0].width;
          imageCanvas.height = value[0].height;
          const context = imageCanvas.getContext("2d");
-         context.drawImage(value[0], 0, 0, value[0].width, value[0].height);
+         value.forEach((singleValue, valueIndex) => {
+            valueIndex = value.length - 1 - valueIndex;
+            context.drawImage(
+               singleValue,
+               (singleValue.width / (value.length * 1.75)) * valueIndex,
+               (singleValue.height / (value.length * 1.75)) * valueIndex,
+               (singleValue.width / value.length) * 4,
+               (singleValue.height / value.length) * 4
+            );
+         });
          const imageElement = new Image();
          imageElement.style.maxWidth = "100%";
          imageCanvas.style.maxHeight = "5rem";
