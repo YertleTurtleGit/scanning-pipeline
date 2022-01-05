@@ -78,7 +78,7 @@ async function main() {
          x: 200,
          y: 500,
       },
-      18
+      0.3
    );
    const lightDistanceInputNode = nodeGraph.createInputNode(
       "number",
@@ -101,7 +101,7 @@ async function main() {
 
    new PhotometricStereoRenderer(
       uiCanvas,
-      "./test-datasets/models/mesh_plane.glb",
+      "./test-datasets/models/skeleton_test.glb",
       {
          width: 250,
          height: 250,
@@ -130,7 +130,7 @@ async function main() {
          x: 1025,
          y: 950,
       },
-      0.5
+      0.1
    );
 
    /*nodeGraph.connect(

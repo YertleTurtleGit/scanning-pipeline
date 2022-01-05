@@ -1051,7 +1051,7 @@ class GraphNodeUI {
          const scene = new THREE.Scene();
          const geometry = new THREE.BufferGeometry();
          const material = new THREE.PointsMaterial({
-            size: 0.1,
+            size: 1,
             vertexColors: true,
          });
          const pointCloud = new THREE.Points(geometry, material);
