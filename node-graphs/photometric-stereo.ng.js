@@ -1,4 +1,4 @@
-/* global NodeGraph, UI_PREVIEW_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer, pointCloud, pointCloudSkeleton */
+/* global THREE, NodeGraph, UI_PREVIEW_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer, pointCloud, pointCloudSkeleton */
 
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
@@ -31,7 +31,7 @@ async function main() {
    );
    const pointCloudSkeletonNode = nodeGraph.registerNodeAsWorker(
       pointCloudSkeleton,
-      ["./src/point-cloud-skeleton.js"],
+      ["./lib/pca-js/pca.js", "./src/point-cloud-skeleton.js"],
       UI_PREVIEW_TYPE.POINT_CLOUD
    );
 
@@ -141,7 +141,8 @@ async function main() {
       lightImagesInputNode.getOutput(),
       albedoMapNodeA.getInput("lightImages")
    );*/
-   nodeGraph.connect(
+
+   /*nodeGraph.connect(
       lightPolarAngleInputNode.getOutput(),
       normalMapNodeA.getInput("lightPolarAngleDeg")
    );
@@ -204,6 +205,37 @@ async function main() {
    nodeGraph.connect(
       pointCloudNodeA.getOutput(),
       pointCloudSkeletonNodeA.getInput("pointCloud")
+   );*/
+
+   const testPointCloudNode = nodeGraph.registerNode(
+      testPointCloud,
+      UI_PREVIEW_TYPE.POINT_CLOUD
    );
+   nodeGraph.placeNode(testPointCloudNode);
 }
 main();
+
+/**
+ * @returns {Promise<{vertices:number[], colors:number[]}>}
+ */
+async function testPointCloud() {
+   // @ts-ignore
+   const loader = new THREE.GLTFLoader();
+
+   const data = await new Promise((resolve, reject) => {
+      loader.load(
+         "./test-datasets/models/assembled_point_cloud.glb",
+         (data) => resolve(data),
+         null,
+         reject
+      );
+   });
+
+   const vertices = data.scene.children[0].geometry.attributes.position.array;
+   vertices.forEach((vertex, index) => {
+      vertices[index] = vertex * 500;
+   });
+   const colors = new Array(vertices.length).fill(1);
+
+   return { vertices: vertices, colors: colors };
+}

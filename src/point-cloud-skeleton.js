@@ -1,3 +1,4 @@
+/* global PCA */
 /* exported PointCloudSkeleton */
 
 class PointCloudSkeleton {
@@ -7,139 +8,211 @@ class PointCloudSkeleton {
     * @returns {{vertices:number[], colors:number[]}}
     */
    static pointCloudSkeleton(pointCloud) {
-      const vertices = pointCloud.vertices;
-      const bounds = {
+      const downSampling = 0.75;
+
+      /** @type {{x:number, y:number, z:number}[]} */
+      const vertices = [];
+
+      /** @type {{x:number, y:number, z:number}[]} */
+      const branchPoints = [];
+
+      for (let i = 0, count = pointCloud.vertices.length; i < count; i += 3) {
+         if (Math.random() > downSampling) {
+            vertices.push({
+               x: pointCloud.vertices[i + 0],
+               y: pointCloud.vertices[i + 1],
+               z: pointCloud.vertices[i + 2],
+            });
+         }
+      }
+
+      console.log({ vertexCount: vertices.length });
+
+      const initialeNeighborhoodSize =
+         PointCloudSkeleton.getInitialNeighborhoodSize(vertices);
+      console.log({ initialeNeighborhoodSize });
+
+      let medians = [];
+      let vertexIndexesToDelete = [];
+      let branchPointCandidates = [];
+
+      let neighborhoodSize = initialeNeighborhoodSize;
+      let medianDrag = initialeNeighborhoodSize;
+
+      while (vertices.length > 0) {
+         console.log({
+            neighborhoodSize: neighborhoodSize,
+            medianDrag: medianDrag,
+            vertexCount: vertices.length,
+         });
+
+         medians = [];
+         vertexIndexesToDelete = [];
+         branchPointCandidates = [];
+
+         vertices.forEach((vertexA, indexA) => {
+            /** @type {{x:number,y:number,z:number}[]} */
+            const neighbors = [];
+
+            vertices.forEach((vertexB) => {
+               const distance = Math.sqrt(
+                  Math.pow(vertexA.x - vertexB.x, 2) +
+                     Math.pow(vertexA.y - vertexB.y, 2) +
+                     Math.pow(vertexA.z - vertexB.z, 2)
+               );
+
+               if (distance < neighborhoodSize && distance > 0) {
+                  neighbors.push(vertexB);
+               }
+            });
+
+            if (neighbors.length > 0) {
+               const anisotropicDegree =
+                  PointCloudSkeleton.getAnisotropicDegree(neighbors);
+               if (anisotropicDegree > 0.9) {
+                  branchPointCandidates.push({
+                     vertex: vertexA,
+                     anisotropicDegree: anisotropicDegree,
+                  });
+                  vertexIndexesToDelete.push(indexA);
+               } else {
+                  medians.push(PointCloudSkeleton.getMedian(neighbors));
+               }
+            }
+         });
+
+         vertexIndexesToDelete.forEach((index) => {
+            vertices.splice(index);
+         });
+
+         if (medians.length > 0) {
+            vertices.forEach((vertex, index) => {
+               /** @type {{x:number, y:number, z:number}} */
+               let closestMedian;
+               let closestDistance = Number.MAX_VALUE;
+
+               medians.forEach((median) => {
+                  const distance = Math.sqrt(
+                     Math.pow(vertex.x - median.x, 2) +
+                        Math.pow(vertex.y - median.y, 2) +
+                        Math.pow(vertex.z - median.z, 2)
+                  );
+                  if (distance < closestDistance) {
+                     closestMedian = median;
+                     closestDistance = distance;
+                  }
+               });
+
+               if (closestMedian && closestDistance) {
+                  const dragDirection = {
+                     x: (closestMedian.x - vertex.x) / closestDistance,
+                     y: (closestMedian.y - vertex.y) / closestDistance,
+                     z: (closestMedian.z - vertex.z) / closestDistance,
+                  };
+
+                  vertices[index].x += dragDirection.x * medianDrag;
+                  vertices[index].y += dragDirection.y * medianDrag;
+                  vertices[index].z += dragDirection.z * medianDrag;
+               }
+            });
+         } else {
+            console.warn("no medians");
+         }
+
+         neighborhoodSize += neighborhoodSize / 2;
+         medianDrag += neighborhoodSize / 2;
+      }
+
+      const skeletonVertices = [];
+      const skeletonColors = [];
+      vertices.forEach((vertex) => {
+         skeletonVertices.push(vertex.x, vertex.y, vertex.z);
+         skeletonColors.push(1, 0, 0);
+      });
+
+      branchPointCandidates.forEach((vertex) => {
+         skeletonVertices.push(vertex.x, vertex.y, vertex.z);
+         skeletonColors.push(0, 1, 0);
+      });
+
+      return { vertices: skeletonVertices, colors: skeletonColors };
+   }
+
+   /**
+    * @private
+    * @param {{x:number, y:number,z:number}[]} vertices
+    * @returns {{x:number, y:number,z:number}}
+    */
+   static getMedian(vertices) {
+      // TODO Median not average.
+
+      const average = { x: 0, y: 0, z: 0 };
+
+      vertices.forEach((vertex) => {
+         average.x += vertex.x;
+         average.y += vertex.y;
+         average.z += vertex.z;
+      });
+
+      average.x /= vertices.length;
+      average.y /= vertices.length;
+      average.z /= vertices.length;
+
+      return average;
+   }
+
+   static getAnisotropicDegree(vertices) {
+      const verticesArray = [];
+      vertices.forEach((vertex) => {
+         verticesArray.push([vertex.x, vertex.y, vertex.z]);
+      });
+
+      const eigenvalues = [];
+      PCA.getEigenVectors(verticesArray).forEach((eigenVector) => {
+         eigenvalues.push(eigenVector.eigenvalue);
+      });
+
+      const sum = eigenvalues[0] + eigenvalues[1] + eigenvalues[2];
+      if (sum === 0) return 0;
+
+      return eigenvalues[0] / sum;
+   }
+
+   /**
+    * @private
+    * @param {{x:number, y:number,z:number}[]} vertices
+    * @returns {number}
+    */
+   static getInitialNeighborhoodSize(vertices) {
+      const boundingBox = {
          x: { min: Number.MAX_VALUE, max: -Number.MAX_VALUE },
          y: { min: Number.MAX_VALUE, max: -Number.MAX_VALUE },
          z: { min: Number.MAX_VALUE, max: -Number.MAX_VALUE },
       };
 
-      for (let i = 0; i < vertices.length; i += 3) {
-         const x = vertices[i + 0];
-         const y = vertices[i + 1];
-         const z = vertices[i + 2];
+      vertices.forEach((vertex) => {
+         if (vertex.x < boundingBox.x.min) boundingBox.x.min = vertex.x;
+         if (vertex.x > boundingBox.x.max) boundingBox.x.max = vertex.x;
 
-         if (x < bounds.x.min) bounds.x.min = x;
-         if (x > bounds.x.max) bounds.x.max = x;
-         if (y < bounds.y.min) bounds.y.min = y;
-         if (y > bounds.y.max) bounds.y.max = y;
-         if (z < bounds.z.min) bounds.z.min = z;
-         if (z > bounds.z.max) bounds.z.max = z;
-      }
+         if (vertex.y < boundingBox.y.min) boundingBox.y.min = vertex.y;
+         if (vertex.y > boundingBox.y.max) boundingBox.y.max = vertex.y;
 
-      const density = 
+         if (vertex.z < boundingBox.z.min) boundingBox.z.min = vertex.z;
+         if (vertex.z > boundingBox.z.max) boundingBox.z.max = vertex.z;
+      });
 
+      const diagonal = {
+         x: boundingBox.x.min - boundingBox.x.max,
+         y: boundingBox.y.min - boundingBox.x.max,
+         z: boundingBox.z.min - boundingBox.x.max,
+      };
+      const diagonalLength = Math.sqrt(
+         Math.pow(diagonal.x, 2) +
+            Math.pow(diagonal.y, 2) +
+            Math.pow(diagonal.z, 2)
+      );
 
-      console.log(bounds);
-
-      const colors = new Array(vertices.length).fill(1);
-
-      let skeletonVertices = vertices;
-
-      let medians = [];
-
-      for (
-         let neighborhoodSize = 1;
-         neighborhoodSize < 10;
-         neighborhoodSize += 1
-      ) {
-         for (let medianDrag = 0.1; medianDrag < 0.5; medianDrag += 0.1) {
-            medians = [];
-
-            for (let i = 0; i < skeletonVertices.length; i += 3) {
-               const vertexA = {
-                  x: skeletonVertices[i + 0],
-                  y: skeletonVertices[i + 1],
-                  z: skeletonVertices[i + 2],
-               };
-               const neighbors = [];
-
-               for (let j = 0; j < skeletonVertices.length; j += 3) {
-                  const vertexB = {
-                     x: skeletonVertices[j + 0],
-                     y: skeletonVertices[j + 1],
-                     z: skeletonVertices[j + 2],
-                  };
-                  const distance = Math.sqrt(
-                     Math.pow(vertexA.x - vertexB.x, 2) +
-                        Math.pow(vertexA.y - vertexB.y, 2) +
-                        Math.pow(vertexA.z - vertexB.z, 2)
-                  );
-
-                  if (distance < neighborhoodSize && j !== i) {
-                     neighbors.push(vertexB);
-                  }
-               }
-
-               const median = { x: 0, y: 0, z: 0 };
-
-               if (neighbors.length > 0) {
-                  neighbors.forEach((vertex) => {
-                     median.x += vertex.x;
-                     median.y += vertex.y;
-                     median.z += vertex.z;
-                  });
-                  median.x /= neighbors.length;
-                  median.y /= neighbors.length;
-                  median.z /= neighbors.length;
-
-                  medians.push(median);
-               }
-            }
-            console.log({
-               neighborhoodSize: neighborhoodSize,
-               mediansCount: medians.length,
-            });
-
-            if (medians.length > 0) {
-               for (let k = 0; k < skeletonVertices.length; k += 3) {
-                  /** @type {{x:number, y:number, z:number}} */
-                  let closestMedian;
-                  let closestDistance = Number.MAX_VALUE;
-
-                  medians.forEach((median) => {
-                     const distance = Math.sqrt(
-                        Math.pow(skeletonVertices[k + 0] - median.x, 2) +
-                           Math.pow(skeletonVertices[k + 1] - median.y, 2) +
-                           Math.pow(skeletonVertices[k + 2] - median.z, 2)
-                     );
-                     if (distance < closestDistance) {
-                        closestMedian = median;
-                        closestDistance = distance;
-                     }
-                  });
-
-                  if (closestMedian && closestDistance) {
-                     const dragDirection = {
-                        x:
-                           (closestMedian.x - skeletonVertices[k + 0]) /
-                           closestDistance,
-                        y:
-                           (closestMedian.y - skeletonVertices[k + 1]) /
-                           closestDistance,
-                        z:
-                           (closestMedian.z - skeletonVertices[k + 2]) /
-                           closestDistance,
-                     };
-
-                     skeletonVertices[k + 0] +=
-                        dragDirection.x * (medianDrag * closestDistance);
-                     skeletonVertices[k + 1] +=
-                        dragDirection.y * (medianDrag * closestDistance);
-                     skeletonVertices[k + 2] +=
-                        dragDirection.z * (medianDrag * closestDistance);
-                  }
-               }
-            }
-         }
-      }
-
-      const skeletonColors = [];
-      for (let i = 0; i < skeletonVertices.length; i += 3) {
-         skeletonColors.push(1, 0, 0);
-      }
-
-      return { vertices: skeletonVertices, colors: skeletonColors };
+      return (2 * diagonalLength) / Math.pow(Math.abs(vertices.length), 1 / 3);
    }
 
    /**

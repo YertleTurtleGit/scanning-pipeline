@@ -1030,6 +1030,47 @@ class GraphNodeUI {
       this.outputUIElement.innerHTML = "";
 
       if (this.graphNode.uiPreviewType === UI_PREVIEW_TYPE.POINT_CLOUD) {
+         const pointCloudDownloadButton = document.createElement("button");
+         pointCloudDownloadButton.innerText = "download";
+         pointCloudDownloadButton.addEventListener("click", () => {
+            const filename = "point_cloud.obj";
+            let objString = "";
+
+            for (
+               let i = 0, vertexCount = value.vertices.length;
+               i < vertexCount;
+               i += 3
+            ) {
+               const x = value.vertices[i + 0];
+               const y = value.vertices[i + 1];
+               const z = value.vertices[i + 2];
+
+               const r = value.colors[i + 0];
+               const g = value.colors[i + 1];
+               const b = value.colors[i + 2];
+               objString += "v " + x + " " + y + " " + z + " ";
+               objString += r + " " + g + " " + b + "\n";
+            }
+
+            let element = document.createElement("a");
+            element.style.display = "none";
+
+            let blob = new Blob([objString], {
+               type: "text/plain; charset = utf-8",
+            });
+
+            let url = window.URL.createObjectURL(blob);
+            element.setAttribute("href", window.URL.createObjectURL(blob));
+            element.setAttribute("download", filename);
+
+            document.body.appendChild(element);
+
+            element.click();
+
+            window.URL.revokeObjectURL(url);
+            element.remove();
+         });
+
          const pointCloudCanvas = document.createElement("canvas");
          pointCloudCanvas.width = 200;
          pointCloudCanvas.height = 200;
@@ -1080,6 +1121,8 @@ class GraphNodeUI {
          pointCloudCanvas.style.width = "100%";
          pointCloudCanvas.style.height = "100%";
          pointCloudCanvas.style.cursor = "move";
+
+         this.outputUIElement.appendChild(pointCloudDownloadButton);
          this.outputUIElement.appendChild(pointCloudCanvas);
 
          controls.addEventListener("change", () => {
