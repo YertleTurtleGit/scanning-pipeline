@@ -2,7 +2,7 @@
 
 ## Live Demo in Web Browser
 
-[<img src="screenshot.png">](https://yertleturtlegit.github.io/scanning-pipeline/)
+[<img src="screenshot.png">](https://scanning-pipeline.netlify.app/)
 [https://scanning-pipeline.netlify.app/](https://scanning-pipeline.netlify.app/)
 
 ## Run and Edit on Local Maschine
