@@ -211,7 +211,15 @@ async function main() {
       testPointCloud,
       UI_PREVIEW_TYPE.POINT_CLOUD
    );
-   nodeGraph.placeNode(testPointCloudNode);
+   const testPointCloudNodeA = nodeGraph.placeNode(testPointCloudNode, {
+      x: 1200,
+      y: 800,
+   });
+
+   nodeGraph.connect(
+      testPointCloudNodeA.getOutput(),
+      pointCloudSkeletonNodeA.getInput("pointCloud")
+   );
 }
 main();
 
@@ -224,7 +232,7 @@ async function testPointCloud() {
 
    const data = await new Promise((resolve, reject) => {
       loader.load(
-         "./test-datasets/models/assembled_point_cloud.glb",
+         "./test-datasets/models/assembled_point_cloud_small.glb",
          (data) => resolve(data),
          null,
          reject

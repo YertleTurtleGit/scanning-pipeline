@@ -8,7 +8,7 @@ class PointCloudSkeleton {
     * @returns {{vertices:number[], colors:number[]}}
     */
    static pointCloudSkeleton(pointCloud) {
-      const MAX_ITERATIONS = 5;
+      const MAX_ITERATIONS = 1;
 
       const downSampling = 0.9;
 
@@ -85,22 +85,6 @@ class PointCloudSkeleton {
             });
 
             if (neighbors.length > 0) {
-               const PCAs = PointCloudSkeleton.getPCAs(neighbors);
-               const alignment = PCAs.alignment;
-               const direction = PCAs.direction;
-
-               if (alignment > 0.9) {
-                  const degreeVertex = {
-                     vertex: vertexA,
-                     alignment: alignment,
-                     direction: direction,
-                  };
-                  if (highestAlignmentVertex.alignment < alignment) {
-                     highestAlignmentVertex = degreeVertex;
-                  }
-                  branchPointCandidates.push(degreeVertex);
-               }
-
                const median = PointCloudSkeleton.getMedian(neighbors);
 
                const distanceToMedian = Math.sqrt(
@@ -116,11 +100,27 @@ class PointCloudSkeleton {
                };
 
                vertices[indexA].x +=
-                  dragDirection.x * (medianDrag / distanceToMedian);
+                  dragDirection.x * (medianDrag * distanceToMedian);
                vertices[indexA].y +=
-                  dragDirection.y * (medianDrag / distanceToMedian);
+                  dragDirection.y * (medianDrag * distanceToMedian);
                vertices[indexA].z +=
-                  dragDirection.z * (medianDrag / distanceToMedian);
+                  dragDirection.z * (medianDrag * distanceToMedian);
+
+               const PCAs = PointCloudSkeleton.getPCAs(neighbors);
+               const alignment = PCAs.alignment;
+               const direction = PCAs.direction;
+
+               if (alignment > 0.9) {
+                  const degreeVertex = {
+                     vertex: vertexA,
+                     alignment: alignment,
+                     direction: direction,
+                  };
+                  if (highestAlignmentVertex.alignment < alignment) {
+                     highestAlignmentVertex = degreeVertex;
+                  }
+                  branchPointCandidates.push(degreeVertex);
+               }
 
                /** @type {{x:number, y:number, z:number}[]} */
                const branchCandidates = [
@@ -138,12 +138,16 @@ class PointCloudSkeleton {
                      highestAlignmentVertex.vertex.z !== candidate.vertex.z
                   ) {
                      const angle = Math.cos(
-                        highestAlignmentVertex.vertex.x * candidate.vertex.x +
-                           highestAlignmentVertex.vertex.y *
-                              candidate.vertex.y +
-                           highestAlignmentVertex.vertex.z * candidate.vertex.z
+                        highestAlignmentVertex.direction.x *
+                           candidate.direction.x +
+                           highestAlignmentVertex.direction.y *
+                              candidate.direction.y +
+                           highestAlignmentVertex.direction.z *
+                              candidate.direction.z
                      );
-                     if (angle < 1.5 && angle > -1.5) {
+                     const isInPCADirection = Math.abs(angle) < 0.9;
+
+                     if (isInPCADirection) {
                         branchCandidates.push({
                            x: candidate.vertex.x,
                            y: candidate.vertex.y,
@@ -163,7 +167,7 @@ class PointCloudSkeleton {
          //medianDrag += initialMedianDrag / 2;
       }
 
-      console.log({ verticesLeft: vertices.length });
+      console.log({ branchPointCount: branchPoints.length });
 
       const skeletonVertices = [];
       const skeletonColors = [];
@@ -217,6 +221,7 @@ class PointCloudSkeleton {
       const eigenvalues = [];
       // @ts-ignore
       const eigenVectors = PCA.getEigenVectors(verticesArray);
+
       eigenVectors.forEach((eigenVector) => {
          eigenvalues.push(eigenVector.eigenvalue);
       });
@@ -226,9 +231,21 @@ class PointCloudSkeleton {
       if (sum !== 0) alignment = eigenvalues[0] / sum;
 
       const direction = {
-         x: (eigenVectors[0][0] + eigenVectors[1][0] + eigenVectors[2][0]) / 3,
-         y: (eigenVectors[0][1] + eigenVectors[1][1] + eigenVectors[2][1]) / 3,
-         z: (eigenVectors[0][2] + eigenVectors[1][2] + eigenVectors[2][2]) / 3,
+         x:
+            (eigenVectors[0].vector[0] +
+               eigenVectors[1].vector[0] +
+               eigenVectors[2].vector[0]) /
+            3,
+         y:
+            (eigenVectors[0].vector[1] +
+               eigenVectors[1].vector[1] +
+               eigenVectors[2].vector[1]) /
+            3,
+         z:
+            (eigenVectors[0].vector[2] +
+               eigenVectors[1].vector[2] +
+               eigenVectors[2].vector[2]) /
+            3,
       };
 
       return { alignment: alignment, direction: direction };

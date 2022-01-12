@@ -1029,7 +1029,10 @@ class GraphNodeUI {
    refreshValuePreview(value) {
       this.outputUIElement.innerHTML = "";
 
-      if (this.graphNode.uiPreviewType === UI_PREVIEW_TYPE.POINT_CLOUD) {
+      if (
+         this.graphNode &&
+         this.graphNode.uiPreviewType === UI_PREVIEW_TYPE.POINT_CLOUD
+      ) {
          const pointCloudDownloadButton = document.createElement("button");
          pointCloudDownloadButton.innerText = "download";
          pointCloudDownloadButton.addEventListener("click", () => {
@@ -1294,7 +1297,8 @@ class GraphNodeUI {
    async getConnections() {
       /** @type {{input: GraphNodeInputUI, output:GraphNodeOutputUI}[]} */
       const connections = [];
-
+      if (!this.graphNodeInputs) return connections;
+      
       this.graphNodeInputs.forEach((graphNodeInput) => {
          if (graphNodeInput.graphNodeUI === this) {
             const output = graphNodeInput.getConnection();
