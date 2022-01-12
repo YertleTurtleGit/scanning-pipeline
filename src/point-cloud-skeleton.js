@@ -8,9 +8,9 @@ class PointCloudSkeleton {
     * @returns {{vertices:number[], colors:number[]}}
     */
    static pointCloudSkeleton(pointCloud) {
-      const MAX_ITERATIONS = 1;
+      const MAX_ITERATIONS = 3;
 
-      const downSampling = 0.9;
+      const downSampling = 0.8;
 
       /** @type {{x:number, y:number, z:number}[]} */
       const vertices = [];
@@ -30,20 +30,16 @@ class PointCloudSkeleton {
 
       const initialNeighborhoodSize =
          PointCloudSkeleton.getInitialNeighborhoodSize(vertices);
-      const initialMedianDrag = 0.5;
+      const medianDragFactor = 0.25;
 
       let neighborhoodSize = initialNeighborhoodSize;
-      let medianDrag = initialMedianDrag;
 
       let iteration = 0;
 
       while (iteration < MAX_ITERATIONS) {
-         medianDrag = Math.abs(medianDrag);
-         medianDrag = Math.min(medianDrag, 1);
-
          console.log({
             neighborhoodSize: neighborhoodSize,
-            medianDrag: medianDrag,
+            medianDragFactor: medianDragFactor,
             vertexCount: vertices.length,
             iteration: iteration,
          });
@@ -51,6 +47,7 @@ class PointCloudSkeleton {
 
          /** @type {{vertex:{x:number, y:number, z:number}, alignment:number, direction:{x:number, y:number, z:number}}[]} */
          const branchPointCandidates = [];
+
          let highestAlignmentVertex = {
             vertex: {},
             alignment: 0,
@@ -87,29 +84,38 @@ class PointCloudSkeleton {
             if (neighbors.length > 0) {
                const median = PointCloudSkeleton.getMedian(neighbors);
 
+               const toMedian = {
+                  x: median.x - vertexA.x,
+                  y: median.y - vertexA.y,
+                  z: median.z - vertexA.z,
+               };
+
                const distanceToMedian = Math.sqrt(
-                  Math.pow(vertexA.x - median.x, 2) +
-                     Math.pow(vertexA.y - median.y, 2) +
-                     Math.pow(vertexA.z - median.z, 2)
+                  Math.pow(toMedian.x, 2) +
+                     Math.pow(toMedian.y, 2) +
+                     Math.pow(toMedian.z, 2)
                );
 
                const dragDirection = {
-                  x: (median.x - vertexA.x) / distanceToMedian,
-                  y: (median.y - vertexA.y) / distanceToMedian,
-                  z: (median.z - vertexA.z) / distanceToMedian,
+                  x: toMedian.x / distanceToMedian,
+                  y: toMedian.y / distanceToMedian,
+                  z: toMedian.z / distanceToMedian,
                };
 
-               vertices[indexA].x +=
-                  dragDirection.x * (medianDrag * distanceToMedian);
-               vertices[indexA].y +=
-                  dragDirection.y * (medianDrag * distanceToMedian);
-               vertices[indexA].z +=
-                  dragDirection.z * (medianDrag * distanceToMedian);
+               const medianDrag = Math.min(
+                  distanceToMedian,
+                  (neighborhoodSize - distanceToMedian) * medianDragFactor
+               );
+
+               vertices[indexA].x += dragDirection.x * medianDrag;
+               vertices[indexA].y += dragDirection.y * medianDrag;
+               vertices[indexA].z += dragDirection.z * medianDrag;
 
                const PCAs = PointCloudSkeleton.getPCAs(neighbors);
                const alignment = PCAs.alignment;
                const direction = PCAs.direction;
 
+               //console.log(alignment);
                if (alignment > 0.9) {
                   const degreeVertex = {
                      vertex: vertexA,
@@ -145,7 +151,7 @@ class PointCloudSkeleton {
                            highestAlignmentVertex.direction.z *
                               candidate.direction.z
                      );
-                     const isInPCADirection = Math.abs(angle) < 0.9;
+                     const isInPCADirection = Math.abs(angle) < Math.PI / 2;
 
                      if (isInPCADirection) {
                         branchCandidates.push({
@@ -164,7 +170,6 @@ class PointCloudSkeleton {
          });
 
          neighborhoodSize += initialNeighborhoodSize / 2;
-         //medianDrag += initialMedianDrag / 2;
       }
 
       console.log({ branchPointCount: branchPoints.length });
@@ -226,7 +231,16 @@ class PointCloudSkeleton {
          eigenvalues.push(eigenVector.eigenvalue);
       });
 
-      const sum = eigenvalues[0] + eigenvalues[1] + eigenvalues[2];
+      /*eigenvalues[2] = Math.pow(eigenvalues[2], 0);
+      eigenvalues[1] = Math.pow(eigenvalues[1], 1);
+      eigenvalues[0] = Math.pow(eigenvalues[0], 2);*/
+
+      console.assert(
+         eigenvalues[2] <= eigenvalues[1] && eigenvalues[1] <= eigenvalues[0],
+         "Eigenvalues are wrong."
+      );
+
+      const sum = eigenvalues[2] + eigenvalues[1] + eigenvalues[0];
       let alignment = 0;
       if (sum !== 0) alignment = eigenvalues[0] / sum;
 
@@ -276,8 +290,8 @@ class PointCloudSkeleton {
 
       const diagonal = {
          x: boundingBox.x.min - boundingBox.x.max,
-         y: boundingBox.y.min - boundingBox.x.max,
-         z: boundingBox.z.min - boundingBox.x.max,
+         y: boundingBox.y.min - boundingBox.y.max,
+         z: boundingBox.z.min - boundingBox.z.max,
       };
       const diagonalLength = Math.sqrt(
          Math.pow(diagonal.x, 2) +
@@ -285,7 +299,7 @@ class PointCloudSkeleton {
             Math.pow(diagonal.z, 2)
       );
 
-      return (2 * diagonalLength) / Math.pow(Math.abs(vertices.length), 1 / 3);
+      return (2 * diagonalLength) / Math.pow(vertices.length, 1 / 3);
    }
 
    /**

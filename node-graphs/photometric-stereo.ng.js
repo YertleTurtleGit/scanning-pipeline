@@ -3,7 +3,13 @@
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
 
-   const albedoMapNode = nodeGraph.registerNodeAsWorker(albedoMap, [
+   const pointCloudSkeletonNode = nodeGraph.registerNodeAsWorker(
+      pointCloudSkeleton,
+      ["./lib/pca-js/pca.js", "./src/point-cloud-skeleton.js"],
+      UI_PREVIEW_TYPE.POINT_CLOUD
+   );
+
+   /*const albedoMapNode = nodeGraph.registerNodeAsWorker(albedoMap, [
       "./src/glsl-shader.js",
       "./src/albedo-map.js",
    ]);
@@ -24,17 +30,12 @@ async function main() {
       "./src/glsl-shader.js",
       "./src/roughness-map.js",
    ]);
-   const pointCloudNode = nodeGraph.registerNodeAsWorker(
-      pointCloud,
-      ["./src/point-cloud.js"],
-      UI_PREVIEW_TYPE.POINT_CLOUD
-   );
-   const pointCloudSkeletonNode = nodeGraph.registerNodeAsWorker(
-      pointCloudSkeleton,
-      ["./lib/pca-js/pca.js", "./src/point-cloud-skeleton.js"],
-      UI_PREVIEW_TYPE.POINT_CLOUD
-   );
 
+   const pointCloudNodeA = nodeGraph.placeNode(pointCloudNode, {
+      x: 1300,
+      y: 800,
+   });
+  
    const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
       x: 750,
       y: 850,
@@ -55,14 +56,7 @@ async function main() {
       x: 1300,
       y: 400,
    });
-   const pointCloudNodeA = nodeGraph.placeNode(pointCloudNode, {
-      x: 1300,
-      y: 800,
-   });
-   const pointCloudSkeletonNodeA = nodeGraph.placeNode(pointCloudSkeletonNode, {
-      x: 1550,
-      y: 800,
-   });
+   
 
    const lightPolarAngleInputNode = nodeGraph.createInputNode(
       "number",
@@ -88,10 +82,6 @@ async function main() {
       },
       18
    );
-   /*const lightImagesInputNode = nodeGraph.createInputNode("ImageBitmap[]", {
-      x: 200,
-      y: 400,
-   });*/
 
    const uiCanvas = document.createElement("canvas");
    uiCanvas.width = 250;
@@ -133,7 +123,7 @@ async function main() {
       0.1
    );
 
-   /*nodeGraph.connect(
+   nodeGraph.connect(
       lightImagesInputNode.getOutput(),
       normalMapNodeA.getInput("lightImages")
    );
@@ -201,11 +191,17 @@ async function main() {
    nodeGraph.connect(
       depthFactorInputNode.getOutput(),
       pointCloudNodeA.getInput("depthFactor")
-   );
+
    nodeGraph.connect(
       pointCloudNodeA.getOutput(),
       pointCloudSkeletonNodeA.getInput("pointCloud")
+   );
    );*/
+   const pointCloudSkeletonNodeA = nodeGraph.placeNode(pointCloudSkeletonNode, {
+      x: 1550,
+      y: 800,
+   });
+   
 
    const testPointCloudNode = nodeGraph.registerNode(
       testPointCloud,
