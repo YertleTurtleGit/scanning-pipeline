@@ -449,12 +449,11 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
          );
       }
 
-      for (let i = 0; i < lightCount; i++) {
-         this.lights[i].visible = true;
-         this.lightHelpers[i].visible = true;
-         // TODO Remove hard code.
-         // this.lights[i].intensity = 0.25;
-      }
+      this.lights.forEach((light, lightIndex) => {
+         light.visible = true;
+         this.lightHelpers[lightIndex].visible = true;
+      });
+
       this.cameraHelper.visible = true;
 
       this.updateCameraPlanes();
@@ -497,7 +496,7 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
 
       this.lights.forEach((light, index) => {
          const azimuthal =
-            this.lightAzimuthalAnglesDeg[index] * (Math.PI / 180);
+            (180 - this.lightAzimuthalAnglesDeg[index]) * (Math.PI / 180);
          const polar =
             (360 - this.lightPolarAnglesDeg[index]) * (Math.PI / 180);
 

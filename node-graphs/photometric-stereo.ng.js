@@ -63,7 +63,7 @@ async function main() {
       },
       [0, 45, 90, 135, 180, 225, 270, 315]
    );
-   const lightPolarAngleInputNode = nodeGraph.createInputNode(
+   const lightPolarAnglesInputNode = nodeGraph.createInputNode(
       NODE_TYPE.NUMBER_ARRAY,
       {
          x: 200,
@@ -147,12 +147,20 @@ async function main() {
       albedoMapNodeA.getInput("lightImages")
    );*/
    nodeGraph.connect(
-      lightPolarAngleInputNode.getOutput(),
-      normalMapNodeA.getInput("lightPolarAngleDeg")
+      lightPolarAnglesInputNode.getOutput(),
+      normalMapNodeA.getInput("lightPolarAnglesDeg")
    );
    nodeGraph.connect(
-      lightPolarAngleInputNode.getOutput(),
-      lightImagesRenderNodeA.getInput("lightPolarAngleDeg")
+      lightPolarAnglesInputNode.getOutput(),
+      lightImagesRenderNodeA.getInput("lightPolarAnglesDeg")
+   );
+   nodeGraph.connect(
+      lightAzimuthalAngleInputNode.getOutput(),
+      normalMapNodeA.getInput("lightAzimuthalAnglesDeg")
+   );
+   nodeGraph.connect(
+      lightAzimuthalAngleInputNode.getOutput(),
+      lightImagesRenderNodeA.getInput("lightAzimuthalAnglesDeg")
    );
    nodeGraph.connect(
       cameraDistanceInputNode.getOutput(),
