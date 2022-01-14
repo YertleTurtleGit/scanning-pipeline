@@ -1031,7 +1031,10 @@ class GraphNodeUI {
    refreshValuePreview(value) {
       this.outputUIElement.innerHTML = "";
 
-      if (this.graphNode.uiPreviewType === NODE_TYPE.POINT_CLOUD) {
+      if (
+         this.graphNode &&
+         this.graphNode.uiPreviewType === NODE_TYPE.POINT_CLOUD
+      ) {
          const pointCloudCanvas = document.createElement("canvas");
          pointCloudCanvas.width = 200;
          pointCloudCanvas.height = 200;
@@ -1133,7 +1136,6 @@ class GraphNodeUI {
          this.outputUIElement.style.justifyContent = "center";
          this.outputUIElement.appendChild(valueImage);
       } else if (Array.isArray(value) && typeof value[0] === "number") {
-         console.warn(value);
          value.forEach((singleValue) => {
             const numberElement = document.createElement("div");
             numberElement.innerText = String(singleValue);
@@ -1261,6 +1263,8 @@ class GraphNodeUI {
    async getConnections() {
       /** @type {{input: GraphNodeInputUI, output:GraphNodeOutputUI}[]} */
       const connections = [];
+
+      if (!this.graphNodeInputs) return connections;
 
       this.graphNodeInputs.forEach((graphNodeInput) => {
          if (graphNodeInput.graphNodeUI === this) {
@@ -1422,7 +1426,7 @@ class InputGraphNode extends GraphNodeUI {
          this.inputElement.accept = "image/*";
          this.inputElement.multiple = true;
       } else if (this.type === NODE_TYPE.NUMBER_ARRAY) {
-         this.inputElement.type = "number";
+         this.inputElement.type = "text";
       } else {
          console.error("Input type '" + this.type + "' not supported.");
       }
@@ -1467,7 +1471,7 @@ class InputGraphNode extends GraphNodeUI {
     * @param {InputEvent} inputEvent
     */
    inputChangeHandler(inputEvent) {
-      if (this.type === "number") {
+      if (this.type === NODE_TYPE.NUMBER) {
          let value = Number(
             /** @type {HTMLInputElement} */ (inputEvent.target).value
          );
@@ -1476,7 +1480,7 @@ class InputGraphNode extends GraphNodeUI {
          }
          this.graphNodeOutputs[0].setValue(value);
          this.refreshValuePreview(value);
-      } else if (this.type === "ImageBitmap") {
+      } else if (this.type === NODE_TYPE.IMAGE) {
          const nodeCallback = new NodeCallback(this);
          nodeCallback.setProgressPercent(0);
 
@@ -1489,7 +1493,7 @@ class InputGraphNode extends GraphNodeUI {
             nodeCallback.setProgressPercent(100);
          });
          imageLoaderWorker.postMessage(inputEvent.target.files[0]);
-      } else if (this.type === "ImageBitmap[]") {
+      } else if (this.type === NODE_TYPE.IMAGE_ARRAY) {
          const nodeCallback = new NodeCallback(this);
          nodeCallback.setProgressPercent(0);
 
@@ -1518,6 +1522,18 @@ class InputGraphNode extends GraphNodeUI {
             );
             imageLoaderWorker.postMessage(file);
          });
+      } else if (this.type === NODE_TYPE.NUMBER_ARRAY) {
+         const valueStringArray = /** @type {HTMLInputElement} */ (
+            inputEvent.target
+         ).value.split(",");
+
+         const value = new Array(valueStringArray.length);
+
+         valueStringArray.forEach((element, index) => {
+            value[index] = Number(element);
+         });
+         this.graphNodeOutputs[0].setValue(value);
+         this.refreshValuePreview(value);
       }
    }
 

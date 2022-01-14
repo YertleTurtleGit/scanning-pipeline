@@ -294,9 +294,7 @@ class VirtualInputRenderer {
 
       this.scene.background = null;
 
-      this.material = new THREE.MeshPhysicalMaterial({
-         precision: "highp",
-      });
+      this.material = new THREE.MeshPhysicalMaterial();
 
       this.mesh.castShadow = true;
       this.mesh.receiveShadow = true;
@@ -348,18 +346,21 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
 
    /**
     * @public
-    * @param {number} lightPolarAngleDeg
+    * @param {number[]} lightPolarAnglesDeg
+    * @param {number[]} lightAzimuthalAnglesDeg
     * @param {number} cameraDistance
     * @param {number} lightDistance
     * @returns {Promise<ImageBitmap[]>}
     */
    static async renderedLightImages(
-      lightPolarAngleDeg,
+      lightPolarAnglesDeg,
+      lightAzimuthalAnglesDeg,
       cameraDistance,
       lightDistance
    ) {
-      PhotometricStereoRenderer.current.setLightPolarAngleDeg(
-         lightPolarAngleDeg
+      PhotometricStereoRenderer.current.setLightAnglesDeg(
+         lightPolarAnglesDeg,
+         lightAzimuthalAnglesDeg
       );
       PhotometricStereoRenderer.current.setCameraDistance(cameraDistance);
       PhotometricStereoRenderer.current.setLightDistance(lightDistance);
@@ -386,6 +387,7 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
 
       await super.initialize();
 
+      /** @type {THREE.PointLight[]} */
       this.lights = new Array(8);
       this.lightHelpers = new Array(8);
 
@@ -463,11 +465,13 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
 
    /**
     * @public
-    * @param {number} lightPolarAngleDeg
+    * @param {number[]} lightPolarAnglesDeg
+    * @param {number[]} lightAzimuthalAnglesDeg
     */
-   async setLightPolarAngleDeg(lightPolarAngleDeg) {
+   async setLightAnglesDeg(lightPolarAnglesDeg, lightAzimuthalAnglesDeg) {
       await this.initialize();
-      this.lightPolarAngleDeg = lightPolarAngleDeg;
+      this.lightPolarAnglesDeg = lightPolarAnglesDeg;
+      this.lightAzimuthalAnglesDeg = lightAzimuthalAnglesDeg;
       this.updateLightPositions();
    }
 
@@ -489,33 +493,20 @@ class PhotometricStereoRenderer extends VirtualInputRenderer {
 
    async updateLightPositions() {
       await this.initialize();
+      const radius = this.lightDistance;
 
-      const correctedLightPolarDegree = 360 - this.lightPolarAngleDeg;
+      this.lights.forEach((light, index) => {
+         const azimuthal =
+            this.lightAzimuthalAnglesDeg[index] * (Math.PI / 180);
+         const polar =
+            (360 - this.lightPolarAnglesDeg[index]) * (Math.PI / 180);
 
-      /**
-       * @param {THREE.Light} light
-       * @param {number} lightAzimuthalDegree
-       */
-      const setSingleLightAzimuthalAngle = (light, lightAzimuthalDegree) => {
-         let lightVector = new THREE.Vector3(this.lightDistance, 0, 0);
+         const x = radius * Math.cos(azimuthal) * Math.sin(polar);
+         const y = radius * Math.sin(azimuthal) * Math.cos(polar);
+         const z = radius * Math.cos(polar);
 
-         let lightPolarRotationAxis = new THREE.Vector3(0, 1, 0).normalize();
-         lightVector.applyAxisAngle(
-            lightPolarRotationAxis,
-            correctedLightPolarDegree * (Math.PI / 180)
-         );
-
-         const lightRotation = lightAzimuthalDegree * (Math.PI / 180);
-         const lightRotationAxis = new THREE.Vector3(0, 0, 1).normalize();
-         lightVector.applyAxisAngle(lightRotationAxis, lightRotation);
-
-         light.position.set(lightVector.x, lightVector.y, lightVector.z);
-      };
-
-      const lightCount = this.lights.length;
-      for (let i = 0; i < lightCount; i++) {
-         setSingleLightAzimuthalAngle(this.lights[i], i * (360 / lightCount));
-      }
+         light.position.set(x, y, z);
+      });
    }
 }
 
