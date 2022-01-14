@@ -3,55 +3,30 @@
 
 /**
  * @public
- * @param {number} lightPolarAngleDeg
  * @param {ImageBitmap[]} lightImages
+ * @param {number[]} lightPolarAnglesDeg
+ * @param {number[]} lightAzimuthalAnglesDeg
  * @returns {Promise<ImageBitmap>}
  */
-async function photometricStereoNormalMap(lightPolarAngleDeg, lightImages) {
-   const lightImage_000 = lightImages[0];
-   const lightImage_045 = lightImages[1];
-   const lightImage_090 = lightImages[2];
-   const lightImage_135 = lightImages[3];
-   const lightImage_180 = lightImages[4];
-   const lightImage_225 = lightImages[5];
-   const lightImage_270 = lightImages[6];
-   const lightImage_315 = lightImages[7];
-
+async function photometricStereoNormalMap(
+   lightImages,
+   lightPolarAnglesDeg,
+   lightAzimuthalAnglesDeg
+) {
    const normalMapShader = new GLSL.Shader({
-      width: lightImage_000.width,
-      height: lightImage_000.height,
+      width: lightImages[0].width,
+      height: lightImages[0].height,
    });
 
    normalMapShader.bind();
 
-   const lightLuminances = [
-      GLSL.Image.load(lightImage_000).getLuminance(),
-      GLSL.Image.load(lightImage_045).getLuminance(),
-      GLSL.Image.load(lightImage_090).getLuminance(),
-      GLSL.Image.load(lightImage_135).getLuminance(),
-      GLSL.Image.load(lightImage_180).getLuminance(),
-      GLSL.Image.load(lightImage_225).getLuminance(),
-      GLSL.Image.load(lightImage_270).getLuminance(),
-      GLSL.Image.load(lightImage_315).getLuminance(),
-   ];
+   const lightLuminances = [];
+
+   lightImages.forEach((lightImage) => {
+      lightLuminances.push(GLSL.Image.load(lightImage).getLuminance());
+   });
 
    const all = new GLSL.Float(0).maximum(...lightLuminances);
-
-   let mask = new GLSL.Float(1);
-
-   /*if (lightImage_NONE) {
-      const lightLuminance_NONE =
-         GLSL.Image.load(lightImage_NONE).getLuminance();
-
-      for (let i = 0; i < lightLuminances.length; i++) {
-         lightLuminances[i] =
-            lightLuminances[i].subtractFloat(lightLuminance_NONE);
-      }
-
-      mask = all
-         .subtractFloat(lightLuminance_NONE)
-         .step(new GLSL.Float(maskThreshold));
-   }*/
 
    for (let i = 0; i < lightLuminances.length; i++) {
       lightLuminances[i] = lightLuminances[i].divideFloat(all);
@@ -64,6 +39,9 @@ async function photometricStereoNormalMap(lightPolarAngleDeg, lightImages) {
     * @param {number} originAzimuthalAngleDeg
     * @param {number} orthogonalAzimuthalAngleDeg
     * @param {number} oppositeAzimuthalAngleDeg
+    * @param {number} originPolarAngleDeg
+    * @param {number} orthogonalPolarAngleDeg
+    * @param {number} oppositePolarAngleDeg
     * @returns {GLSL.Vector3}
     */
    function getAnisotropicNormalVector(
@@ -73,7 +51,11 @@ async function photometricStereoNormalMap(lightPolarAngleDeg, lightImages) {
 
       originAzimuthalAngleDeg,
       orthogonalAzimuthalAngleDeg,
-      oppositeAzimuthalAngleDeg
+      oppositeAzimuthalAngleDeg,
+
+      originPolarAngleDeg,
+      orthogonalPolarAngleDeg,
+      oppositePolarAngleDeg
    ) {
       /**
        * @param {number} azimuthalAngleDeg
@@ -93,15 +75,15 @@ async function photometricStereoNormalMap(lightPolarAngleDeg, lightImages) {
 
       const originLightDirection = getLightDirectionVector(
          originAzimuthalAngleDeg,
-         lightPolarAngleDeg
+         originPolarAngleDeg
       );
       const orthogonalLightDirection = getLightDirectionVector(
          orthogonalAzimuthalAngleDeg,
-         lightPolarAngleDeg
+         orthogonalPolarAngleDeg
       );
       const oppositeLightDirection = getLightDirectionVector(
          oppositeAzimuthalAngleDeg,
-         lightPolarAngleDeg
+         oppositePolarAngleDeg
       );
 
       const lightMatrix = new GLSL.Matrix3([
@@ -137,41 +119,31 @@ async function photometricStereoNormalMap(lightPolarAngleDeg, lightImages) {
 
    /** @type {number[][]} */
    const anisotropicCombinations = [
-      [180, 270, 0],
-      [180, 90, 0],
-      [90, 180, 270],
-      [90, 0, 270],
-      [225, 315, 45],
-      [225, 135, 45],
-      [315, 45, 135],
-      [315, 225, 135],
+      [4, 6, 0],
+      [4, 2, 0],
+      [2, 4, 6],
+      [2, 0, 6],
+      [5, 7, 1],
+      [5, 3, 1],
+      [7, 1, 3],
+      [7, 5, 3],
    ];
 
    /** @type {GLSL.Vector3[]} */
    const normalVectors = [];
 
    anisotropicCombinations.forEach((combination) => {
-      /**
-       * @param {number} azimuthalAngle
-       * @returns {GLSL.Float}
-       */
-      function getLightLuminance(azimuthalAngle) {
-         const lightAzimuthalAngles = [0, 45, 90, 135, 180, 225, 270, 315];
-         const id = lightAzimuthalAngles.findIndex((value) => {
-            return value === azimuthalAngle;
-         });
-
-         return lightLuminances[id];
-      }
-
       normalVectors.push(
          getAnisotropicNormalVector(
-            getLightLuminance(combination[0]),
-            getLightLuminance(combination[1]),
-            getLightLuminance(combination[2]),
-            combination[0],
-            combination[1],
-            combination[2]
+            lightLuminances[combination[0]],
+            lightLuminances[combination[1]],
+            lightLuminances[combination[2]],
+            lightAzimuthalAnglesDeg[combination[0]],
+            lightAzimuthalAnglesDeg[combination[1]],
+            lightAzimuthalAnglesDeg[combination[2]],
+            lightPolarAnglesDeg[combination[0]],
+            lightPolarAnglesDeg[combination[1]],
+            lightPolarAnglesDeg[combination[2]]
          )
       );
    });
@@ -183,28 +155,7 @@ async function photometricStereoNormalMap(lightPolarAngleDeg, lightImages) {
    ])
       .addVector3(...normalVectors)
       .divideFloat(new GLSL.Float(normalVectors.length))
-      .normalize()
-      .multiplyFloat(mask);
-
-   /*if (cameraVerticalShift) {
-      // TODO: use cameraVerticalShift
-      const cameraAngle = Math.atan(
-                  1 / Math.tan(lightPolarAngleDeg * (Math.PI / 180))
-               );
-
-               const zero = new GLSL.Float(0);
-               const one = new GLSL.Float(1);
-               const sine = new GLSL.Float(Math.sin(cameraAngle));
-               const cosine = new GLSL.Float(Math.cos(cameraAngle));
-
-               const rotationMatrix = new GLSL.Matrix3([
-                  [one, zero, zero],
-                  [zero, cosine, sine],
-                  [zero, sine.multiplyFloat(new GLSL.Float(-1)), cosine],
-               ]);
-
-               normalVector = rotationMatrix.multiplyVector3(normalVector);
-   }*/
+      .normalize();
 
    // TODO: fix alpha
    const alpha = normalVector

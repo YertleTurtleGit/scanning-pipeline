@@ -1,4 +1,4 @@
-/* global NodeGraph, UI_PREVIEW_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer, pointCloud */
+/* global NodeGraph, NODE_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer, pointCloud */
 
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
@@ -27,7 +27,7 @@ async function main() {
    const pointCloudNode = nodeGraph.registerNodeAsWorker(
       pointCloud,
       ["./src/point-cloud.js"],
-      UI_PREVIEW_TYPE.POINT_CLOUD
+      NODE_TYPE.POINT_CLOUD
    );
 
    const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
@@ -55,16 +55,24 @@ async function main() {
       y: 800,
    });
 
-   const lightPolarAngleInputNode = nodeGraph.createInputNode(
-      "number",
+   const lightAzimuthalAngleInputNode = nodeGraph.createInputNode(
+      NODE_TYPE.NUMBER_ARRAY,
+      {
+         x: 200,
+         y: 25,
+      },
+      [0, 45, 90, 135, 180, 225, 270, 315]
+   );
+   const lightPolarAnglesInputNode = nodeGraph.createInputNode(
+      NODE_TYPE.NUMBER_ARRAY,
       {
          x: 200,
          y: 300,
       },
-      45
+      [45, 45, 45, 45, 45, 45, 45, 45]
    );
    const cameraDistanceInputNode = nodeGraph.createInputNode(
-      "number",
+      NODE_TYPE.NUMBER,
       {
          x: 200,
          y: 500,
@@ -72,7 +80,7 @@ async function main() {
       18
    );
    const lightDistanceInputNode = nodeGraph.createInputNode(
-      "number",
+      NODE_TYPE.NUMBER,
       {
          x: 200,
          y: 600,
@@ -98,10 +106,16 @@ async function main() {
          height: 250,
       }
    );
-   await PhotometricStereoRenderer.renderedLightImages(45, 18, 18);
+   await PhotometricStereoRenderer.renderedLightImages(
+      [45, 45, 45, 45, 45, 45, 45, 45],
+      [0, 45, 90, 135, 180, 225, 270, 315],
+      18,
+      18
+   );
 
    const lightImagesRenderNode = nodeGraph.registerNode(
-      PhotometricStereoRenderer.renderedLightImages
+      PhotometricStereoRenderer.renderedLightImages,
+      NODE_TYPE.IMAGE
    );
    const lightImagesRenderNodeA = nodeGraph.placeNode(lightImagesRenderNode, {
       x: 450,
@@ -133,12 +147,20 @@ async function main() {
       albedoMapNodeA.getInput("lightImages")
    );*/
    nodeGraph.connect(
-      lightPolarAngleInputNode.getOutput(),
-      normalMapNodeA.getInput("lightPolarAngleDeg")
+      lightPolarAnglesInputNode.getOutput(),
+      normalMapNodeA.getInput("lightPolarAnglesDeg")
    );
    nodeGraph.connect(
-      lightPolarAngleInputNode.getOutput(),
-      lightImagesRenderNodeA.getInput("lightPolarAngleDeg")
+      lightPolarAnglesInputNode.getOutput(),
+      lightImagesRenderNodeA.getInput("lightPolarAnglesDeg")
+   );
+   nodeGraph.connect(
+      lightAzimuthalAngleInputNode.getOutput(),
+      normalMapNodeA.getInput("lightAzimuthalAnglesDeg")
+   );
+   nodeGraph.connect(
+      lightAzimuthalAngleInputNode.getOutput(),
+      lightImagesRenderNodeA.getInput("lightAzimuthalAnglesDeg")
    );
    nodeGraph.connect(
       cameraDistanceInputNode.getOutput(),

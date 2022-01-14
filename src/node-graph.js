@@ -1,5 +1,5 @@
 /* global THREE */
-/* exported NodeCallback, UI_PREVIEW_TYPE */
+/* exported NodeCallback, NODE_TYPE */
 
 class NodeCallback {
    /**
@@ -97,7 +97,7 @@ class NodeGraph {
    /**
     * @public
     * @param {Function} nodeExecuter
-    * @param {UI_PREVIEW_TYPE} uiPreviewType
+    * @param {NODE_TYPE} uiPreviewType
     * @returns {GraphNode}
     */
    registerNode(nodeExecuter, uiPreviewType) {
@@ -110,13 +110,13 @@ class NodeGraph {
     * @public
     * @param {Function} nodeExecuter
     * @param {string[]} dependencies
-    * @param {UI_PREVIEW_TYPE} uiPreviewType
+    * @param {NODE_TYPE} uiPreviewType
     * @returns {GraphNode}
     */
    registerNodeAsWorker(
       nodeExecuter,
       dependencies = [],
-      uiPreviewType = UI_PREVIEW_TYPE.AUTO
+      uiPreviewType = NODE_TYPE.AUTO
    ) {
       const graphNode = new GraphNode(
          nodeExecuter,
@@ -341,7 +341,7 @@ class GraphNode {
     * @param {Function} executer
     * @param {boolean} asWorker
     * @param {string[]} dependencies
-    * @param {UI_PREVIEW_TYPE} uiPreviewType
+    * @param {NODE_TYPE} uiPreviewType
     */
    constructor(executer, asWorker, dependencies, uiPreviewType) {
       /**
@@ -360,7 +360,7 @@ class GraphNode {
 
       /**
        * @public
-       * @type {UI_PREVIEW_TYPE}
+       * @type {NODE_TYPE}
        */
       this.uiPreviewType = uiPreviewType;
 
@@ -524,12 +524,14 @@ class GraphNode {
    }
 }
 
-/** @typedef {string} UI_PREVIEW_TYPE */
-const UI_PREVIEW_TYPE = {
+/** @typedef {string} NODE_TYPE */
+const NODE_TYPE = {
    AUTO: "auto",
    NUMBER: "number",
-   IMAGE: "image",
-   POINT_CLOUD: "pointCloud",
+   NUMBER_ARRAY: "number[]",
+   IMAGE: "ImageBitmap",
+   IMAGE_ARRAY: "ImageBitmap[]",
+   POINT_CLOUD: "{vertices:number,colors:number}",
 };
 
 class GraphNodeInput {
@@ -1029,7 +1031,10 @@ class GraphNodeUI {
    refreshValuePreview(value) {
       this.outputUIElement.innerHTML = "";
 
-      if (this.graphNode.uiPreviewType === UI_PREVIEW_TYPE.POINT_CLOUD) {
+      if (
+         this.graphNode &&
+         this.graphNode.uiPreviewType === NODE_TYPE.POINT_CLOUD
+      ) {
          const pointCloudCanvas = document.createElement("canvas");
          pointCloudCanvas.width = 200;
          pointCloudCanvas.height = 200;
@@ -1122,11 +1127,6 @@ class GraphNodeUI {
          this.outputUIElement.style.justifyContent = "center";
          this.outputUIElement.appendChild(imageElement);
          imageElement.src = imageCanvas.toDataURL();
-      } else if (typeof value === "number") {
-         const numberElement = document.createElement("div");
-         numberElement.innerText = String(value);
-         numberElement.style.textAlign = "center";
-         this.outputUIElement.appendChild(numberElement);
       } else if (typeof value === "string") {
          const valueImage = new Image();
          valueImage.src = value;
@@ -1135,6 +1135,18 @@ class GraphNodeUI {
          this.outputUIElement.style.display = "flex";
          this.outputUIElement.style.justifyContent = "center";
          this.outputUIElement.appendChild(valueImage);
+      } else if (Array.isArray(value) && typeof value[0] === "number") {
+         value.forEach((singleValue) => {
+            const numberElement = document.createElement("div");
+            numberElement.innerText = String(singleValue);
+            numberElement.style.textAlign = "center";
+            this.outputUIElement.appendChild(numberElement);
+         });
+      } else if (typeof value === "number") {
+         const numberElement = document.createElement("div");
+         numberElement.innerText = String(value);
+         numberElement.style.textAlign = "center";
+         this.outputUIElement.appendChild(numberElement);
       }
 
       this.nodeGraph.updateConnectionUI();
@@ -1251,6 +1263,8 @@ class GraphNodeUI {
    async getConnections() {
       /** @type {{input: GraphNodeInputUI, output:GraphNodeOutputUI}[]} */
       const connections = [];
+
+      if (!this.graphNodeInputs) return connections;
 
       this.graphNodeInputs.forEach((graphNodeInput) => {
          if (graphNodeInput.graphNodeUI === this) {
@@ -1401,16 +1415,18 @@ class InputGraphNode extends GraphNodeUI {
       this.inputElement.style.whiteSpace = "normal";
       this.inputElement.multiple = false;
 
-      if (this.type === "number") {
+      if (this.type === NODE_TYPE.NUMBER) {
          this.inputElement.type = "number";
          domInputList.appendChild(this.inputElement);
-      } else if (this.type === "ImageBitmap") {
+      } else if (this.type === NODE_TYPE.IMAGE) {
          this.inputElement.type = "file";
          this.inputElement.accept = "image/*";
-      } else if (this.type === "ImageBitmap[]") {
+      } else if (this.type === NODE_TYPE.IMAGE_ARRAY) {
          this.inputElement.type = "file";
          this.inputElement.accept = "image/*";
          this.inputElement.multiple = true;
+      } else if (this.type === NODE_TYPE.NUMBER_ARRAY) {
+         this.inputElement.type = "text";
       } else {
          console.error("Input type '" + this.type + "' not supported.");
       }
@@ -1455,7 +1471,7 @@ class InputGraphNode extends GraphNodeUI {
     * @param {InputEvent} inputEvent
     */
    inputChangeHandler(inputEvent) {
-      if (this.type === "number") {
+      if (this.type === NODE_TYPE.NUMBER) {
          let value = Number(
             /** @type {HTMLInputElement} */ (inputEvent.target).value
          );
@@ -1464,7 +1480,7 @@ class InputGraphNode extends GraphNodeUI {
          }
          this.graphNodeOutputs[0].setValue(value);
          this.refreshValuePreview(value);
-      } else if (this.type === "ImageBitmap") {
+      } else if (this.type === NODE_TYPE.IMAGE) {
          const nodeCallback = new NodeCallback(this);
          nodeCallback.setProgressPercent(0);
 
@@ -1477,7 +1493,7 @@ class InputGraphNode extends GraphNodeUI {
             nodeCallback.setProgressPercent(100);
          });
          imageLoaderWorker.postMessage(inputEvent.target.files[0]);
-      } else if (this.type === "ImageBitmap[]") {
+      } else if (this.type === NODE_TYPE.IMAGE_ARRAY) {
          const nodeCallback = new NodeCallback(this);
          nodeCallback.setProgressPercent(0);
 
@@ -1506,6 +1522,18 @@ class InputGraphNode extends GraphNodeUI {
             );
             imageLoaderWorker.postMessage(file);
          });
+      } else if (this.type === NODE_TYPE.NUMBER_ARRAY) {
+         const valueStringArray = /** @type {HTMLInputElement} */ (
+            inputEvent.target
+         ).value.split(",");
+
+         const value = new Array(valueStringArray.length);
+
+         valueStringArray.forEach((element, index) => {
+            value[index] = Number(element);
+         });
+         this.graphNodeOutputs[0].setValue(value);
+         this.refreshValuePreview(value);
       }
    }
 
