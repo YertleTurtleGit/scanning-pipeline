@@ -1035,6 +1035,49 @@ class GraphNodeUI {
          this.graphNode &&
          this.graphNode.uiPreviewType === NODE_TYPE.POINT_CLOUD
       ) {
+         const pointCloudDownloadButton = document.createElement("button");
+         pointCloudDownloadButton.innerText = "download";
+         pointCloudDownloadButton.addEventListener("click", () => {
+            const filename = "point_cloud.obj";
+            let objString = "";
+
+            for (
+               let i = 0, vertexCount = value.vertices.length;
+               i < vertexCount;
+               i += 3
+            ) {
+               const x = value.vertices[i + 0];
+               const y = value.vertices[i + 1];
+               const z = value.vertices[i + 2];
+
+               const r = value.colors[i + 0];
+               const g = value.colors[i + 1];
+               const b = value.colors[i + 2];
+               objString += "v " + x + " " + y + " " + z + " ";
+               objString += r + " " + g + " " + b + "\n";
+            }
+
+            let element = document.createElement("a");
+            element.style.display = "none";
+
+            let blob = new Blob([objString], {
+               type: "text/plain; charset = utf-8",
+            });
+
+            let url = window.URL.createObjectURL(blob);
+            element.setAttribute("href", window.URL.createObjectURL(blob));
+            element.setAttribute("download", filename);
+
+            document.body.appendChild(element);
+
+            element.click();
+
+            window.URL.revokeObjectURL(url);
+            element.remove();
+         });
+
+         this.outputUIElement.appendChild(pointCloudDownloadButton);
+
          const pointCloudCanvas = document.createElement("canvas");
          pointCloudCanvas.width = 200;
          pointCloudCanvas.height = 200;
@@ -1101,10 +1144,23 @@ class GraphNodeUI {
          const imageElement = new Image();
          imageElement.style.maxWidth = "100%";
          imageCanvas.style.maxHeight = "5rem";
-         this.outputUIElement.style.display = "flex";
-         this.outputUIElement.style.justifyContent = "center";
+
+         const dataUrl = imageCanvas.toDataURL();
+         imageElement.src = dataUrl;
+
+         const imageDownloadButton = document.createElement("button");
+         imageDownloadButton.innerText = "download";
+         imageDownloadButton.addEventListener("click", () => {
+            const tmpElement = document.createElement("a");
+            tmpElement.setAttribute("href", dataUrl);
+            tmpElement.setAttribute("download", "image.png");
+            document.body.appendChild(tmpElement);
+            tmpElement.click();
+            tmpElement.remove();
+         });
+
+         this.outputUIElement.appendChild(imageDownloadButton);
          this.outputUIElement.appendChild(imageElement);
-         imageElement.src = imageCanvas.toDataURL();
       } else if (Array.isArray(value) && value[0] instanceof ImageBitmap) {
          const imageCanvas = document.createElement("canvas");
          imageCanvas.width = value[0].width;
@@ -1487,7 +1543,7 @@ class InputGraphNode extends GraphNodeUI {
          const imageLoaderWorker = new Worker("./src/image-loader-worker.js");
 
          imageLoaderWorker.addEventListener("message", async (messageEvent) => {
-            const imageBitmap = messageEvent.data;
+            const imageBitmap = messageEvent.data.imageBitmap;
             this.graphNodeOutputs[0].setValue(imageBitmap);
             this.refreshValuePreview(imageBitmap);
             nodeCallback.setProgressPercent(100);
@@ -1498,6 +1554,7 @@ class InputGraphNode extends GraphNodeUI {
          nodeCallback.setProgressPercent(0);
 
          const files = Array.from(inputEvent.target.files);
+
          const imageCount = files.length;
          const imageBitmapArray = [];
 
@@ -1509,10 +1566,24 @@ class InputGraphNode extends GraphNodeUI {
             imageLoaderWorker.addEventListener(
                "message",
                async (messageEvent) => {
-                  const imageBitmap = messageEvent.data;
-                  imageBitmapArray.push(imageBitmap);
+                  const name = messageEvent.data.name;
+                  const imageBitmap = messageEvent.data.imageBitmap;
+                  imageBitmapArray.push({
+                     name: name,
+                     imageBitmap: imageBitmap,
+                  });
                   if (imageBitmapArray.length === imageCount) {
-                     this.graphNodeOutputs[0].setValue(imageBitmapArray);
+                     imageBitmapArray.sort(function (a, b) {
+                        if (a.name < b.name) return -1;
+                        if (a.name > b.name) return 1;
+                        return 0;
+                     });
+
+                     const rawImageBitmapArray = [];
+                     imageBitmapArray.forEach((imageBitmap) => {
+                        rawImageBitmapArray.push(imageBitmap.imageBitmap);
+                     });
+                     this.graphNodeOutputs[0].setValue(rawImageBitmapArray);
                      this.refreshValuePreview(imageBitmap);
                   }
                   nodeCallback.setProgressPercent(

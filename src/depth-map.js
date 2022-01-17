@@ -4,8 +4,6 @@
 /**
  * @global
  * @typedef {{x: number, y: number}} Pixel
- * @typedef {{x: number, y: number, slope: number}} LinePixel
- * @typedef {LinePixel[]} PixelLine
  */
 class DepthMapHelper {
    /**
@@ -360,10 +358,12 @@ function calculateAnisotropicIntegral(messageEvent) {
 
                   pixelSlope =
                      stepVector.x * rightSlope + stepVector.y * topSlope;
+
+                  integralValue -= pixelSlope;
+               } else {
+                  integralValue = 0;
                }
 
-               integralValue -= pixelSlope;
-               //integralSA[index] += integralValue;
                Atomics.add(integralSA, index, integralValue);
             }
          } while (inDimensions);
