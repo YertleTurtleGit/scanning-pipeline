@@ -360,10 +360,12 @@ function calculateAnisotropicIntegral(messageEvent) {
 
                   pixelSlope =
                      stepVector.x * rightSlope + stepVector.y * topSlope;
+                  
+                  integralValue -= pixelSlope;
+               } else {
+                  integralValue = 0;
                }
-
-               integralValue -= pixelSlope;
-               //integralSA[index] += integralValue;
+               
                Atomics.add(integralSA, index, integralValue);
             }
          } while (inDimensions);
