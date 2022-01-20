@@ -14,6 +14,7 @@ async function main() {
    const depthMapNode = nodeGraph.registerNodeAsWorker(depthMap, [
       "./src/glsl-shader.js",
       "./src/function-worker.js",
+      "./src/basic-image-operations.js",
       "./src/depth-map.js",
    ]);
    const ambientOcclusionMapNode = nodeGraph.registerNodeAsWorker(
