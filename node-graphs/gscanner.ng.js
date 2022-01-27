@@ -1,4 +1,4 @@
-/* global NodeGraph, NODE_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, PhotometricStereoRenderer, pointCloud */
+/* global NodeGraph, NODE_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, translucencyMap, pointCloud */
 
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
@@ -6,6 +6,10 @@ async function main() {
    const albedoMapNode = nodeGraph.registerNodeAsWorker(albedoMap, [
       "./src/glsl-shader.js",
       "./src/albedo-map.js",
+   ]);
+   const translucencyMapNode = nodeGraph.registerNodeAsWorker(translucencyMap, [
+      "./src/glsl-shader.js",
+      "./src/translucency-map.js",
    ]);
    const normalMapNode = nodeGraph.registerNodeAsWorker(
       photometricStereoNormalMap,
@@ -32,6 +36,10 @@ async function main() {
 
    const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
       x: 750,
+      y: 850,
+   });
+   const translucencyMapNodeA = nodeGraph.placeNode(translucencyMapNode, {
+      x: 450,
       y: 850,
    });
    const normalMapNodeA = nodeGraph.placeNode(normalMapNode, {
@@ -86,6 +94,14 @@ async function main() {
       },
       0.001
    );
+   const backlightImagesInputNode = nodeGraph.createInputNode(
+      NODE_TYPE.IMAGE_ARRAY,
+      {
+         x: 200,
+         y: 850,
+      },
+      0.001
+   );
 
    const qualityPercentInputNode = nodeGraph.createInputNode(
       NODE_TYPE.NUMBER,
@@ -112,7 +128,10 @@ async function main() {
       lightImagesInputNode.getOutput(),
       albedoMapNodeA.getInput("lightImages")
    );
-
+   nodeGraph.connect(
+      backlightImagesInputNode.getOutput(),
+      translucencyMapNodeA.getInput("backlightImages")
+   );
    nodeGraph.connect(
       lightPolarAnglesInputNode.getOutput(),
       normalMapNodeA.getInput("lightPolarAnglesDeg")
