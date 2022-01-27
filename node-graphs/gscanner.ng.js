@@ -98,7 +98,7 @@ async function main() {
       NODE_TYPE.IMAGE_ARRAY,
       {
          x: 200,
-         y: 850,
+         y: 875,
       },
       0.001
    );
