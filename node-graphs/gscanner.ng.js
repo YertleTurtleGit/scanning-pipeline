@@ -177,5 +177,37 @@ async function main() {
       depthFactorInputNode.getOutput(),
       pointCloudNodeA.getInput("depthFactor")
    );
+
+   const downloadAll = document.createElement("button");
+   downloadAll.style.zIndex = "9999";
+   downloadAll.style.position = "absolute";
+   downloadAll.style.left = "50%";
+   downloadAll.style.top = "10px";
+   downloadAll.innerText = "download all maps";
+
+   const outputMaps = [
+      { name: "AlbedoMap", node: albedoMapNodeA },
+      { name: "TranslucencyMap", node: translucencyMapNodeA },
+      { name: "NormalMap", node: normalMapNodeA },
+      { name: "HeightMap", node: depthMapNodeA },
+      { name: "AmbientOcclusionMap", node: ambientOcclusionMapNodeA },
+      { name: "RoughnessMap", node: roughnessMapNodeA },
+   ];
+
+   downloadAll.addEventListener("click", () => {
+      outputMaps.forEach((map) => {
+         const mapImage = map.node.outputUIElement.children[0];
+         if (mapImage instanceof HTMLImageElement) {
+            const tmpElement = document.createElement("a");
+            tmpElement.setAttribute("href", mapImage.src);
+            tmpElement.setAttribute("download", map.name + ".png");
+            document.body.appendChild(tmpElement);
+            tmpElement.click();
+            tmpElement.remove();
+         }
+      });
+   });
+
+   document.body.appendChild(downloadAll);
 }
 main();
