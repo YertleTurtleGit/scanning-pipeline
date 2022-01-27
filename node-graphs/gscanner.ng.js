@@ -40,7 +40,7 @@ async function main() {
    });
    const translucencyMapNodeA = nodeGraph.placeNode(translucencyMapNode, {
       x: 450,
-      y: 850,
+      y: 875,
    });
    const normalMapNodeA = nodeGraph.placeNode(normalMapNode, {
       x: 750,
@@ -90,7 +90,7 @@ async function main() {
       NODE_TYPE.IMAGE_ARRAY,
       {
          x: 200,
-         y: 600,
+         y: 550,
       },
       0.001
    );
@@ -98,7 +98,7 @@ async function main() {
       NODE_TYPE.IMAGE_ARRAY,
       {
          x: 200,
-         y: 875,
+         y: 900,
       },
       0.001
    );
