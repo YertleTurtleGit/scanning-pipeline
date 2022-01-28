@@ -1,4 +1,4 @@
-/* global GLSL */
+/* global IL */
 /* exported photometricStereoNormalMap */
 
 /**
@@ -13,7 +13,7 @@ async function photometricStereoNormalMap(
    lightPolarAnglesDeg,
    lightAzimuthalAnglesDeg
 ) {
-   const normalMapShader = new GLSL.Shader({
+   const normalMapShader = new IL.Shader({
       width: lightImages[0].width,
       height: lightImages[0].height,
    });
@@ -23,26 +23,26 @@ async function photometricStereoNormalMap(
    const lightLuminances = [];
 
    lightImages.forEach((lightImage) => {
-      lightLuminances.push(GLSL.Image.load(lightImage).getLuminance());
+      lightLuminances.push(IL.Image.load(lightImage).getLuminance());
    });
 
-   const all = new GLSL.Float(0).maximum(...lightLuminances);
+   const all = new IL.ShaderVariable.Float(0).maximum(...lightLuminances);
 
    for (let i = 0; i < lightLuminances.length; i++) {
       lightLuminances[i] = lightLuminances[i].divideFloat(all);
    }
 
    /**
-    * @param {GLSL.Float} originLuminance
-    * @param {GLSL.Float} orthogonalLuminance
-    * @param {GLSL.Float} oppositeLuminance
+    * @param {IL.ShaderVariable.Float} originLuminance
+    * @param {IL.ShaderVariable.Float} orthogonalLuminance
+    * @param {IL.ShaderVariable.Float} oppositeLuminance
     * @param {number} originAzimuthalAngleDeg
     * @param {number} orthogonalAzimuthalAngleDeg
     * @param {number} oppositeAzimuthalAngleDeg
     * @param {number} originPolarAngleDeg
     * @param {number} orthogonalPolarAngleDeg
     * @param {number} oppositePolarAngleDeg
-    * @returns {GLSL.Vector3}
+    * @returns {IL.ShaderVariable.Vector3}
     */
    function getAnisotropicNormalVector(
       originLuminance,
@@ -60,13 +60,13 @@ async function photometricStereoNormalMap(
       /**
        * @param {number} azimuthalAngleDeg
        * @param {number} polarAngleDeg
-       * @returns {GLSL.Vector3}
+       * @returns {IL.ShaderVariable.Vector3}
        */
       function getLightDirectionVector(azimuthalAngleDeg, polarAngleDeg) {
-         const polar = new GLSL.Float(polarAngleDeg).radians();
-         const azimuthal = new GLSL.Float(azimuthalAngleDeg).radians();
+         const polar = new IL.ShaderVariable.Float(polarAngleDeg).radians();
+         const azimuthal = new IL.ShaderVariable.Float(azimuthalAngleDeg).radians();
 
-         return new GLSL.Vector3([
+         return new IL.ShaderVariable.Vector3([
             polar.sin().multiplyFloat(azimuthal.cos()),
             polar.sin().multiplyFloat(azimuthal.sin()),
             polar.cos(),
@@ -86,7 +86,7 @@ async function photometricStereoNormalMap(
          oppositePolarAngleDeg
       );
 
-      const lightMatrix = new GLSL.Matrix3([
+      const lightMatrix = new IL.ShaderVariable.Matrix3([
          [
             originLightDirection.channel(0),
             originLightDirection.channel(1),
@@ -104,7 +104,7 @@ async function photometricStereoNormalMap(
          ],
       ]).inverse();
 
-      const reflection = new GLSL.Vector3([
+      const reflection = new IL.ShaderVariable.Vector3([
          originLuminance,
          orthogonalLuminance,
          oppositeLuminance,
@@ -113,8 +113,8 @@ async function photometricStereoNormalMap(
       return lightMatrix
          .multiplyVector3(reflection)
          .normalize()
-         .addFloat(new GLSL.Float(1))
-         .divideFloat(new GLSL.Float(2));
+         .addFloat(new IL.ShaderVariable.Float(1))
+         .divideFloat(new IL.ShaderVariable.Float(2));
    }
 
    /** @type {number[][]} */
@@ -129,7 +129,7 @@ async function photometricStereoNormalMap(
       [7, 5, 3],
    ];
 
-   /** @type {GLSL.Vector3[]} */
+   /** @type {IL.ShaderVariable.Vector3[]} */
    const normalVectors = [];
 
    anisotropicCombinations.forEach((combination) => {
@@ -148,23 +148,23 @@ async function photometricStereoNormalMap(
       );
    });
 
-   let normalVector = new GLSL.Vector3([
-      new GLSL.Float(0),
-      new GLSL.Float(0),
-      new GLSL.Float(0),
+   let normalVector = new IL.ShaderVariable.Vector3([
+      new IL.ShaderVariable.Float(0),
+      new IL.ShaderVariable.Float(0),
+      new IL.ShaderVariable.Float(0),
    ])
       .addVector3(...normalVectors)
-      .divideFloat(new GLSL.Float(normalVectors.length))
+      .divideFloat(new IL.ShaderVariable.Float(normalVectors.length))
       .normalize();
 
    // TODO: fix alpha
    const alpha = normalVector
       .channel(0)
       .minimum(normalVector.channel(1), normalVector.channel(2))
-      .multiplyFloat(new GLSL.Float(99999))
-      .minimum(new GLSL.Float(1));
+      .multiplyFloat(new IL.ShaderVariable.Float(99999))
+      .minimum(new IL.ShaderVariable.Float(1));
 
-   const normalMapRendering = GLSL.render(normalVector.getVector4(alpha));
+   const normalMapRendering = IL.render(normalVector.getVector4(alpha));
    const normalMap = await normalMapRendering.getImageBitmap();
    normalMapShader.purge();
    return normalMap;
@@ -196,26 +196,26 @@ async function photometricStereoNormalMap(
 ) {
    return new Promise((resolve) => {
       setTimeout(async () => {
-         const normalMapShader = new GLSL.Shader({
+         const normalMapShader = new IL.ShaderVariable.Shader({
             width: lightImage_000.width * (resolutionPercent / 100),
             height: lightImage_000.naturalHeight * (resolutionPercent / 100),
          });
          normalMapShader.bind();
 
          let lightLuminance_ALL =
-            GLSL.Image.load(lightImage_ALL).getLuminance();
+            IL.ShaderVariable.Image.load(lightImage_ALL).getLuminance();
 
          const lightLuminances = [
-            GLSL.Image.load(lightImage_000).getLuminance(),
-            GLSL.Image.load(lightImage_090).getLuminance(),
-            GLSL.Image.load(lightImage_180).getLuminance(),
-            GLSL.Image.load(lightImage_270).getLuminance(),
-            GLSL.Image.load(lightImage_FRONT).getLuminance(),
+            IL.ShaderVariable.Image.load(lightImage_000).getLuminance(),
+            IL.ShaderVariable.Image.load(lightImage_090).getLuminance(),
+            IL.ShaderVariable.Image.load(lightImage_180).getLuminance(),
+            IL.ShaderVariable.Image.load(lightImage_270).getLuminance(),
+            IL.ShaderVariable.Image.load(lightImage_FRONT).getLuminance(),
          ];
 
          if (lightImage_NONE) {
             const lightLuminance_NONE =
-               GLSL.Image.load(lightImage_NONE).getLuminance();
+               IL.ShaderVariable.Image.load(lightImage_NONE).getLuminance();
 
             for (let i = 0; i < lightLuminances.length; i++) {
                lightLuminances[i] =
@@ -232,21 +232,21 @@ async function photometricStereoNormalMap(
 
          const horizontal = lightLuminances[0]
             .subtractFloat(lightLuminances[2])
-            .addFloat(new GLSL.Float(1))
-            .divideFloat(new GLSL.Float(2));
+            .addFloat(new IL.ShaderVariable.Float(1))
+            .divideFloat(new IL.ShaderVariable.Float(2));
 
          const vertical = lightLuminances[3]
             .subtractFloat(lightLuminances[1])
-            .addFloat(new GLSL.Float(1))
-            .divideFloat(new GLSL.Float(2));
+            .addFloat(new IL.ShaderVariable.Float(1))
+            .divideFloat(new IL.ShaderVariable.Float(2));
 
-         const normalVector = new GLSL.Vector3([
+         const normalVector = new IL.ShaderVariable.Vector3([
             horizontal,
             vertical,
             lightLuminances[4],
          ]);
 
-         const normalMapRendering = GLSL.render(
+         const normalMapRendering = IL.ShaderVariable.render(
             normalVector.normalize().getVector4()
          );
 

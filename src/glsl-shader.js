@@ -1,4 +1,4 @@
-/* exported GLSL */
+/* exported IL */
 
 /** @type {{RED: number, GREEN: number, BLUE: number}} */
 const LUMINANCE_CHANNEL_QUANTIFIER = {
@@ -476,6 +476,32 @@ class GlslContext {
 
 class GlslRendering {
    /**
+    * @param {ImageBitmap[]} images
+    * @param {)=>GlslVector4} shaderFunction
+    * @param {{width:number, height:number}} dimensions
+    * @returns {Promise<ImageBitmap>}
+    */
+   static async renderShader(
+      images,
+      shaderFunction,
+      dimensions = { width: images[0].width, height: images[0].height }
+   ) {
+      const shader = new Shader(dimensions);
+      shader.bind();
+      const outColor = await shaderFunction();
+      console.log({ outColor });
+      const rendering = await GlslRendering.render(outColor).getImageBitmap();
+      shader.purge();
+      return rendering;
+   }
+   /**
+    * @param  {GlslVector4} outVariable
+    * @returns {GlslRendering}
+    */
+   static render(outVariable) {
+      return new GlslRendering(GlslShader.getGlslContext(), outVariable);
+   }
+   /**
     * @param  {GlslContext} glslContext
     * @param  {GlslVector4} outVariable
     */
@@ -483,14 +509,7 @@ class GlslRendering {
       this.glslContext = glslContext;
       this.outVariable = outVariable;
    }
-   /**
-    * @static
-    * @param  {GlslVector4} outVariable
-    * @returns {GlslRendering}
-    */
-   static render(outVariable) {
-      return new GlslRendering(GlslShader.getGlslContext(), outVariable);
-   }
+
    /**
     * @returns {Uint8Array}
     */
@@ -1337,7 +1356,7 @@ class GlslFloat extends GlslVariable {
     * @param {GlslFloat} edge
     * @returns {GlslFloat} Is zero if input is smaller than edge and otherwise one.
     */
-   step(edge = new GLSL.Float(0.5)) {
+   step(edge = new IL.Float(0.5)) {
       return this.getGlslFloatResult([edge, this], GLSL_OPERATOR.STEP);
    }
 }
@@ -1852,25 +1871,28 @@ class GlslMatrix3 extends GlslMatrix {
 
 /**
  * @global
- * @typedef {Shader} GLSL.Shader
- * @typedef {GlslRendering.render} GLSL.render
- * @typedef {GlslFloat} GLSL.Float
- * @typedef {GlslImage} GLSL.image
- * @typedef {GlslVector2} GLSL.Vector2
- * @typedef {GlslVector3} GLSL.Vector3
- * @typedef {GlslVector4} GLSL.Vector4
- * @typedef {GlslMatrix3} GLSL.Matrix3
- * @typedef {GlslUniformImage} GLSL.Uniform.Image
+ * @typedef {Shader} IL.Shader
+ * @typedef {GlslRendering.render} IL.render
+ * @typedef {GlslFloat} IL.ShaderVariable.Float
+ * @typedef {GlslImage} IL.ShaderVariable.Image
+ * @typedef {GlslVector2} IL.ShaderVariable.Vector2
+ * @typedef {GlslVector3} IL.ShaderVariable.Vector3
+ * @typedef {GlslVector4} IL.ShaderVariable.Vector4
+ * @typedef {GlslMatrix3} IL.ShaderVariable.Matrix3
+ * @typedef {GlslUniformImage} IL.ShaderVariable.Uniform.Image
  */
-const GLSL = {
+const IL = {
+   renderShader: GlslRendering.renderShader,
    Shader: Shader,
    render: GlslRendering.render,
    Image: GlslImage,
-   Integer: GlslInteger,
-   Float: GlslFloat,
-   Vector2: GlslVector2,
-   Vector3: GlslVector3,
-   Vector4: GlslVector4,
-   Matrix3: GlslMatrix3,
-   Uniform: { Image: GlslUniformImage },
+   ShaderVariable: {
+      Integer: GlslInteger,
+      Float: GlslFloat,
+      Vector2: GlslVector2,
+      Vector3: GlslVector3,
+      Vector4: GlslVector4,
+      Matrix3: GlslMatrix3,
+      Uniform: { Image: GlslUniformImage },
+   },
 };

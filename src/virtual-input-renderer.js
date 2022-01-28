@@ -1,4 +1,4 @@
-/* global THREE, GLSL */
+/* global THREE, IL */
 /* exported VirtualInputRenderer, PhotometricStereoRenderer, SphericalGradientRenderer */
 
 /**
@@ -170,27 +170,27 @@ class VirtualInputRenderer {
          }
       }
 
-      const normalizeShader = new GLSL.Shader({ width: width, height: height });
+      const normalizeShader = new IL.Shader({ width: width, height: height });
       normalizeShader.bind();
 
-      const depthValue = new GLSL.Image(renderImage).getPixelColor().channel(0);
+      const depthValue = new IL.Image(renderImage).getPixelColor().channel(0);
 
       let normalizedDepthValue;
 
       if (min === max) {
-         normalizedDepthValue = new GLSL.Float(0.5);
+         normalizedDepthValue = new IL.Float(0.5);
       } else {
          normalizedDepthValue = depthValue
-            .subtractFloat(new GLSL.Float(min))
-            .multiplyFloat(new GLSL.Float(1 / max));
+            .subtractFloat(new IL.Float(min))
+            .multiplyFloat(new IL.Float(1 / max));
       }
 
-      const normalizedDepthImage = GLSL.render(
-         new GLSL.Vector4([
+      const normalizedDepthImage = IL.render(
+         new IL.Vector4([
             normalizedDepthValue,
             normalizedDepthValue,
             normalizedDepthValue,
-            new GLSL.Float(1),
+            new IL.Float(1),
          ])
       ).getJsImage();
 

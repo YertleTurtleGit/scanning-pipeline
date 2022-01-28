@@ -1,13 +1,11 @@
-/* global GLSL, FunctionWorker */
+/* global IL, FunctionWorker */
 /* exported depthMap */
 
 /**
  * @global
  * @typedef {{x: number, y: number}} Pixel
- * @typedef {{x: number, y: number, slope: number}} LinePixel
- * @typedef {LinePixel[]} PixelLine
  */
-class DepthMapHelper {
+ class DepthMapHelper {
    /**
     * This functions calculates a depth mapping by a given
     * normal mapping.
@@ -29,26 +27,30 @@ class DepthMapHelper {
          width: normalMap.width,
          height: normalMap.height,
       };
+
       const maximumAngleCount = dimensions.width * 2 + dimensions.height * 2;
-      const angleCount = Math.round(maximumAngleCount * qualityPercent);
+      const angleCount = maximumAngleCount * qualityPercent;
       const azimuthalAngles = [];
 
-      for (let frac = 1; frac < angleCount; frac *= 2) {
-         for (let angle = 0; angle < 360; angle += 360 / frac) {
-            if (!azimuthalAngles.includes(angle)) {
-               azimuthalAngles.push(angle);
-               azimuthalAngles.push(180 + angle);
-            }
-         }
+      for (
+         let angle = 0, angleStep = 360 / angleCount;
+         angle < 360;
+         angle += angleStep
+      ) {
+         azimuthalAngles.push(angle);
       }
 
       const anglesCount = azimuthalAngles.length;
-      const threadCount = Math.min(navigator.hardwareConcurrency, anglesCount);
+      const threadCount = Math.min(
+         navigator.hardwareConcurrency - 1,
+         anglesCount
+      );
       const maxAnglesPerThread = Math.ceil(angleCount / threadCount);
 
       let azimuthalAnglesFinished = 0;
 
-      const edgeFramePixels = DepthMapHelper.getEdgeFramePixels(dimensions);
+      const circularFramePixels =
+         DepthMapHelper.getCircularFramePixels(dimensions);
 
       let gradientPixelArray = await DepthMapHelper.getLocalGradientFactor(
          normalMap
@@ -63,6 +65,14 @@ class DepthMapHelper {
       );
       const integralSA = new Int32Array(integralSAB);
       integralSA.set(new Int32Array(integralSA.length).fill(0));
+
+      const integralDenominatorSAB = new SharedArrayBuffer(
+         dimensions.height * dimensions.width * 4
+      );
+      const integralDenominatorSA = new Uint32Array(integralDenominatorSAB);
+      integralDenominatorSA.set(
+         new Uint32Array(integralDenominatorSA.length).fill(1)
+      );
 
       for (let threadId = 0; threadId < threadCount; threadId++) {
          const functionWorker = new FunctionWorker(
@@ -95,15 +105,16 @@ class DepthMapHelper {
             if (ETAsec.length < 2) ETAsec = "0" + ETAsec;
 
             const etaString = "ETA in " + ETAmin + ":" + ETAsec + " min";
-            console.log(percent + " " + etaString);
+            console.log(percent + " // " + etaString);
          });
 
          functionWorker.postMessage({
             azimuthalAngles: threadAzimuthalAngles,
             dimensions: dimensions,
-            edgeFramePixels: edgeFramePixels,
+            circularFramePixels: circularFramePixels,
             gradientPixelSAB: gradientPixelSAB,
             integralSAB: integralSAB,
+            integralDenominatorSAB: integralDenominatorSAB,
          });
       }
 
@@ -116,6 +127,7 @@ class DepthMapHelper {
       const normalizedIntegral =
          await DepthMapHelper.getNormalizedIntegralAsGrayscale(
             integralSA,
+            integralDenominatorSA,
             dimensions
          );
 
@@ -165,43 +177,58 @@ class DepthMapHelper {
    /**
     * @private
     * @param {Int32Array} integral
+    * @param {Uint32Array} integralDenominator
     * @param {{width:number, height:number}} dimensions
     * @returns {Promise<Uint8ClampedArray>}
     */
-   static async getNormalizedIntegralAsGrayscale(integral, dimensions) {
+   static async getNormalizedIntegralAsGrayscale(
+      integral,
+      integralDenominator,
+      dimensions
+   ) {
       return new Promise((resolve) => {
-         setTimeout(() => {
-            const colorImageArrayLength =
-               dimensions.width * dimensions.height * 4;
-            const normalizedIntegral = new Uint8ClampedArray(
-               new ArrayBuffer(colorImageArrayLength)
-            );
+         const colorImageArrayLength = dimensions.width * dimensions.height * 4;
+         const normalizedIntegral = new Uint8ClampedArray(
+            new ArrayBuffer(colorImageArrayLength)
+         );
 
-            let min = Number.MAX_VALUE;
-            let max = Number.MIN_VALUE;
-
-            integral.forEach((value) => {
-               if (value > max) max = value;
-               if (value < min) min = value;
-            });
-
-            if (min < -Math.pow(2, 32) / 2 || max > Math.pow(2, 32) / 2) {
-               console.warn("Int32 overflow.");
-            }
-
-            const maxMinDelta = max - min;
-
-            integral.forEach((value, index) => {
-               const normalizedValue = ((value - min) * 255) / maxMinDelta;
-               const colorIndex = index * 4;
-               normalizedIntegral[colorIndex + 0] = normalizedValue;
-               normalizedIntegral[colorIndex + 1] = normalizedValue;
-               normalizedIntegral[colorIndex + 2] = normalizedValue;
-               normalizedIntegral[colorIndex + 3] = 255;
-            });
-
-            resolve(normalizedIntegral);
+         let maxDenominator = 1;
+         integralDenominator.forEach((denominator) => {
+            if (denominator > maxDenominator) maxDenominator = denominator;
          });
+         console.log({ maxDenominator });
+
+         integral.forEach((value, index) => {
+            const denominator = Math.max(integralDenominator[index] - 1, 1);
+            integral[index] = (value * maxDenominator) / denominator;
+         });
+         console.log(integral);
+
+         let min = Number.MAX_VALUE;
+         let max = Number.MIN_VALUE;
+
+         integral.forEach((value) => {
+            if (value > max) max = value;
+            if (value < min) min = value;
+         });
+
+         if (min <= -Math.pow(2, 32) / 2 || max >= Math.pow(2, 32) / 2) {
+            console.warn("Int32 overflow.");
+         }
+
+         const maxMinDelta = max - min;
+
+         integral.forEach((value, index) => {
+            const normalizedValue = ((value - min) * 255) / maxMinDelta;
+
+            const colorIndex = index * 4;
+            normalizedIntegral[colorIndex + 0] = normalizedValue;
+            normalizedIntegral[colorIndex + 1] = normalizedValue;
+            normalizedIntegral[colorIndex + 2] = normalizedValue;
+            normalizedIntegral[colorIndex + 3] = 255;
+         });
+
+         resolve(normalizedIntegral);
       });
    }
 
@@ -213,23 +240,23 @@ class DepthMapHelper {
    static getLocalGradientFactor(normalMap) {
       return new Promise((resolve) => {
          setTimeout(() => {
-            const depthMapShader = new GLSL.Shader({
+            const depthMapShader = new IL.Shader({
                width: normalMap.width,
                height: normalMap.height,
             });
             depthMapShader.bind();
 
-            const glslNormalMap = GLSL.Image.load(normalMap);
+            const glslNormalMap = IL.Image.load(normalMap);
             const red = glslNormalMap.channel(0);
             const green = glslNormalMap.channel(1);
             const blue = glslNormalMap.channel(2);
-            const result = new GLSL.Vector3([
+            const result = new IL.ShaderVariable.Vector3([
                red.divideFloat(blue),
                green.divideFloat(blue),
                blue.minimum(red, green),
             ]);
 
-            const gradientPixelArray = GLSL.render(
+            const gradientPixelArray = IL.render(
                result.getVector4()
             ).getPixelArray();
 
@@ -245,25 +272,25 @@ class DepthMapHelper {
     * @param {{width:number, height:number}} dimensions
     * @returns {Pixel[]}
     */
-   static getEdgeFramePixels(dimensions) {
+   static getCircularFramePixels(dimensions) {
+      const radius = Math.max(dimensions.width, dimensions.height);
+      const resolution = 2 * Math.PI * radius;
+
       /** @type {Pixel[]} */
-      const edgeFramePixels = [];
+      const circularFramePixels = [];
 
-      const topY = -1;
-      const bottomY = dimensions.height;
-      const leftX = -1;
-      const rightX = dimensions.width;
+      const polarIndexFactor = (Math.PI * 2) / resolution;
+      const xShift = dimensions.width / 2;
+      const yShift = dimensions.height / 2;
 
-      for (let x = 0; x < dimensions.width; x++) {
-         edgeFramePixels.push({ x: x, y: topY });
-         edgeFramePixels.push({ x: x, y: bottomY });
-      }
-      for (let y = 0; y < dimensions.height; y++) {
-         edgeFramePixels.push({ x: leftX, y: y });
-         edgeFramePixels.push({ x: rightX, y: y });
+      for (let i = 0; i < resolution; i++) {
+         const polarAngle = polarIndexFactor * i;
+         const x = radius * Math.cos(polarAngle) + xShift;
+         const y = radius * Math.sin(polarAngle) + yShift;
+         circularFramePixels.push({ x: x, y: y });
       }
 
-      return edgeFramePixels;
+      return circularFramePixels;
    }
 }
 /** @type {FunctionWorker[]} */
@@ -273,10 +300,14 @@ DepthMapHelper.functionWorkers = [];
 // eslint-disable-next-line no-unused-vars
 const calculateDepthMap = DepthMapHelper.depthMap;
 
+/**
+ * @private
+ * @param {MessageEvent} messageEvent
+ */
 function calculateAnisotropicIntegral(messageEvent) {
    const azimuthalAngles = messageEvent.data.azimuthalAngles;
    const dimensions = messageEvent.data.dimensions;
-   const edgeFramePixels = messageEvent.data.edgeFramePixels;
+   const circularFramePixels = messageEvent.data.circularFramePixels;
 
    const gradientPixelSAB = messageEvent.data.gradientPixelSAB;
    const gradientPixelSA = new Uint8Array(gradientPixelSAB);
@@ -284,7 +315,11 @@ function calculateAnisotropicIntegral(messageEvent) {
    const integralSAB = messageEvent.data.integralSAB;
    const integralSA = new Int32Array(integralSAB);
 
-   const SLOPE_SHIFT = -255 / 2;
+   const integralDenominatorSAB = messageEvent.data.integralDenominatorSAB;
+   const integralDenominatorSA = new Uint32Array(integralDenominatorSAB);
+
+   const slopeShift = -255 / 2;
+   const radius = Math.max(dimensions.width, dimensions.height);
 
    azimuthalAngles.forEach((azimuthalAngle) => {
       // Inverse and thus, line FROM and NOT TO azimuthal angle.
@@ -296,21 +331,17 @@ function calculateAnisotropicIntegral(messageEvent) {
          y: Math.sin(azimuthalAngleInRadians),
       };
 
-      const minimumStep = 0.00000001;
-
-      if (Math.abs(stepVector.x) < minimumStep) {
-         stepVector.x = 0;
-      }
-      if (Math.abs(stepVector.y) < minimumStep) {
-         stepVector.y = 0;
-      }
+      const minimumStep = Number.MIN_VALUE;
+      if (Math.abs(stepVector.x) <= minimumStep) stepVector.x = 0;
+      if (Math.abs(stepVector.y) <= minimumStep) stepVector.y = 0;
 
       for (
-         let framePixelIndex = 0, edgeFramePixelsCount = edgeFramePixels.length;
-         framePixelIndex < edgeFramePixelsCount;
+         let framePixelIndex = 0,
+            circularFramePixelsCount = circularFramePixels.length;
+         framePixelIndex < circularFramePixelsCount;
          framePixelIndex++
       ) {
-         const startPixel = edgeFramePixels[framePixelIndex];
+         const startPixel = circularFramePixels[framePixelIndex];
 
          const stepOffset = {
             x: startPixel.x,
@@ -318,13 +349,14 @@ function calculateAnisotropicIntegral(messageEvent) {
          };
 
          const pixel = {
-            x: startPixel.x,
-            y: startPixel.y,
+            x: Math.round(startPixel.x),
+            y: Math.round(startPixel.y),
          };
 
          const nextPixel = { x: pixel.x, y: pixel.y };
 
          let inDimensions;
+         let inRadius;
          let integralValue = 0;
 
          do {
@@ -337,11 +369,22 @@ function calculateAnisotropicIntegral(messageEvent) {
 
             pixel.x = nextPixel.x;
             pixel.y = nextPixel.y;
+
             inDimensions =
                pixel.x < dimensions.width &&
                pixel.y < dimensions.height &&
                pixel.x >= 0 &&
                pixel.y >= 0;
+
+            if (inDimensions) {
+               inRadius = true;
+            } else {
+               const distanceToCenter = Math.sqrt(
+                  Math.pow(dimensions.width / 2 - pixel.x, 2) +
+                     Math.pow(dimensions.height / 2 - pixel.y, 2)
+               );
+               inRadius = distanceToCenter <= radius;
+            }
 
             if (inDimensions) {
                // TODO y-flipping?
@@ -354,26 +397,25 @@ function calculateAnisotropicIntegral(messageEvent) {
 
                if (gradientPixelSA[colorIndex + 2] !== 0) {
                   const rightSlope =
-                     gradientPixelSA[colorIndex + 0] + SLOPE_SHIFT;
-                  const topSlope =
-                     gradientPixelSA[colorIndex + 1] + SLOPE_SHIFT;
+                     gradientPixelSA[colorIndex + 0] + slopeShift;
+                  const topSlope = gradientPixelSA[colorIndex + 1] + slopeShift;
 
                   pixelSlope =
                      stepVector.x * rightSlope + stepVector.y * topSlope;
-                  
+
                   integralValue -= pixelSlope;
                } else {
                   integralValue = 0;
                }
-               
+
                Atomics.add(integralSA, index, integralValue);
+               Atomics.add(integralDenominatorSA, index, 1);
             }
-         } while (inDimensions);
+         } while (inRadius);
       }
       self.postMessage({ azimuthalAngle: azimuthalAngle });
+      self.close();
    });
-
-   self.close();
 }
 
 function onClose() {

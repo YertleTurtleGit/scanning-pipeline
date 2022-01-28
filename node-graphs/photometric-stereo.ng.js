@@ -127,7 +127,7 @@ async function main() {
          x: 750,
          y: 750,
       },
-      1
+      0.2
    );
    const depthFactorInputNode = nodeGraph.createInputNode(
       "number",

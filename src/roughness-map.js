@@ -1,4 +1,4 @@
-/* global GLSL */
+/* global IL */
 /* exported roughnessMap */
 
 /**
@@ -8,13 +8,13 @@
  * @returns {Promise<ImageBitmap>}
  */
 async function roughnessMap(normalMap, depthMap) {
-   const roughnessShader = new GLSL.Shader({
+   const roughnessShader = new IL.Shader({
       width: normalMap.width,
       height: normalMap.height,
    });
    roughnessShader.bind();
 
-   const glslNormalMap = new GLSL.Image(normalMap);
+   const glslNormalMap = new IL.Image(normalMap);
 
    const normalMapKernelPadding = 2;
 
@@ -32,24 +32,24 @@ async function roughnessMap(normalMap, depthMap) {
       .getPixelColor()
       .normalize()
       .addVector4(...normalMapNeighborhood)
-      .divideFloat(new GLSL.Float(normalMapNeighborhood.length + 1));
+      .divideFloat(new IL.ShaderVariable.Float(normalMapNeighborhood.length + 1));
 
-   let normalMapRoughness = new GLSL.Float(0);
+   let normalMapRoughness = new IL.ShaderVariable.Float(0);
 
    normalMapNeighborhood.forEach((neighbor) => {
       const neighborAberrance = neighbor
          .dot(average)
          .acos()
          .abs()
-         .minimum(new GLSL.Float(1));
+         .minimum(new IL.ShaderVariable.Float(1));
       normalMapRoughness = normalMapRoughness.addFloat(neighborAberrance);
    });
 
    normalMapRoughness = normalMapRoughness.divideFloat(
-      new GLSL.Float(normalMapNeighborhood.length * 0.1)
+      new IL.ShaderVariable.Float(normalMapNeighborhood.length * 0.1)
    );
 
-   const glslDepthMap = new GLSL.Image(depthMap);
+   const glslDepthMap = new IL.Image(depthMap);
 
    const depthMapKernelPadding = 1;
    const depthMapNeighborhood = [];
@@ -63,30 +63,30 @@ async function roughnessMap(normalMap, depthMap) {
    }
 
    const depth = glslDepthMap.getPixelColor().channel(0);
-   let depthMapRoughness = new GLSL.Float(1);
+   let depthMapRoughness = new IL.ShaderVariable.Float(1);
 
    depthMapNeighborhood.forEach((neighbor) => {
       const neighborOcclusion = neighbor
          .subtractFloat(depth)
-         .divideFloat(new GLSL.Float(2))
-         .minimum(new GLSL.Float(1));
+         .divideFloat(new IL.ShaderVariable.Float(2))
+         .minimum(new IL.ShaderVariable.Float(1));
       depthMapRoughness = depthMapRoughness.subtractFloat(neighborOcclusion);
    });
 
    depthMapRoughness = depthMapRoughness
-      .divideFloat(new GLSL.Float(depthMapNeighborhood.length * 0.08))
-      .subtractFloat(new GLSL.Float(3.05));
+      .divideFloat(new IL.ShaderVariable.Float(depthMapNeighborhood.length * 0.08))
+      .subtractFloat(new IL.ShaderVariable.Float(3.05));
 
    let roughness = depthMapRoughness.addFloat(normalMapRoughness);
 
    roughness = roughness.divideFloat(
-      roughness.multiplyFloat(roughness).multiplyFloat(new GLSL.Float(20))
+      roughness.multiplyFloat(roughness).multiplyFloat(new IL.ShaderVariable.Float(20))
    );
 
-   roughness = new GLSL.Float(1).subtractFloat(roughness);
+   roughness = new IL.ShaderVariable.Float(1).subtractFloat(roughness);
 
-   const roughnessMap = GLSL.render(
-      new GLSL.Vector4([roughness, roughness, roughness, new GLSL.Float(1)])
+   const roughnessMap = IL.render(
+      new IL.ShaderVariable.Vector4([roughness, roughness, roughness, new IL.ShaderVariable.Float(1)])
    ).getImageBitmap();
 
    roughnessShader.purge();
