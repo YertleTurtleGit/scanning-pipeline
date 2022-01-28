@@ -1,4 +1,4 @@
-/* global NodeGraph, NODE_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, pointCloud, normalize */
+/* global NodeGraph, NODE_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, opacityMap, pointCloud, normalize */
 
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
@@ -6,6 +6,10 @@ async function main() {
    const albedoMapNode = nodeGraph.registerNodeAsWorker(albedoMap, [
       "./src/glsl-shader.js",
       "./src/albedo-map.js",
+   ]);
+   const opacityMapNode = nodeGraph.registerNodeAsWorker(opacityMap, [
+      "./src/glsl-shader.js",
+      "./src/opacity-map.js",
    ]);
    const normalMapNode = nodeGraph.registerNodeAsWorker(
       photometricStereoNormalMap,
@@ -39,6 +43,10 @@ async function main() {
 
    const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
       x: 750,
+      y: 850,
+   });
+   const opacityMapNodeA = nodeGraph.placeNode(opacityMapNode, {
+      x: 400,
       y: 850,
    });
    const normalMapNodeA = nodeGraph.placeNode(normalMapNode, {
@@ -116,6 +124,10 @@ async function main() {
    nodeGraph.connect(
       lightImagesInputNode.getOutput(),
       albedoMapNodeA.getInput("lightImages")
+   );
+   nodeGraph.connect(
+      lightImagesInputNode.getOutput(),
+      opacityMapNodeA.getInput("lightImages")
    );
    nodeGraph.connect(
       lightPolarAnglesInputNode.getOutput(),
