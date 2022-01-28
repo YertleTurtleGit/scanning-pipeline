@@ -87,10 +87,7 @@ async function main() {
       },
       18
    );
-   /*const lightImagesInputNode = nodeGraph.createInputNode("ImageBitmap[]", {
-      x: 200,
-      y: 400,
-   });*/
+
 
    const uiCanvas = document.createElement("canvas");
    uiCanvas.width = 250;
@@ -119,7 +116,7 @@ async function main() {
    );
    const lightImagesRenderNodeA = nodeGraph.placeNode(lightImagesRenderNode, {
       x: 500,
-      y: 400,
+      y: 500,
    });
    const qualityPercentInputNode = nodeGraph.createInputNode(
       "number",
@@ -138,14 +135,6 @@ async function main() {
       0.5
    );
 
-   /*nodeGraph.connect(
-      lightImagesInputNode.getOutput(),
-      normalMapNodeA.getInput("lightImages")
-   );
-   nodeGraph.connect(
-      lightImagesInputNode.getOutput(),
-      albedoMapNodeA.getInput("lightImages")
-   );*/
    nodeGraph.connect(
       lightPolarAnglesInputNode.getOutput(),
       normalMapNodeA.getInput("lightPolarAnglesDeg")
