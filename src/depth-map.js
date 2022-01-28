@@ -5,7 +5,7 @@
  * @global
  * @typedef {{x: number, y: number}} Pixel
  */
- class DepthMapHelper {
+class DepthMapHelper {
    /**
     * This functions calculates a depth mapping by a given
     * normal mapping.
@@ -196,13 +196,11 @@
          integralDenominator.forEach((denominator) => {
             if (denominator > maxDenominator) maxDenominator = denominator;
          });
-         console.log({ maxDenominator });
 
          integral.forEach((value, index) => {
             const denominator = Math.max(integralDenominator[index] - 1, 1);
             integral[index] = (value * maxDenominator) / denominator;
          });
-         console.log(integral);
 
          let min = Number.MAX_VALUE;
          let max = Number.MIN_VALUE;

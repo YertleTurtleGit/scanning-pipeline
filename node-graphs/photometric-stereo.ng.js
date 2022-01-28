@@ -59,7 +59,7 @@ async function main() {
       NODE_TYPE.NUMBER_ARRAY,
       {
          x: 200,
-         y: 25,
+         y: 300,
       },
       [0, 45, 90, 135, 180, 225, 270, 315]
    );
@@ -67,7 +67,7 @@ async function main() {
       NODE_TYPE.NUMBER_ARRAY,
       {
          x: 200,
-         y: 300,
+         y: 25,
       },
       [45, 45, 45, 45, 45, 45, 45, 45]
    );
@@ -75,7 +75,7 @@ async function main() {
       NODE_TYPE.NUMBER,
       {
          x: 200,
-         y: 500,
+         y: 700,
       },
       18
    );
@@ -83,7 +83,7 @@ async function main() {
       NODE_TYPE.NUMBER,
       {
          x: 200,
-         y: 600,
+         y: 800,
       },
       18
    );
@@ -118,7 +118,7 @@ async function main() {
       NODE_TYPE.IMAGE
    );
    const lightImagesRenderNodeA = nodeGraph.placeNode(lightImagesRenderNode, {
-      x: 450,
+      x: 500,
       y: 400,
    });
    const qualityPercentInputNode = nodeGraph.createInputNode(

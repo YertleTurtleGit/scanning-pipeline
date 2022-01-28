@@ -477,7 +477,7 @@ class GlslContext {
 class GlslRendering {
    /**
     * @param {ImageBitmap[]} images
-    * @param {)=>GlslVector4} shaderFunction
+    * @param {()=>GlslVector4} shaderFunction
     * @param {{width:number, height:number}} dimensions
     * @returns {Promise<ImageBitmap>}
     */
@@ -1882,7 +1882,7 @@ class GlslMatrix3 extends GlslMatrix {
  * @typedef {GlslUniformImage} IL.ShaderVariable.Uniform.Image
  */
 const IL = {
-   renderShader: GlslRendering.renderShader,
+   renderShaderToBitmap: GlslRendering.renderShader,
    Shader: Shader,
    render: GlslRendering.render,
    Image: GlslImage,

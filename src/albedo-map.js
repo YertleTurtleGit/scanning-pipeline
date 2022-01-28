@@ -7,7 +7,7 @@
  * @returns {Promise<ImageBitmap>}
  */
 async function albedoMap(lightImages) {
-   return IL.renderShader(lightImages, () => {
+   return IL.renderShaderToBitmap(lightImages, () => {
       /** @type {IL.ShaderVariable.Vector4[]} */
       const glslLightImageColor = [];
 
