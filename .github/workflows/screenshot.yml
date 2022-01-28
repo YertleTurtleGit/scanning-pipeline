@@ -20,7 +20,7 @@ jobs:
         source: https://scanning-pipeline.netlify.app/
         destination: screenshot.png
         full-page: true
-        delay: 100
+        delay: 500
 
     - uses: actions/download-artifact@v2
       with:
