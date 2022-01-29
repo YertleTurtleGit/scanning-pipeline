@@ -35,12 +35,13 @@ const GLSL_VARIABLE = {
  * @typedef {string} GLSL_VARIABLE_TYPE
  */
 const GLSL_VARIABLE_TYPE = {
+   BOOLEAN: "bool",
+   INTEGER: "int",
    FLOAT: "float",
    VECTOR2: "vec2",
    VECTOR3: "vec3",
    VECTOR4: "vec4",
    MATRIX3: "mat3",
-   INTEGER: "int",
 };
 
 /**
@@ -78,7 +79,7 @@ const GLSL_OPERATOR = {
 
    LUMINANCE: { GLSL_NAME: "luminance", TYPE: OPERATOR_TYPE.CUSTOM },
    CHANNEL: { GLSL_NAME: "channel", TYPE: OPERATOR_TYPE.CUSTOM },
-   VEC3_TO_VEC4: { GLSL_NAME: "vec3_to_vec4", TYPE: OPERATOR_TYPE.CUSTOM },
+   VEC4: { GLSL_NAME: "vec4", TYPE: OPERATOR_TYPE.CUSTOM },
 };
 
 class Shader {
@@ -627,7 +628,7 @@ class GlslOperation {
                glslNames[1] +
                "];"
             );
-         } else if (this.glslOperator === GLSL_OPERATOR.VEC3_TO_VEC4) {
+         } else if (this.glslOperator === GLSL_OPERATOR.VEC4) {
             return (
                this.result.getGlslName() +
                " = vec4(" +
@@ -1150,6 +1151,26 @@ class GlslMatrix extends GlslVariable {
     */
 }
 
+class GlslBoolean extends GlslVariable {
+   /**
+    * @param {boolean} jsBoolean
+    */
+   constructor(jsBoolean = null) {
+      if (jsBoolean !== null) {
+         super(null);
+         this.glslName = jsBoolean.toString();
+      } else {
+         super();
+      }
+   }
+   /**
+    * @returns {GLSL_VARIABLE_TYPE}
+    */
+   getGlslVarType() {
+      return GLSL_VARIABLE_TYPE.BOOLEAN;
+   }
+}
+
 class GlslInteger extends GlslVariable {
    /**
     * @param  {number} jsNumber
@@ -1559,7 +1580,7 @@ class GlslVector3 extends GlslVector {
    getVector4(fourthChannel = new GlslFloat(1)) {
       return this.getGlslVector4Result(
          [this, fourthChannel],
-         GLSL_OPERATOR.VEC3_TO_VEC4
+         GLSL_OPERATOR.VEC4
       );
    }
 }
