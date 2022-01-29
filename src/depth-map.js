@@ -5,7 +5,7 @@
  * @global
  * @typedef {{x: number, y: number}} Pixel
  */
- class DepthMapHelper {
+class DepthMapHelper {
    /**
     * This functions calculates a depth mapping by a given
     * normal mapping.
@@ -45,7 +45,7 @@
          navigator.hardwareConcurrency - 1,
          anglesCount
       );
-      const maxAnglesPerThread = Math.ceil(angleCount / threadCount);
+      const maxAnglesPerThread = Math.ceil(angleCount / threadCount + 1);
 
       let azimuthalAnglesFinished = 0;
 
