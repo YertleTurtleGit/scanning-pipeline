@@ -45,7 +45,7 @@ class DepthMapHelper {
          navigator.hardwareConcurrency - 1,
          anglesCount
       );
-      const maxAnglesPerThread = Math.ceil(angleCount / threadCount);
+      const maxAnglesPerThread = Math.ceil(angleCount / threadCount + 1);
 
       let azimuthalAnglesFinished = 0;
 
@@ -105,7 +105,7 @@ class DepthMapHelper {
             if (ETAsec.length < 2) ETAsec = "0" + ETAsec;
 
             const etaString = "ETA in " + ETAmin + ":" + ETAsec + " min";
-            console.log(percent + " // " + etaString);
+            //console.log(percent + " // " + etaString);
          });
 
          functionWorker.postMessage({
@@ -117,8 +117,10 @@ class DepthMapHelper {
             integralDenominatorSAB: integralDenominatorSAB,
          });
       }
+      console.log({ anglesCount });
 
       while (azimuthalAnglesFinished < anglesCount) {
+         console.log(azimuthalAnglesFinished);
          await new Promise((resolve) => {
             setTimeout(resolve, 500);
          });
