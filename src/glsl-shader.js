@@ -863,7 +863,7 @@ class GlslImage {
       );
       console.assert(
          [].concat(...kernel).every((v) => v >= 0),
-         "Kernel (convolution matrix) values should be all positive."
+         "Weights in kernel (convolution matrix) should be all positive."
       );
 
       let filtered = new GlslVector4([
