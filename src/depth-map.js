@@ -210,7 +210,7 @@ class DepthMapHelper {
             if (value < min) min = value;
          });
 
-         if (min <= -Math.pow(2, 32) / 2 || max >= Math.pow(2, 32) / 2) {
+         if (min <= -(2 ** 32) / 2 || max >= 2 ** 32 / 2) {
             console.warn("Int32 overflow.");
          }
 
@@ -378,8 +378,8 @@ function calculateAnisotropicIntegral(messageEvent) {
                inRadius = true;
             } else {
                const distanceToCenter = Math.sqrt(
-                  Math.pow(dimensions.width / 2 - pixel.x, 2) +
-                     Math.pow(dimensions.height / 2 - pixel.y, 2)
+                  (dimensions.width / 2 - pixel.x) ** 2 +
+                     (dimensions.height / 2 - pixel.y) ** 2
                );
                inRadius = distanceToCenter <= radius;
             }
