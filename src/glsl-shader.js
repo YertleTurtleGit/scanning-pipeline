@@ -1250,7 +1250,7 @@ class GlslFloat extends GlslVariable {
          return "(" + number.toString() + ".0)";
       }
       if (number.toString().includes("e-")) {
-         //console.warn(number.toString() + " is converted to zero.");
+         console.warn(number.toString() + " is converted to zero.");
          return "0.0";
       }
       return "(" + number.toString() + ")";
@@ -1265,12 +1265,6 @@ class GlslFloat extends GlslVariable {
       } else {
          super();
       }
-   }
-   /**
-    * @returns {string}
-    */
-   getGlslName() {
-      return this.glslName;
    }
    /**
     * @returns {GLSL_VARIABLE_TYPE}
