@@ -1,5 +1,7 @@
 /* exported IL */
 
+// https://github.com/tc39/proposal-operator-overloading
+
 /** @type {{RED: number, GREEN: number, BLUE: number}} */
 const LUMINANCE_CHANNEL_QUANTIFIER = {
    RED: 0.2126,
@@ -62,6 +64,10 @@ const GLSL_OPERATOR = {
    MULTIPLY: { GLSL_NAME: " * ", TYPE: OPERATOR_TYPE.SYMBOL },
    DIVIDE: { GLSL_NAME: " / ", TYPE: OPERATOR_TYPE.SYMBOL },
 
+   GREATER_THAN: { GLSL_NAME: " > ", TYPE: OPERATOR_TYPE.SYMBOL },
+   SMALLER_THAN: { GLSL_NAME: " < ", TYPE: OPERATOR_TYPE.SYMBOL },
+   EQUALS: { GLSL_NAME: " == ", TYPE: OPERATOR_TYPE.SYMBOL },
+
    ABS: { GLSL_NAME: "abs", TYPE: OPERATOR_TYPE.METHOD },
    MAXIMUM: { GLSL_NAME: "max", TYPE: OPERATOR_TYPE.METHOD },
    MINIMUM: { GLSL_NAME: "min", TYPE: OPERATOR_TYPE.METHOD },
@@ -120,6 +126,24 @@ class Shader {
     */
    getUV() {
       return new GlslVector2(undefined, GLSL_VARIABLE.UV);
+   }
+
+   /**
+    * @param {GlslBoolean} condition
+    * @param {Function} trueFunction
+    * @param {Function} elseFunction
+    */
+   if(condition, trueFunction, elseFunction = null) {
+      GlslShader.addGlslCommandToCurrentShader(
+         "if(" + condition.glslName + ") {\n"
+      );
+      trueFunction();
+      GlslShader.addGlslCommandToCurrentShader("\n}");
+      if (elseFunction) {
+         GlslShader.addGlslCommandToCurrentShader(" else {\n");
+         elseFunction();
+         GlslShader.addGlslCommandToCurrentShader("\n}\n");
+      }
    }
 }
 
@@ -977,6 +1001,19 @@ class GlslVariable {
     * @protected
     * @param  {GlslVariable[]} operants
     * @param  {GLSL_OPERATOR} operator
+    * @returns {GlslBoolean}
+    */
+   getGlslBooleanResult(operants, operator) {
+      const glslResult = new GlslBoolean();
+      this.declareGlslResult(
+         new GlslOperation(this, glslResult, operants, operator)
+      );
+      return glslResult;
+   }
+   /**
+    * @protected
+    * @param  {GlslVariable[]} operants
+    * @param  {GLSL_OPERATOR} operator
     * @returns {GlslFloat}
     */
    getGlslFloatResult(operants, operator) {
@@ -1379,6 +1416,36 @@ class GlslFloat extends GlslVariable {
     */
    step(edge = new IL.Float(0.5)) {
       return this.getGlslFloatResult([edge, this], GLSL_OPERATOR.STEP);
+   }
+   /**
+    * @param {GlslFloat} comparative
+    * @returns {GlslBoolean}
+    */
+   greaterThan(comparative) {
+      return this.getGlslBooleanResult(
+         [this, comparative],
+         GLSL_OPERATOR.GREATER_THAN
+      );
+   }
+   /**
+    * @param {GlslFloat} comparative
+    * @returns {GlslBoolean}
+    */
+   smallerThan(comparative) {
+      return this.getGlslBooleanResult(
+         [this, comparative],
+         GLSL_OPERATOR.SMALLER_THAN
+      );
+   }
+   /**
+    * @param {GlslFloat} comparative
+    * @returns {GlslBoolean}
+    */
+   equals(comparative) {
+      return this.getGlslBooleanResult(
+         [this, comparative],
+         GLSL_OPERATOR.EQUALS
+      );
    }
 }
 
