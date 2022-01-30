@@ -1,7 +1,5 @@
 /* exported IL */
 
-// https://github.com/tc39/proposal-operator-overloading
-
 /** @type {{RED: number, GREEN: number, BLUE: number}} */
 const LUMINANCE_CHANNEL_QUANTIFIER = {
    RED: 0.2126,
@@ -56,6 +54,8 @@ const OPERATOR_TYPE = {
 };
 
 /**
+ * https://github.com/tc39/proposal-operator-overloading
+ *
  * @typedef {{GLSL_NAME: string, TYPE: OPERATOR_TYPE}} GLSL_OPERATOR
  */
 const GLSL_OPERATOR = {
@@ -852,8 +852,19 @@ class GlslImage {
     * @param {boolean} normalize
     * @returns {GlslVector4}
     */
-   applyFilter(kernel, normalize = false) {
-      // TODO Check if kernel is quadratic.
+   convolute(kernel, normalize = false) {
+      console.assert(
+         kernel.length === kernel[0].length,
+         "Kernel (convolution matrix) should be quadratic."
+      );
+      console.assert(
+         kernel.length % 2 === 1,
+         "Kernel (convolution matrix) dimension should be odd."
+      );
+      console.assert(
+         [].concat(...kernel).every((v) => v >= 0),
+         "Kernel (convolution matrix) values should be all positive."
+      );
 
       let filtered = new GlslVector4([
          new GlslFloat(0),
@@ -863,18 +874,18 @@ class GlslImage {
       ]);
 
       if (normalize) {
-         let kernelSum = 0;
+         let maxKernelValue = 0;
 
          kernel.forEach((row) => {
             row.forEach((value) => {
-               kernelSum += value;
+               maxKernelValue = Math.max(maxKernelValue, value);
             });
          });
 
-         if (kernelSum !== 0) {
+         if (maxKernelValue !== 0) {
             kernel.forEach((row, rowIndex) => {
                row.forEach((value, columnIndex) => {
-                  kernel[rowIndex][columnIndex] = value / kernelSum;
+                  kernel[rowIndex][columnIndex] = value / maxKernelValue;
                });
             });
          }
