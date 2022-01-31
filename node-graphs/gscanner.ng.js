@@ -1,8 +1,9 @@
-/* global NodeGraph, NODE_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, translucencyMap, pointCloud */
+/* global NodeGraph, NODE_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, translucencyMap, opacityMap */
 
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
 
+   const opacityMapNode = nodeGraph.registerNode(opacityMap, NODE_TYPE.IMAGE);
    const albedoMapNode = nodeGraph.registerNode(
       albedoMap,
       NODE_TYPE.IMAGE /*[
@@ -39,11 +40,11 @@ async function main() {
       "./src/roughness-map.js",
    ]*/ NODE_TYPE.IMAGE
    );
-   /*const pointCloudNode = nodeGraph.registerNode(
-      pointCloud,
-      NODE_TYPE.POINT_CLOUD
-   );*/
 
+   const opacityMapNodeA = nodeGraph.placeNode(opacityMapNode, {
+      x: 450,
+      y: 300,
+   });
    const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
       x: 750,
       y: 850,
@@ -121,16 +122,13 @@ async function main() {
       },
       0.001
    );
-   /*const depthFactorInputNode = nodeGraph.createInputNode(
-      NODE_TYPE.NUMBER,
-      {
-         x: 1025,
-         y: 950,
-      },
-      0.1
-   );*/
 
    nodeGraph.connect(
+      lightImagesInputNode.getOutput(),
+      opacityMapNodeA.getInput("lightImages")
+   );
+
+   /*nodeGraph.connect(
       lightImagesInputNode.getOutput(),
       normalMapNodeA.getInput("lightImages")
    );
@@ -174,18 +172,6 @@ async function main() {
    nodeGraph.connect(
       depthMapNodeA.getOutput(),
       roughnessMapNodeA.getInput("depthMap")
-   );
-   /*nodeGraph.connect(
-      depthMapNodeA.getOutput(),
-      pointCloudNodeA.getInput("depthMap")
-   );
-   nodeGraph.connect(
-      albedoMapNodeA.getOutput(),
-      pointCloudNodeA.getInput("texture")
-   );
-   nodeGraph.connect(
-      depthFactorInputNode.getOutput(),
-      pointCloudNodeA.getInput("depthFactor")
    );*/
 
    const downloadAll = document.createElement("button");
@@ -196,6 +182,7 @@ async function main() {
    downloadAll.innerText = "download all maps";
 
    const outputMaps = [
+      { name: "OpacityMap", node: opacityMapNodeA },
       { name: "AlbedoMap", node: albedoMapNodeA },
       { name: "TranslucencyMap", node: translucencyMapNodeA },
       { name: "NormalMap", node: normalMapNodeA },

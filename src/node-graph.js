@@ -1105,6 +1105,22 @@ class GraphNodeUI {
          this.outputUIElement.style.justifyContent = "center";
          this.outputUIElement.appendChild(imageElement);
          imageElement.src = imageCanvas.toDataURL();
+
+         this.outputUIElement.addEventListener("click", () => {
+            imageElement.style.position = "fixed";
+            imageElement.style.top = "0";
+            imageElement.style.left = "0";
+            imageElement.style.width = "100vw";
+            imageElement.style.height = "100vh";
+            imageElement.style.maxWidth = "100vh";
+            imageElement.style.zIndex = "999999";
+            imageElement.style.transform = "";
+            /*setTimeout(() => {
+               imageElement.style.position = "relative";
+               imageElement.style.maxWidth = "100%";
+               imageElement.style.height = "auto";
+            }, 3000);*/
+         });
       } else if (Array.isArray(value) && value[0] instanceof ImageBitmap) {
          const imageCanvas = document.createElement("canvas");
          imageCanvas.width = value[0].width;
