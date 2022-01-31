@@ -3,34 +3,45 @@
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
 
-   const albedoMapNode = nodeGraph.registerNodeAsWorker(albedoMap, [
+   const albedoMapNode = nodeGraph.registerNode(
+      albedoMap,
+      NODE_TYPE.IMAGE /*[
       "./src/glsl-shader.js",
       "./src/albedo-map.js",
-   ]);
-   const translucencyMapNode = nodeGraph.registerNodeAsWorker(translucencyMap, [
+   ]*/
+   );
+   const translucencyMapNode = nodeGraph.registerNode(
+      translucencyMap,
+      NODE_TYPE.IMAGE /*[
       "./src/glsl-shader.js",
       "./src/translucency-map.js",
-   ]);
-   const normalMapNode = nodeGraph.registerNodeAsWorker(
+   ]*/
+   );
+   const normalMapNode = nodeGraph.registerNode(
       photometricStereoNormalMap,
-      ["./src/glsl-shader.js", "./src/normal-map.js"]
+      NODE_TYPE.IMAGE
+      /*["./src/glsl-shader.js", "./src/normal-map.js"]*/
    );
    const depthMapNode = nodeGraph.registerNodeAsWorker(depthMap, [
       "./src/glsl-shader.js",
       "./src/function-worker.js",
       "./src/depth-map.js",
    ]);
-   const ambientOcclusionMapNode = nodeGraph.registerNodeAsWorker(
+   const ambientOcclusionMapNode = nodeGraph.registerNode(
       ambientOcclusionMap,
-      ["./src/glsl-shader.js", "./src/ambient-occlusion-map.js"]
+      NODE_TYPE.IMAGE
+      /*["./src/glsl-shader.js", "./src/ambient-occlusion-map.js"]*/
    );
-   const roughnessMapNode = nodeGraph.registerNodeAsWorker(roughnessMap, [
+   const roughnessMapNode = nodeGraph.registerNode(
+      roughnessMap,
+      /*[
       "./src/glsl-shader.js",
       "./src/roughness-map.js",
-   ]);
-   const pointCloudNode = nodeGraph.registerNodeAsWorker(
+   ]*/ NODE_TYPE.IMAGE
+   );
+   const pointCloudNode = nodeGraph.registerNode(
       pointCloud,
-      ["./src/point-cloud.js"],
+      /*["./src/point-cloud.js"],*/
       NODE_TYPE.POINT_CLOUD
    );
 

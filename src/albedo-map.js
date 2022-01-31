@@ -16,13 +16,10 @@ async function albedoMap(lightImages) {
    /** @type {GLSL.Vector4[]} */
    const glslLightImageColor = [];
 
-   lightImages.forEach((lightImage, index) => {
+   lightImages.forEach((lightImage) => {
       const glslLightImage = new GLSL.Image(lightImage);
-      lightImage = undefined;
-      lightImages[index] = undefined;
       glslLightImageColor.push(glslLightImage.getPixelColor());
    });
-   lightImages = undefined;
 
    const albedoColor = glslLightImageColor[0].maximum(...glslLightImageColor);
 
