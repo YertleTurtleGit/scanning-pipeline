@@ -7,7 +7,6 @@
  * @returns {Promise<ImageBitmap>}
  */
 async function albedoMap(lightImages) {
-   return lightImages[0];
    const albedoShader = new GLSL.Shader({
       width: lightImages[0].width,
       height: lightImages[0].height,
@@ -17,10 +16,13 @@ async function albedoMap(lightImages) {
    /** @type {GLSL.Vector4[]} */
    const glslLightImageColor = [];
 
-   lightImages.forEach((lightImage) => {
+   lightImages.forEach((lightImage, index) => {
       const glslLightImage = new GLSL.Image(lightImage);
+      lightImage = undefined;
+      lightImages[index] = undefined;
       glslLightImageColor.push(glslLightImage.getPixelColor());
    });
+   lightImages = undefined;
 
    const albedoColor = glslLightImageColor[0].maximum(...glslLightImageColor);
 
