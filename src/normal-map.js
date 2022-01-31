@@ -22,9 +22,12 @@ async function photometricStereoNormalMap(
 
    const lightLuminances = [];
 
-   lightImages.forEach((lightImage) => {
+   lightImages.forEach((lightImage, index) => {
       lightLuminances.push(GLSL.Image.load(lightImage).getLuminance());
+      lightImage = undefined;
+      lightImages[index] = undefined;
    });
+   lightImages = undefined;
 
    const all = new GLSL.Float(0).maximum(...lightLuminances);
 

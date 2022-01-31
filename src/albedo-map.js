@@ -7,6 +7,7 @@
  * @returns {Promise<ImageBitmap>}
  */
 async function albedoMap(lightImages) {
+   return lightImages[0];
    const albedoShader = new GLSL.Shader({
       width: lightImages[0].width,
       height: lightImages[0].height,

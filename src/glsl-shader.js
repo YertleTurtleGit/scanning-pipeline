@@ -352,6 +352,7 @@ class GlslContext {
       //console.log("Loading " + glslImages.length + " image(s) for gpu.");
       for (let i = 0; i < glslImages.length; i++) {
          glslImages[i].loadIntoShaderProgram(this.glContext, shaderProgram, i);
+         glslImages[i].imageBitmap = undefined;
       }
    }
    /**
