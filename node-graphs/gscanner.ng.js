@@ -39,11 +39,10 @@ async function main() {
       "./src/roughness-map.js",
    ]*/ NODE_TYPE.IMAGE
    );
-   const pointCloudNode = nodeGraph.registerNode(
+   /*const pointCloudNode = nodeGraph.registerNode(
       pointCloud,
-      /*["./src/point-cloud.js"],*/
       NODE_TYPE.POINT_CLOUD
-   );
+   );*/
 
    const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
       x: 750,
@@ -69,10 +68,10 @@ async function main() {
       x: 1300,
       y: 400,
    });
-   const pointCloudNodeA = nodeGraph.placeNode(pointCloudNode, {
+   /*const pointCloudNodeA = nodeGraph.placeNode(pointCloudNode, {
       x: 1300,
       y: 800,
-   });
+   });*/
 
    const lightAzimuthalAngleInputNode = nodeGraph.createInputNode(
       NODE_TYPE.NUMBER_ARRAY,
@@ -122,14 +121,14 @@ async function main() {
       },
       0.001
    );
-   const depthFactorInputNode = nodeGraph.createInputNode(
+   /*const depthFactorInputNode = nodeGraph.createInputNode(
       NODE_TYPE.NUMBER,
       {
          x: 1025,
          y: 950,
       },
       0.1
-   );
+   );*/
 
    nodeGraph.connect(
       lightImagesInputNode.getOutput(),
@@ -176,7 +175,7 @@ async function main() {
       depthMapNodeA.getOutput(),
       roughnessMapNodeA.getInput("depthMap")
    );
-   nodeGraph.connect(
+   /*nodeGraph.connect(
       depthMapNodeA.getOutput(),
       pointCloudNodeA.getInput("depthMap")
    );
@@ -187,7 +186,7 @@ async function main() {
    nodeGraph.connect(
       depthFactorInputNode.getOutput(),
       pointCloudNodeA.getInput("depthFactor")
-   );
+   );*/
 
    const downloadAll = document.createElement("button");
    downloadAll.style.zIndex = "9999";
