@@ -113,6 +113,14 @@ async function main() {
       },
       0.001
    );
+   const opacityThresholdInputNode = nodeGraph.createInputNode(
+      NODE_TYPE.NUMBER,
+      {
+         x: 200,
+         y: 700,
+      },
+      0.005
+   );
 
    const qualityPercentInputNode = nodeGraph.createInputNode(
       NODE_TYPE.NUMBER,
@@ -125,7 +133,15 @@ async function main() {
 
    nodeGraph.connect(
       lightImagesInputNode.getOutput(),
-      opacityMapNodeA.getInput("lightImages")
+      opacityMapNodeA.getInput("frontLightImages")
+   );
+   nodeGraph.connect(
+      backlightImagesInputNode.getOutput(),
+      opacityMapNodeA.getInput("backLightImages")
+   );
+   nodeGraph.connect(
+      opacityThresholdInputNode.getOutput(),
+      opacityMapNodeA.getInput("threshold")
    );
 
    /*nodeGraph.connect(
