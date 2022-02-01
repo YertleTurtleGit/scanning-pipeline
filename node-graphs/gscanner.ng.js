@@ -47,15 +47,15 @@ async function main() {
 
    const opacityMapNodeA = nodeGraph.placeNode(opacityMapNode, {
       x: 450,
-      y: 600,
+      y: 750,
    });
    const applyMasksNodeA = nodeGraph.placeNode(applyMasksNode, {
       x: 750,
       y: 600,
    });
    const applyMasksNodeB = nodeGraph.placeNode(applyMasksNode, {
-      x: 450,
-      y: 900,
+      x: 750,
+      y: 750,
    });
    const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
       x: 1000,
@@ -81,16 +81,12 @@ async function main() {
       x: 1500,
       y: 400,
    });
-   /*const pointCloudNodeA = nodeGraph.placeNode(pointCloudNode, {
-      x: 1300,
-      y: 800,
-   });*/
 
    const lightAzimuthalAngleInputNode = nodeGraph.createInputNode(
       NODE_TYPE.NUMBER_ARRAY,
       {
          x: 200,
-         y: 300,
+         y: 250,
       },
       [
          206.499435031581, 167.879650327573, 126.36394528385, 81.7247591127658,
@@ -113,7 +109,7 @@ async function main() {
       NODE_TYPE.IMAGE_ARRAY,
       {
          x: 200,
-         y: 550,
+         y: 450,
       },
       0.001
    );
@@ -121,7 +117,7 @@ async function main() {
       NODE_TYPE.IMAGE_ARRAY,
       {
          x: 200,
-         y: 900,
+         y: 750,
       },
       0.001
    );
@@ -129,7 +125,7 @@ async function main() {
       NODE_TYPE.NUMBER,
       {
          x: 200,
-         y: 700,
+         y: 1050,
       },
       0.005
    );
