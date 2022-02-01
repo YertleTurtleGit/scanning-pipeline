@@ -54,7 +54,7 @@ async function opacityMap(
       .step(new GLSL.Float(threshold));
 
    const opacityMap = GLSL.render(
-      maxColor.multiplyFloat(opacity)
+      new GLSL.Vector4([opacity, opacity, opacity, new GLSL.Float(1)])
    ).getImageBitmap();
 
    opacityShader.purge();

@@ -1113,6 +1113,7 @@ class GraphNodeUI {
          imageMagnifiedContainer.style.height = "350px";
 
          imageMagnified.style.backgroundColor = "red";
+
          imageMagnifiedContainer.style.position = "absolute";
          imageMagnifiedContainer.style.zIndex = "999999";
          imageMagnified.src = imageElement.src;
@@ -1122,7 +1123,6 @@ class GraphNodeUI {
          imageMagnifiedContainer.appendChild(imageMagnified);
 
          this.outputUIElement.addEventListener("mousemove", (mouseEvent) => {
-            imageMagnifiedContainer.hidden = false;
             const rect = imageElement.getBoundingClientRect();
             const x = Math.max(
                (mouseEvent.pageX - rect.left) / imageElement.offsetWidth,
@@ -1136,7 +1136,7 @@ class GraphNodeUI {
             imageMagnified.style.marginLeft =
                String(
                   Math.round(
-                     -imageMagnified.width * x +
+                     -imageMagnified.offsetWidth * x +
                         imageMagnifiedContainer.offsetWidth / 2
                   )
                ) + "px";
@@ -1144,7 +1144,7 @@ class GraphNodeUI {
             imageMagnified.style.marginTop =
                String(
                   Math.round(
-                     -imageMagnified.height * y +
+                     -imageMagnified.offsetHeight * y +
                         imageMagnifiedContainer.offsetHeight / 2
                   )
                ) + "px";
