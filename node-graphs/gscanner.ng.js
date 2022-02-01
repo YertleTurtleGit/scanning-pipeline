@@ -1,8 +1,13 @@
-/* global NodeGraph, NODE_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, translucencyMap, pointCloud */
+/* global NodeGraph, NODE_TYPE, ambientOcclusionMap, roughnessMap, photometricStereoNormalMap, depthMap, albedoMap, translucencyMap, opacityMap, applyMasks */
 
 async function main() {
    const nodeGraph = new NodeGraph(document.getElementById("nodeGraphDiv"));
 
+   const opacityMapNode = nodeGraph.registerNode(opacityMap, NODE_TYPE.IMAGE);
+   const applyMasksNode = nodeGraph.registerNode(
+      applyMasks,
+      NODE_TYPE.IMAGE_ARRAY
+   );
    const albedoMapNode = nodeGraph.registerNode(
       albedoMap,
       NODE_TYPE.IMAGE /*[
@@ -39,45 +44,49 @@ async function main() {
       "./src/roughness-map.js",
    ]*/ NODE_TYPE.IMAGE
    );
-   /*const pointCloudNode = nodeGraph.registerNode(
-      pointCloud,
-      NODE_TYPE.POINT_CLOUD
-   );*/
 
-   const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
+   const opacityMapNodeA = nodeGraph.placeNode(opacityMapNode, {
+      x: 450,
+      y: 750,
+   });
+   const applyMasksNodeA = nodeGraph.placeNode(applyMasksNode, {
       x: 750,
+      y: 600,
+   });
+   const applyMasksNodeB = nodeGraph.placeNode(applyMasksNode, {
+      x: 750,
+      y: 750,
+   });
+   const albedoMapNodeA = nodeGraph.placeNode(albedoMapNode, {
+      x: 1000,
       y: 850,
    });
    const translucencyMapNodeA = nodeGraph.placeNode(translucencyMapNode, {
-      x: 450,
+      x: 750,
       y: 875,
    });
    const normalMapNodeA = nodeGraph.placeNode(normalMapNode, {
-      x: 750,
+      x: 1000,
       y: 150,
    });
-   const depthMapNodeA = nodeGraph.placeNode(depthMapNode, { x: 1025, y: 600 });
+   const depthMapNodeA = nodeGraph.placeNode(depthMapNode, { x: 1250, y: 600 });
    const ambientOcclusionMapNodeA = nodeGraph.placeNode(
       ambientOcclusionMapNode,
       {
-         x: 1300,
+         x: 1500,
          y: 50,
       }
    );
    const roughnessMapNodeA = nodeGraph.placeNode(roughnessMapNode, {
-      x: 1300,
+      x: 1500,
       y: 400,
    });
-   /*const pointCloudNodeA = nodeGraph.placeNode(pointCloudNode, {
-      x: 1300,
-      y: 800,
-   });*/
 
    const lightAzimuthalAngleInputNode = nodeGraph.createInputNode(
       NODE_TYPE.NUMBER_ARRAY,
       {
          x: 200,
-         y: 300,
+         y: 250,
       },
       [
          206.499435031581, 167.879650327573, 126.36394528385, 81.7247591127658,
@@ -100,7 +109,7 @@ async function main() {
       NODE_TYPE.IMAGE_ARRAY,
       {
          x: 200,
-         y: 550,
+         y: 450,
       },
       0.001
    );
@@ -108,38 +117,66 @@ async function main() {
       NODE_TYPE.IMAGE_ARRAY,
       {
          x: 200,
-         y: 900,
+         y: 750,
       },
       0.001
+   );
+   const opacityThresholdInputNode = nodeGraph.createInputNode(
+      NODE_TYPE.NUMBER,
+      {
+         x: 200,
+         y: 1050,
+      },
+      0.005
    );
 
    const qualityPercentInputNode = nodeGraph.createInputNode(
       NODE_TYPE.NUMBER,
       {
-         x: 750,
+         x: 1000,
          y: 750,
       },
       0.001
    );
-   /*const depthFactorInputNode = nodeGraph.createInputNode(
-      NODE_TYPE.NUMBER,
-      {
-         x: 1025,
-         y: 950,
-      },
-      0.1
-   );*/
 
    nodeGraph.connect(
       lightImagesInputNode.getOutput(),
-      normalMapNodeA.getInput("lightImages")
-   );
-   nodeGraph.connect(
-      lightImagesInputNode.getOutput(),
-      albedoMapNodeA.getInput("lightImages")
+      opacityMapNodeA.getInput("frontLightImages")
    );
    nodeGraph.connect(
       backlightImagesInputNode.getOutput(),
+      opacityMapNodeA.getInput("backLightImages")
+   );
+   nodeGraph.connect(
+      lightImagesInputNode.getOutput(),
+      applyMasksNodeA.getInput("images")
+   );
+   nodeGraph.connect(
+      backlightImagesInputNode.getOutput(),
+      applyMasksNodeB.getInput("images")
+   );
+   nodeGraph.connect(
+      opacityThresholdInputNode.getOutput(),
+      opacityMapNodeA.getInput("threshold")
+   );
+   nodeGraph.connect(
+      opacityMapNodeA.getOutput(),
+      applyMasksNodeA.getInput("mask")
+   );
+   nodeGraph.connect(
+      opacityMapNodeA.getOutput(),
+      applyMasksNodeB.getInput("mask")
+   );
+   nodeGraph.connect(
+      applyMasksNodeA.getOutput(),
+      normalMapNodeA.getInput("lightImages")
+   );
+   nodeGraph.connect(
+      applyMasksNodeA.getOutput(),
+      albedoMapNodeA.getInput("lightImages")
+   );
+   nodeGraph.connect(
+      applyMasksNodeB.getOutput(),
       translucencyMapNodeA.getInput("backlightImages")
    );
    nodeGraph.connect(
@@ -175,18 +212,6 @@ async function main() {
       depthMapNodeA.getOutput(),
       roughnessMapNodeA.getInput("depthMap")
    );
-   /*nodeGraph.connect(
-      depthMapNodeA.getOutput(),
-      pointCloudNodeA.getInput("depthMap")
-   );
-   nodeGraph.connect(
-      albedoMapNodeA.getOutput(),
-      pointCloudNodeA.getInput("texture")
-   );
-   nodeGraph.connect(
-      depthFactorInputNode.getOutput(),
-      pointCloudNodeA.getInput("depthFactor")
-   );*/
 
    const downloadAll = document.createElement("button");
    downloadAll.style.zIndex = "9999";
@@ -196,6 +221,7 @@ async function main() {
    downloadAll.innerText = "download all maps";
 
    const outputMaps = [
+      { name: "OpacityMap", node: opacityMapNodeA },
       { name: "AlbedoMap", node: albedoMapNodeA },
       { name: "TranslucencyMap", node: translucencyMapNodeA },
       { name: "NormalMap", node: normalMapNodeA },

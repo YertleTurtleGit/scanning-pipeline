@@ -1105,6 +1105,60 @@ class GraphNodeUI {
          this.outputUIElement.style.justifyContent = "center";
          this.outputUIElement.appendChild(imageElement);
          imageElement.src = imageCanvas.toDataURL();
+
+         const imageMagnifiedContainer = document.createElement("div");
+         const imageMagnified = new Image();
+
+         imageMagnifiedContainer.style.width = "350px";
+         imageMagnifiedContainer.style.height = "350px";
+
+         imageMagnified.style.backgroundColor = "red";
+
+         imageMagnifiedContainer.style.position = "absolute";
+         imageMagnifiedContainer.style.zIndex = "999999";
+         imageMagnified.src = imageElement.src;
+         imageMagnifiedContainer.style.overflow = "hidden";
+         imageMagnifiedContainer.style.borderRadius = "100%";
+
+         imageMagnifiedContainer.appendChild(imageMagnified);
+
+         this.outputUIElement.addEventListener("mousemove", (mouseEvent) => {
+            const rect = imageElement.getBoundingClientRect();
+            const x = Math.max(
+               (mouseEvent.pageX - rect.left) / imageElement.offsetWidth,
+               0
+            );
+            const y = Math.max(
+               (mouseEvent.pageY - rect.top) / imageElement.offsetHeight,
+               0
+            );
+
+            imageMagnified.style.marginLeft =
+               String(
+                  Math.round(
+                     -imageMagnified.offsetWidth * x +
+                        imageMagnifiedContainer.offsetWidth / 2
+                  )
+               ) + "px";
+
+            imageMagnified.style.marginTop =
+               String(
+                  Math.round(
+                     -imageMagnified.offsetHeight * y +
+                        imageMagnifiedContainer.offsetHeight / 2
+                  )
+               ) + "px";
+
+            imageMagnifiedContainer.style.left =
+               String(mouseEvent.pageX) + "px";
+            imageMagnifiedContainer.style.top = String(mouseEvent.pageY) + "px";
+         });
+         this.outputUIElement.addEventListener("mouseenter", () => {
+            document.body.appendChild(imageMagnifiedContainer);
+         });
+         this.outputUIElement.addEventListener("mouseleave", () => {
+            imageMagnifiedContainer.remove();
+         });
       } else if (Array.isArray(value) && value[0] instanceof ImageBitmap) {
          const imageCanvas = document.createElement("canvas");
          imageCanvas.width = value[0].width;
