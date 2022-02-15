@@ -253,7 +253,7 @@ class DepthMapHelper {
             const result = new GLSL.Vector3([
                red.divideFloat(blue),
                green.divideFloat(blue),
-               blue.minimum(red, green),
+               blue.maximum(red, green),
             ]);
 
             const gradientPixelArray = GLSL.render(
@@ -395,7 +395,7 @@ function calculateAnisotropicIntegral(messageEvent) {
 
                let pixelSlope = 0;
 
-               if (gradientPixelSA[colorIndex + 2] !== 0) {
+               if (gradientPixelSA[colorIndex + 2] > 0) {
                   const rightSlope =
                      gradientPixelSA[colorIndex + 0] + slopeShift;
                   const topSlope = gradientPixelSA[colorIndex + 1] + slopeShift;
