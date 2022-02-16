@@ -247,8 +247,14 @@ class DepthMapHelper {
             depthMapShader.bind();
 
             const glslNormalMap = GLSL.Image.load(normalMap);
-            const red = glslNormalMap.channel(0);
-            const green = glslNormalMap.channel(1);
+            const red = glslNormalMap
+               .channel(0)
+               .multiplyFloat(new GLSL.Float(2))
+               .subtractFloat(new GLSL.Float(1));
+            const green = glslNormalMap
+               .channel(1)
+               .multiplyFloat(new GLSL.Float(2))
+               .subtractFloat(new GLSL.Float(1));
             const blue = glslNormalMap.channel(2);
             const result = new GLSL.Vector3([
                red.divideFloat(blue),
