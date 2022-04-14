@@ -1,6 +1,6 @@
 # Scanning Pipeline
 
-## Live Demo in Web Browser
+## Live Demo in Web Browser (Chromium)
 
 [<img src="screenshot.png">](https://scanning-pipeline.netlify.app/)
 [https://scanning-pipeline.netlify.app/](https://scanning-pipeline.netlify.app/)
