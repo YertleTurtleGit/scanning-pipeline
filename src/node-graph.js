@@ -58,6 +58,8 @@ class NodeGraph {
       this.domCanvas = document.createElement("canvas");
       this.domCanvas.style.backgroundColor = "transparent";
       this.domCanvas.style.position = "absolute";
+      this.domCanvas.style.top = "0px";
+      this.domCanvas.style.left = "0px";
       this.domCanvas.style.width = "100%";
       this.domCanvas.style.height = "100%";
 
