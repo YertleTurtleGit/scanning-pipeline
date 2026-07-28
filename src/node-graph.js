@@ -60,8 +60,8 @@ class NodeGraph {
       this.domCanvas.style.position = "absolute";
       this.domCanvas.style.top = "0px";
       this.domCanvas.style.left = "0px";
-      this.domCanvas.style.width = "100%";
-      this.domCanvas.style.height = "100%";
+      this.domCanvas.width = this.parentElement.clientWidth;
+      this.domCanvas.height = this.parentElement.clientHeight;
 
       window.addEventListener("resize", this.resizeHandler.bind(this));
       this.parentElement.appendChild(this.domCanvas);
@@ -199,8 +199,8 @@ class NodeGraph {
     * @private
     */
    resizeHandler() {
-      this.domCanvas.height = this.parentElement.clientHeight;
-      this.domCanvas.width = this.parentElement.clientWidth;
+      this.domCanvas.width = this.parentElement.scrollWidth;
+      this.domCanvas.height = this.parentElement.scrollHeight;
       this.updateConnectionUI();
    }
 
@@ -240,6 +240,14 @@ class NodeGraph {
       return connections;
    }
 
+   getCanvasPosition(clientX, clientY) {
+      const rect = this.domCanvas.getBoundingClientRect();
+      return {
+         x: clientX - rect.left,
+         y: clientY - rect.top,
+      };
+   }
+
    /**
     * @public
     */
@@ -259,16 +267,16 @@ class NodeGraph {
          if (connection.input && connection.output) {
             const startRect =
                connection.input.domElement.getBoundingClientRect();
-            const start = {
-               x: startRect.left,
-               y: (startRect.top + startRect.bottom) / 2,
-            };
+            const start = this.getCanvasPosition(
+               startRect.left,
+               (startRect.top + startRect.bottom) / 2
+            );
             const endRect =
                connection.output.domElement.getBoundingClientRect();
-            const end = {
-               x: endRect.right,
-               y: (endRect.top + endRect.bottom) / 2,
-            };
+            const end = this.getCanvasPosition(
+               endRect.right,
+               (endRect.top + endRect.bottom) / 2
+            );
             this.domCanvasContext.moveTo(start.x, start.y);
             this.domCanvasContext.lineTo(end.x, end.y);
          }
@@ -303,10 +311,10 @@ class NodeGraph {
     * @param {MouseEvent} mouseEvent
     */
    mousemoveHandler(mouseEvent) {
-      this.currentMousePosition = {
-         x: mouseEvent.pageX - this.parentElement.offsetLeft,
-         y: mouseEvent.pageY - this.parentElement.offsetTop,
-      };
+      this.currentMousePosition = this.getCanvasPosition(
+         mouseEvent.clientX,
+         mouseEvent.clientY
+      );
 
       if (this.grabbedNode) {
          this.grabbedNode.setPosition(this.currentMousePosition);
@@ -325,10 +333,11 @@ class NodeGraph {
          this.domCanvasContext.lineWidth = 2;
 
          const startRect = this.linkedNodeIO.domElement.getBoundingClientRect();
-         const start = {
-            x: startRect.right,
-            y: (startRect.top + startRect.bottom) / 2,
-         };
+         const start = this.getCanvasPosition(
+            startRect.right,
+            (startRect.top + startRect.bottom) / 2
+         );
+
          const end = this.currentMousePosition;
          this.domCanvasContext.moveTo(start.x, start.y);
          this.domCanvasContext.lineTo(end.x, end.y);
@@ -652,10 +661,11 @@ class GraphNodeInputUI extends GraphNodeInput {
       this.removeConnection();
 
       const boundingRect = this.domElement.getBoundingClientRect();
-      const inputNode = this.nodeGraph.createInputNode(this.type, {
-         x: boundingRect.left - 200,
-         y: boundingRect.top - 25,
-      });
+      const position = this.nodeGraph.getCanvasPosition(
+         boundingRect.left - 200,
+         boundingRect.top - 25
+      );
+      const inputNode = this.nodeGraph.createInputNode(this.type, position);
       this.nodeGraph.connect(
          inputNode.getOutput(),
          new Promise((resolve) => {
