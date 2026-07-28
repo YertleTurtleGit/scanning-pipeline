@@ -206,7 +206,7 @@ class PointCloudHelperRenderingContext {
       this.scene = new THREE.Scene();
       this.geometry = new THREE.BufferGeometry();
       this.material = new THREE.PointsMaterial({
-         size: 2,
+         size: 5,
          vertexColors: true,
       });
       this.pointCloud = new THREE.Points(this.geometry, this.material);
